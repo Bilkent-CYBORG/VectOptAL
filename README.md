@@ -1,4 +1,4 @@
-## Code for "Vector Optimization in Active Leaning"
+## Vector Optimization with Active Learning
 
 ### Setup
 ```setup
