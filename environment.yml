@@ -1,0 +1,28 @@
+name: torch
+channels:
+- conda-forge
+- pytorch
+- gpytorch
+- nvidia
+- gurobi
+- mosek
+dependencies:
+- python=3.10
+- pytorch=2.0.1
+- pytorch-cuda=11.7
+- cvxpy
+- gpytorch=1.8.0
+- botorch=0.5.1
+- scikit-learn
+- scipy
+- oyaml
+- gpy
+- jupyter
+- matplotlib
+- numpy
+- pandas
+- seaborn
+- jupyter
+- gurobi
+- mosek
+- pymoo=0.5.0

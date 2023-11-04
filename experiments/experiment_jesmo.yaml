@@ -1,0 +1,140 @@
+# Datasets: [("BC", 2), ("JAHS", 1), ("SINE", 1), ("Brake", null), ("SNW", null)]
+
+experiment_name: "07_27_2023__01_35_54"  # Be careful not to override previous experiments!
+
+num_experiments: 8
+experiment_ids: 8  # If list: id's, If int: start id (from 1)
+
+# NOTE: Make sure the configurations of compared experiments match up,
+# including the order of elements.
+
+experiment1:
+  iteration: 50
+  datasets_and_workers: [["Brake", 16], ["SNW", 16]]
+  epsilons: [0.01]
+  noise_var: 0.0001
+  delta: 0.05
+  cone_degrees: [90]
+  conf_contractions: [1024, 512, 256, 128, 64, 32, 16, 8, 4]
+  algorithm: "PaVeBa"
+  PaVeBa:
+    GP:
+      use_gp: False
+      independent: False
+  Auer: null
+  Naive: null
+  MESMO: null
+
+experiment2:
+  iteration: 50
+  datasets_and_workers: [["Brake", 16], ["SNW", 16]]
+  epsilons: [0.01]
+  noise_var: 0.0001
+  delta: 0.05
+  cone_degrees: [90]
+  conf_contractions: [1024, 512, 256, 128, 64, 32, 16, 8, 4]
+  algorithm: "Auer"
+  PaVeBa: null
+  Auer:
+    compare_experiment_id: 1
+  Naive: null
+  MESMO: null
+
+experiment3:
+  iteration: 50
+  datasets_and_workers: [["Brake", 16], ["SNW", 16]]
+  epsilons: [0.1, 0.01]
+  noise_var: 0.01
+  delta: 0.05
+  cone_degrees: [45, 60, 90, 120, 135]
+  conf_contractions: [16]
+  algorithm: "PaVeBa"
+  PaVeBa:
+    GP:
+      use_gp: False
+      independent: False
+  Auer: null
+  Naive: null
+  MESMO: null
+
+experiment4:
+  iteration: 50
+  datasets_and_workers: [["Brake", null], ["SNW", null]]
+  epsilons: [0.1, 0.01]
+  noise_var: 0.01
+  delta: 0.05
+  cone_degrees: [45, 60, 90, 120, 135]
+  conf_contractions: [16]
+  algorithm: "Naive"
+  PaVeBa: null
+  Auer: null
+  Naive:
+    compare_experiment_id: 3
+    samples: null  # (dset x cone) x eps
+  MESMO: null
+
+experiment5:
+  iteration: 50
+  datasets_and_workers: [["BC", 10], ["SNW", 10]]
+  epsilons: [0.1, 0.05, 0.01, 0.005, 0.001, 0]
+  noise_var: 0.0001
+  delta: 0.05
+  cone_degrees: [90]
+  conf_contractions: [32]
+  algorithm: "PaVeBa"
+  PaVeBa:
+    GP:
+      use_gp: True
+      independent: False
+  Auer: null
+  Naive: null
+  MESMO: null
+
+experiment6:
+  iteration: 50
+  datasets_and_workers: [["BC", 10], ["SNW", 10]]
+  epsilons: [0.1, 0.05, 0.01, 0.005, 0.001, 0]
+  noise_var: 0.0001
+  delta: 0.05
+  cone_degrees: [90]
+  conf_contractions: [32]
+  algorithm: "PaVeBa"
+  PaVeBa:
+    GP:
+      use_gp: True
+      independent: True
+  Auer: null
+  Naive: null
+  MESMO: null
+
+experiment7:
+  iteration: 50
+  datasets_and_workers: [["BC", 2], ["SNW", 3]]
+  epsilons: [0.1, 0.05, 0.01, 0.005, 0.001, 0]
+  noise_var: 0.01
+  delta: 0.05
+  cone_degrees: [90]
+  conf_contractions: [32]
+  algorithm: "MESMO"
+  PaVeBa: null
+  Auer: null
+  Naive: null
+  MESMO:
+    compare_experiment_id: 5
+    samples: null  # dset x eps
+
+experiment8:
+  iteration: 50
+  datasets_and_workers: [["BC", 2], ["SNW", 3]]
+  epsilons: [0.1, 0.05, 0.01, 0.005, 0.001, 0]
+  noise_var: 0.01
+  delta: 0.05
+  cone_degrees: [90]
+  conf_contractions: [32]
+  algorithm: "JESMO"
+  PaVeBa: null
+  Auer: null
+  Naive: null
+  JESMO:
+    compare_experiment_id: 5
+    samples: null  # dset x eps

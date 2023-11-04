@@ -1,0 +1,44 @@
+# Datasets: [("BC", 2), ("JAHS", 1), ("SINE", 1), ("Brake", null), ("SNW", null)]
+
+experiment_name: ""  # Be careful not to override previous experiments!
+
+num_experiments: 2
+experiment_ids: 1  # If list: id's, If int: start id (from 1)
+
+# NOTE: Make sure the configurations of compared experiments match up,
+# including the order of elements.
+
+
+experiment1:
+  iteration: 2
+  datasets_and_workers: [["SNW", 2]]
+  epsilons: [0.1]
+  noise_var: 0.01
+  delta: 0.05
+  cone_degrees: [90]
+  conf_contractions: [16]
+  algorithm: "ADELGP"
+  PaVeBa: null
+  ADELGP: null
+  Auer: null
+  Naive: null
+  MESMO: null
+
+experiment2:
+  iteration: 2
+  datasets_and_workers: [["SNW", 2]]
+  epsilons: [0.1]
+  noise_var: 0.01
+  delta: 0.05
+  cone_degrees: [90]
+  conf_contractions: [64]
+  algorithm: "PaVeBa"
+  PaVeBa:
+    GP:
+      use_gp: True
+      independent: False
+      ellipsoid: False
+      batch_sizes: [1]
+  Auer: null
+  Naive: null
+  MESMO: null
