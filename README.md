@@ -5,8 +5,7 @@
 conda env create --name vo --file environment.yml
 ```
 
-### Run as:
+### Run the example experiment as:
 ```bash
-python simulations.py --experiment_file EXP_FILE_PATH
+python main.py
 ```
-where `EXP_FILE_PATH` is a YAML file prepared according to the samples in `experiments/` folder.
