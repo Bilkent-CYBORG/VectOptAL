@@ -19,3 +19,7 @@ class PALAlgorithm(Algorithm, ABC):
 
         self.epsilon = epsilon
         self.delta = delta
+
+    @abstractmethod
+    def run_one_step(self):
+        pass
