@@ -1,5 +1,6 @@
 import copy
 import logging
+from typing import Literal
 
 import numpy as np
 
@@ -15,33 +16,48 @@ from vectoptal.confidence_region import (
     confidence_region_check_dominates,
     confidence_region_is_covered
 )
+from vectoptal.models import (
+    CorrelatedExactGPyTorchModel,
+    IndependentExactGPyTorchModel,
+    get_gpytorch_model_w_known_hyperparams
+)
 
 
-class PaVeBa(PALAlgorithm):
+class PaVeBaGP(PALAlgorithm):
     def __init__(
         self, epsilon, delta,
         dataset_name, order: Order,
         noise_var,
         conf_contraction=32,
+        type: Literal["IH", "DE"]="IH",
+        batch_size=1,
     ) -> None:
         super().__init__(epsilon, delta)
 
         self.order = order
-        self.noise_var = noise_var
+        self.batch_size = batch_size
         self.conf_contraction = conf_contraction
 
         dataset = get_dataset(dataset_name)
 
         self.m = dataset.out_dim
 
-        # Trick to keep indices alongside points. This is for predictions from PaVeBa model.
-        in_data = np.hstack((dataset.in_data, np.arange(len(dataset.in_data))[:, None]))
+        if type == "IH":
+            design_confidence_type = 'hyperrectangle'
+            model_class = IndependentExactGPyTorchModel
+        elif type == "DE":
+            design_confidence_type = 'hyperellipsoid'
+            model_class = CorrelatedExactGPyTorchModel
+
         self.design_space = DiscreteDesignSpace(
-            in_data, dataset.out_dim, confidence_type='hyperellipsoid'
+            dataset.in_data, dataset.out_dim, confidence_type=design_confidence_type
         )
         self.problem = ProblemFromDataset(dataset, noise_var)
 
-        self.model = PaVeBaModel(dataset.in_dim, self.m, noise_var, self.design_space.cardinality)
+        self.model = get_gpytorch_model_w_known_hyperparams(
+            model_class, self.problem, dataset.in_data, dataset.out_data,
+            noise_var, initial_sample_cnt=1
+        )
 
         self.cone_alpha = self.order.ordering_cone.alpha.flatten()
         self.cone_alpha_eps = self.cone_alpha * self.epsilon
@@ -53,9 +69,9 @@ class PaVeBa(PALAlgorithm):
         self.sample_count = 0
 
     def modeling(self):
-        self.r_t = self.compute_radius()
+        self.alpha_t = self.compute_alpha()
         A = self.S.union(self.U)
-        self.design_space.update(self.model, self.r_t, list(A))
+        self.design_space.update(self.model, self.alpha_t, list(A))
 
     def discarding(self):
         A = self.S.union(self.U)
@@ -119,12 +135,14 @@ class PaVeBa(PALAlgorithm):
 
     def evaluating(self):
         A = self.S.union(self.U)
+        acq = SumVarianceAcquisition(self.model)
         active_pts = self.design_space.points[list(A)]
+        candidate_list, _ = optimize_acqf_discrete(acq, self.batch_size, choices=active_pts)
 
-        observations = self.problem.evaluate(active_pts[:, :-1])
+        observations = self.problem.evaluate(candidate_list)
 
-        self.sample_count += len(A)
-        self.model.add_sample(A, observations)
+        self.sample_count += len(candidate_list)
+        self.model.add_sample(candidate_list, observations)
         self.model.update()
 
     def run_one_step(self) -> bool:
@@ -155,10 +173,11 @@ class PaVeBa(PALAlgorithm):
 
         return len(self.S) == 0
 
-    def compute_radius(self):
-        t1 = (8 * self.noise_var / self.round)
-        t2 = np.log(  # ni**2 is equal to t**2 since only active arms are sampled
-            (np.pi**2 * (self.m + 1) * self.design_space.cardinality * self.round**2) / (6 * self.delta)
+    def compute_alpha(self):
+        alpha = (
+            8*self.m*np.log(6) + 4*np.log(
+                (np.pi**2 * self.round**2 * self.design_space.cardinality)/(6*self.delta)
+            )
         )
-        r = np.sqrt(t1 * t2)
-        return (r / self.conf_contraction) * np.ones(self.m, )
+
+        return (alpha / self.conf_contraction) * np.ones(self.m, )
