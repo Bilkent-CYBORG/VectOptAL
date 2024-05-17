@@ -1,16 +1,11 @@
-import logging
-
 from vectoptal.utils.seed import SEED
+from vectoptal.datasets.dataset import *
 from vectoptal.order import ConeTheta2DOrder
-from vectoptal.datasets.dataset import DiskBrake, SNW
+from vectoptal.algorithms import NaiveElimination
 from vectoptal.utils import set_seed, calculate_epsilonF1_score
-from vectoptal.algorithms import VOGP, PaVeBa, PaVeBaGP, NaiveElimination
 
 
 if __name__ == "__main__":
-    # Set up logging level
-    logging.basicConfig(level=logging.INFO)
-
     # Set seed
     set_seed(SEED)
 
@@ -25,13 +20,8 @@ if __name__ == "__main__":
     algorithm = NaiveElimination(
         epsilon=epsilon, delta=delta,
         dataset_name=dataset_name, order=order, noise_var=noise_var,
-        L=500
+        # L=500
     )
-    # algorithm = VOGP(
-    #     epsilon=epsilon, delta=delta,
-    #     dataset_name=dataset_name, order=order, noise_var=noise_var,
-    #     conf_contraction=16
-    # )
 
     while True:
         is_done = algorithm.run_one_step()

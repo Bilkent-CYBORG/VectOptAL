@@ -27,6 +27,15 @@ class SumVarianceAcquisition(AcquisitionStrategy):
         _, variances = self.model.predict(x)
         return np.sum(np.diagonal(variances, axis1=-2, axis2=-1), axis=-1)
 
+class MaxVarianceDecoupledAcquisition(AcquisitionStrategy):
+    def __init__(self, model: Model) -> None:
+        super().__init__()
+        self.model = model
+
+    def forward(self, x):
+        _, variances = self.model.predict(x)
+        return np.diagonal(variances, axis1=-2, axis2=-1)
+
 def optimize_acqf_discrete(
     acq: AcquisitionStrategy,
     q: int,
