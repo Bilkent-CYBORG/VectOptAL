@@ -90,6 +90,147 @@ def get_noisy_evaluations_chol(means, cholesky_cov):
     
     return noisy_samples
 
+
+def get_smallmij(vi, vj, W, alpha_vec):
+    """
+    Compute m(i,j) for designs i and j 
+    :param vi, vj: (D,1) ndarrays
+    :param W: (n_constraint,D) ndarray
+    :param alpha_vec: (n_constraint,1) ndarray of alphas of W
+    :return: m(i,j).
+    """
+    prod = np.matmul(W, vj - vi)
+    prod[prod<0] = 0
+    smallmij = (prod/alpha_vec).min()
+    
+    return smallmij
+
+def get_delta(mu, W, alpha_vec):
+    """
+    Computes Delta^*_i for each i in [n.points]
+    :param mu: An (n_points, D) array
+    :param W: (n_constraint,D) ndarray
+    :param alpha_vec: (n_constraint,1) ndarray of alphas of W
+    :return: An (n_points, D) array of Delta^*_i for each i in [n.points]
+    """
+    n = mu.shape[0]
+    Delta = np.zeros(n)
+    for i in range(n):
+        for j in range(n):
+            vi = mu[i,:].reshape(-1,1)
+            vj = mu[j,:].reshape(-1,1)
+            mij = get_smallmij(vi, vj, W, alpha_vec)
+            if mij>Delta[i]:
+                Delta[i] = mij
+    
+    return Delta.reshape(-1,1)
+
+def get_uncovered_set(p_opt_miss, p_opt_hat, mu, eps, W):
+    """
+    Check if vi is eps covered by vj for cone matrix W
+    :param p_opt_hat: ndarray of indices of designs in returned Pareto set
+    :param p_opt_miss: ndarray of indices of Pareto optimal points not in p_opt_hat
+    :mu: An (n_points,D) mean reward matrix
+    :param eps: float
+    :param W: An (n_constraint,D) ndarray
+    :return: ndarray of indices of points in p_opt_miss that are not epsilon covered
+    """
+    uncovered_set = []
+    
+    for i in p_opt_miss:
+        for j in p_opt_hat:
+            if is_covered(mu[i,:].reshape(-1,1), mu[j,:].reshape(-1,1), eps, W):
+                break
+        else:
+            uncovered_set.append(i)
+        
+    return uncovered_set
+
+def is_covered_SOCP(vi, vj, eps, W):
+    """
+    Check if vi is eps covered by vj for cone matrix W 
+    :param vi, vj: (D,1) ndarrays
+    :param W: An (n_constraint,D) ndarray
+    :param eps: float
+    :return: Boolean.
+    """    
+    m = 2*W.shape[0]+1 # number of constraints
+    D = W.shape[1]
+    f = np.zeros(D)
+    A = []
+    b = []
+    c = []
+    d = []
+
+    for i in range(W.shape[0]):
+        A.append(np.zeros((1, D)))
+        b.append(np.zeros(1))
+        c.append(W[i,:])
+        d.append(np.zeros(1))
+    
+    A.append(np.eye(D))
+    b.append((vi-vj).ravel())
+    c.append(np.zeros(D))
+    d.append(eps*np.ones(1))
+
+    for i in range(W.shape[0]):
+        A.append(np.zeros((1, D)))
+        b.append(np.zeros(1))
+        c.append(W[i,:])
+        d.append(np.dot(W[i,:],(vi-vj)))
+        
+    # Define and solve the CVXPY problem.
+    x = cp.Variable(D)
+    # We use cp.SOC(t, x) to create the SOC constraint ||x||_2 <= t.
+    soc_constraints = [
+          cp.SOC(c[i].T @ x + d[i], A[i] @ x + b[i]) for i in range(m)
+    ]
+    prob = cp.Problem(cp.Minimize(f.T@x),
+                  soc_constraints)
+    prob.solve(solver="ECOS")
+
+    """
+    # Print result.
+    print("The optimal value is", prob.value)
+    print("A solution x is")
+    print(x.value)
+    print(x.value is not None)
+    for i in range(m):
+        print("SOC constraint %i dual variable solution" % i)
+        print(soc_constraints[i].dual_value)
+    """     
+    return x.value is not None
+
+def is_covered(vi, vj, eps, W):
+    """
+    Check if vi is eps covered by vj for cone matrix W 
+    :param vi, vj: (D,1) ndarrays
+    :param W: An (n_constraint,D) ndarray
+    :param eps: float
+    :return: Boolean.
+    """
+    if np.dot((vi-vj).T, vi-vj) <= eps**2:
+        return True
+    return is_covered_SOCP(vi, vj, eps, W)
+
+def calculate_epsilonF1_score(dataset, order, true_indices, pred_indices, epsilon):
+    indices_of_missed_pareto = list(set(true_indices) - set(pred_indices))
+
+    uncovered_missed_pareto_indices = get_uncovered_set(
+        indices_of_missed_pareto, pred_indices, dataset.out_data, epsilon, order.ordering_cone.W
+    )
+
+    delta_values = get_delta(dataset.out_data, order.ordering_cone.W, order.ordering_cone.alpha)
+
+    true_eps = np.sum(delta_values[np.array(list(pred_indices)).astype(int)] <= epsilon, axis=0)[0]
+
+    tp_eps = true_eps
+    fp_eps = len(pred_indices) - true_eps
+    f1_eps = (2 * tp_eps) / (2*tp_eps + fp_eps + len(uncovered_missed_pareto_indices))
+
+    return f1_eps
+
+
 def hyperrectangle_check_intersection(
     lower1: np.ndarray, upper1: np.ndarray, lower2: np.ndarray, upper2: np.ndarray
 ):

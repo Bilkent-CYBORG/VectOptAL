@@ -1,10 +1,10 @@
 import logging
 
-from vectoptal.utils import set_seed
 from vectoptal.utils.seed import SEED
-from vectoptal.algorithms import VOGP, PaVeBa, PaVeBaGP, NaiveElimination
-from vectoptal.datasets.dataset import DiskBrake, SNW
 from vectoptal.order import ConeTheta2DOrder
+from vectoptal.datasets.dataset import DiskBrake, SNW
+from vectoptal.utils import set_seed, calculate_epsilonF1_score
+from vectoptal.algorithms import VOGP, PaVeBa, PaVeBaGP, NaiveElimination
 
 
 if __name__ == "__main__":
@@ -15,26 +15,22 @@ if __name__ == "__main__":
     set_seed(SEED)
 
     order = ConeTheta2DOrder(cone_degree=135)
+    dataset_name = "DiskBrake"
+    dataset = globals()[dataset_name]()
 
-    # algorithm = VOGP(
-    #     epsilon=0.01, delta=0.1,
-    #     dataset_name="DiskBrake", order=order, noise_var=0.01,
-    #     conf_contraction=16
-    # )
-    algorithm = PaVeBa(
-        epsilon=0.01, delta=0.1,
-        dataset_name="DiskBrake", order=order, noise_var=0.01,
-        conf_contraction=16
+    epsilon = 0.01
+    delta = 0.05
+    noise_var = epsilon
+
+    algorithm = NaiveElimination(
+        epsilon=epsilon, delta=delta,
+        dataset_name=dataset_name, order=order, noise_var=noise_var,
+        L=500
     )
-    # algorithm = PaVeBaGP(
-    #     epsilon=0.01, delta=0.1,
-    #     dataset_name="DiskBrake", order=order, noise_var=0.0001,
-    #     conf_contraction=64, type="IH"
-    # )
-    # algorithm = NaiveElimination(
-    #     epsilon=0.01, delta=0.05,
-    #     dataset_name="SNW", order=order, noise_var=0.01,
-    #     L=500
+    # algorithm = VOGP(
+    #     epsilon=epsilon, delta=delta,
+    #     dataset_name=dataset_name, order=order, noise_var=noise_var,
+    #     conf_contraction=16
     # )
 
     while True:
@@ -46,9 +42,9 @@ if __name__ == "__main__":
     print("Done!")
 
     print(f"Found Pareto front indices are: {str(sorted(algorithm.P))}")
-    
-    # dataset = DiskBrake()
-    dataset = SNW()
+
     pareto_indices = order.get_pareto_set(dataset.out_data)
-    # figure = order.plot(path="try.png")
     print(f"True Pareto front indices are: {str(sorted(set(pareto_indices)))}")
+
+    eps_f1 = calculate_epsilonF1_score(dataset, order, pareto_indices, list(algorithm.P), epsilon)
+    print(f"epsilon-F1 Score is: {eps_f1:.2f}")
