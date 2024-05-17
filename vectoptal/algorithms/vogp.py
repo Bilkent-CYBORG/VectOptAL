@@ -114,29 +114,29 @@ class VOGP(PALAlgorithm):
         self.model.update()
 
     def run_one_step(self) -> bool:
-        logging.info(f"Round {self.round}")
+        print(f"Round {self.round}")
 
-        logging.info(f"Round {self.round}:Modeling")
+        print(f"Round {self.round}:Modeling")
         self.modeling()
 
-        logging.info(f"Round {self.round}:Discarding")
+        print(f"Round {self.round}:Discarding")
         self.discarding()
 
-        logging.info(f"Round {self.round}:Epsilon-Covering")
+        print(f"Round {self.round}:Epsilon-Covering")
         self.epsiloncovering()
 
-        logging.info(f"Round {self.round}:Evaluating")
+        print(f"Round {self.round}:Evaluating")
         if self.S:  # If S_t is not empty
             self.evaluating()
 
-        logging.info(
+        print(
             f"There are {len(self.S)} designs left in set S and"
             f" {len(self.P)} designs in set P."
         )
 
         self.round += 1
 
-        logging.info(f"Round {self.round}:Sample count {self.sample_count}")
+        print(f"Round {self.round}:Sample count {self.sample_count}")
 
         return len(self.S) == 0
 

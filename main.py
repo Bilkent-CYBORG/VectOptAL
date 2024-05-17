@@ -21,21 +21,21 @@ if __name__ == "__main__":
     #     dataset_name="DiskBrake", order=order, noise_var=0.01,
     #     conf_contraction=16
     # )
-    # algorithm = PaVeBa(
-    #     epsilon=0.01, delta=0.1,
-    #     dataset_name="DiskBrake", order=order, noise_var=0.0001,
-    #     conf_contraction=16
-    # )
+    algorithm = PaVeBa(
+        epsilon=0.01, delta=0.1,
+        dataset_name="DiskBrake", order=order, noise_var=0.01,
+        conf_contraction=16
+    )
     # algorithm = PaVeBaGP(
     #     epsilon=0.01, delta=0.1,
     #     dataset_name="DiskBrake", order=order, noise_var=0.0001,
-    #     conf_contraction=64, type="DE"
+    #     conf_contraction=64, type="IH"
     # )
-    algorithm = NaiveElimination(
-        epsilon=0.01, delta=0.05,
-        dataset_name="SNW", order=order, noise_var=0.01,
-        L=500
-    )
+    # algorithm = NaiveElimination(
+    #     epsilon=0.01, delta=0.05,
+    #     dataset_name="SNW", order=order, noise_var=0.01,
+    #     L=500
+    # )
 
     while True:
         is_done = algorithm.run_one_step()
@@ -43,12 +43,12 @@ if __name__ == "__main__":
         if is_done:
             break
 
-    logging.info("Done!")
+    print("Done!")
 
-    logging.info(f"Found Pareto front indices are: {str(sorted(algorithm.P))}")
+    print(f"Found Pareto front indices are: {str(sorted(algorithm.P))}")
     
     # dataset = DiskBrake()
     dataset = SNW()
     pareto_indices = order.get_pareto_set(dataset.out_data)
     # figure = order.plot(path="try.png")
-    logging.info(f"True Pareto front indices are: {str(sorted(set(pareto_indices)))}")
+    print(f"True Pareto front indices are: {str(sorted(set(pareto_indices)))}")

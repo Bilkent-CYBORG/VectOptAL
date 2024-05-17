@@ -71,7 +71,7 @@ class ConeTheta2DOrder(Order):
         xlim = [-5, 5]
         ylim = [-5, 5]
 
-        fig, ax = plt.subplots(1, 1, figsize=(4, 3))
+        fig, ax = plt.subplots(1, 1, figsize=(8, 5))
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
 
@@ -132,7 +132,7 @@ class ConeTheta2DOrder(Order):
         return fig
 
     def plot_pareto_set(self, elements: np.ndarray, path: Optional[Union[str, PathLike]]=None):
-        fig, ax = plt.subplots(1, 1, figsize=(4, 3))
+        fig, ax = plt.subplots(1, 1, figsize=(8, 5))
 
         pareto_indices = self.get_pareto_set(elements)
 

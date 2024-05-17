@@ -1,6 +1,4 @@
-python==3.10
-pytorch==2.0.1
-pytorch-cuda==11.7
+torch==2.0.1
 gpytorch==1.11.0
 botorch==0.10.0
 pymoo==0.5.0
@@ -15,5 +13,4 @@ numpy
 pandas
 seaborn
 jupyter
-gurobi
 mosek

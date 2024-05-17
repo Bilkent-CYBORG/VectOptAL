@@ -129,29 +129,29 @@ class PaVeBa(PALAlgorithm):
 
     def run_one_step(self) -> bool:
         self.round += 1
-        logging.info(f"Round {self.round}")
+        print(f"Round {self.round}")
 
-        logging.info(f"Round {self.round}:Evaluating")
+        print(f"Round {self.round}:Evaluating")
         self.evaluating()
 
-        logging.info(f"Round {self.round}:Modeling")
+        print(f"Round {self.round}:Modeling")
         self.modeling()
 
-        logging.info(f"Round {self.round}:Discarding")
+        print(f"Round {self.round}:Discarding")
         self.discarding()
 
-        logging.info(f"Round {self.round}:Pareto update")
+        print(f"Round {self.round}:Pareto update")
         self.pareto_updating()
 
-        logging.info(f"Round {self.round}:Useful update")
+        print(f"Round {self.round}:Useful update")
         self.useful_updating()
 
-        logging.info(
+        print(
             f"There are {len(self.S)} designs left in set S and"
             f" {len(self.P)} designs in set P."
         )
 
-        logging.info(f"Round {self.round}:Sample count {self.sample_count}")
+        print(f"Round {self.round}:Sample count {self.sample_count}")
 
         return len(self.S) == 0
 

@@ -150,9 +150,9 @@ class GPyTorchExactModel(Model, ABC):
 
         mll = gpytorch.mlls.ExactMarginalLogLikelihood(self.likelihood, self.model)
 
-        logging.info("Training started.")
+        print("Training started.")
         fit_gpytorch_model(mll)
-        logging.info("Training done.")
+        print("Training done.")
 
         self.model.eval()
         self.likelihood.eval()
