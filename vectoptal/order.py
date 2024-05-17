@@ -67,7 +67,7 @@ class ConeTheta2DOrder(Order):
     
         super().__init__(ordering_cone)
     
-    def plot(self, path: Optional[Union[str, PathLike]]):
+    def plot(self, path: Optional[Union[str, PathLike]]=None):
         xlim = [-5, 5]
         ylim = [-5, 5]
 
@@ -123,6 +123,37 @@ class ConeTheta2DOrder(Order):
             label=rf"Cone $\theta={self.cone_degree}^\circ$"
         )
         ax.add_patch(polygon)
+        ax.legend(loc="lower left")
+        
+        if path:
+            plt.tight_layout()
+            plt.savefig(path)
+
+        return fig
+
+    def plot_pareto_set(self, elements: np.ndarray, path: Optional[Union[str, PathLike]]=None):
+        fig, ax = plt.subplots(1, 1, figsize=(4, 3))
+
+        pareto_indices = self.get_pareto_set(elements)
+
+        mask = np.ones(len(elements), dtype=np.uint8)
+        mask[pareto_indices] = 0
+        non_pareto_indices = np.nonzero(mask)
+        ax.scatter(
+            elements[pareto_indices][:, 0],
+            elements[pareto_indices][:, 1], c="mediumslateblue", label="Pareto", alpha=0.6
+        )
+        ax.scatter(
+            elements[non_pareto_indices][:, 0],
+            elements[non_pareto_indices][:, 1], c="tab:blue", label="Non Pareto", alpha=0.6
+        )
+
+        ax.set(xticks=[], xticklabels=[], yticks=[], yticklabels=[])
+        ax.spines['bottom'].set_position('center')
+        ax.spines['left'].set_position('center')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+
         ax.legend(loc="lower left")
         
         if path:

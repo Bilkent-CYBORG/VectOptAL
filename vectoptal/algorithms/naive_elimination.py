@@ -27,9 +27,8 @@ class NaiveElimination(PALAlgorithm):
         self.m = self.dataset.out_dim
 
         self.K = len(self.dataset.in_data)
-        if L is None:
-            # Any c>0 should suffice according to Lemma B.12, keep it as original.
-            c = 1 + np.sqrt(2)
+        if L is None:  # Use theoretical sampling count if not given.
+            c = 1 + np.sqrt(2)  # Any c>0 should suffice according to Lemma B.12.
             self.L = np.ceil(
                 4
                 * ((c*self.noise_var*self.ordering_complexity/self.epsilon)**2)

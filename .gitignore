@@ -2,5 +2,9 @@
 
 # Folders
 __pycache__/
+docs/build/
+
 .vscode/
+
 outputs/
+data/
