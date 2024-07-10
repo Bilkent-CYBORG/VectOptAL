@@ -198,10 +198,10 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
         except:
             prob.solve(solver="MOSEK")
 
-        if prob.status == None or "optimal" in prob.status:  # "optimal" or "optimal_inaccurate"
-            return True
-        else:
+        if "infeasible" in prob.status:
             return False
+        else:
+            return True
 
 def confidence_region_is_dominated(order, region1, region2, slackness) -> bool:
     if isinstance(region1, RectangularConfidenceRegion):
@@ -220,6 +220,7 @@ def confidence_region_check_dominates(order, region1, region2) -> bool:
         raise NotImplementedError
 
 def confidence_region_is_covered(order, region1, region2, slackness) -> bool:
+    # TODO: is_covered may be a bad name. Maybe is_not_dominated?
     if isinstance(region1, RectangularConfidenceRegion):
         return RectangularConfidenceRegion.is_covered(order, region1, region2, slackness)
     elif isinstance(region1, EllipsoidalConfidenceRegion):

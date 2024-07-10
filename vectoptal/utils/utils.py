@@ -209,8 +209,9 @@ def is_covered(vi, vj, eps, W):
     :param eps: float
     :return: Boolean.
     """
-    if np.dot((vi-vj).T, vi-vj) <= eps**2:
-        return True
+    # TODO: Check if the commented out early stop condition is correct.
+    # if np.dot((vi-vj).T, vi-vj) <= eps**2:
+    #     return True
     return is_covered_SOCP(vi, vj, eps, W)
 
 def calculate_epsilonF1_score(dataset, order, true_indices, pred_indices, epsilon):
@@ -240,16 +241,16 @@ def hyperrectangle_check_intersection(
     return True
 
 def hyperrectangle_get_vertices(lower: np.ndarray, upper: np.ndarray):
-        a = [[l1, l2] for l1, l2 in zip(lower, upper)]
-        vertex_list = [element for element in itertools.product(*a)]
-        return np.array(vertex_list)
+    a = [[l1, l2] for l1, l2 in zip(lower, upper)]
+    vertex_list = [element for element in itertools.product(*a)]
+    return np.array(vertex_list)
 
 def hyperrectangle_get_region_matrix(lower: np.ndarray, upper: np.ndarray):
-        dim = len(lower)
-        region_matrix = np.vstack((np.eye(dim), -np.eye(dim)))
-        region_boundary = np.hstack((np.array(lower), -np.array(upper)))
+    dim = len(lower)
+    region_matrix = np.vstack((np.eye(dim), -np.eye(dim)))
+    region_boundary = np.hstack((np.array(lower), -np.array(upper)))
 
-        return region_matrix, region_boundary
+    return region_matrix, region_boundary
 
 def is_pt_in_extended_polytope(pt, polytope, invert_extension=False):
     dim = polytope.shape[1]

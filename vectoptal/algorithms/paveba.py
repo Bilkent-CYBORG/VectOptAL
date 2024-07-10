@@ -72,14 +72,14 @@ class PaVeBa(PALAlgorithm):
                 if confidence_region_is_dominated(self.order, pt_conf, pt_p_conf, 0):
                     to_be_discarded.append(pt)
                     break
-
+        
         for pt in to_be_discarded:
             self.S.remove(pt)
 
     def pareto_updating(self):
         A = self.S.union(self.U)
 
-        is_index_pareto = []
+        new_pareto_pts = []
         for pt in self.S:
             pt_conf = self.design_space.confidence_regions[pt]
             for pt_prime in A:
@@ -91,16 +91,13 @@ class PaVeBa(PALAlgorithm):
                 if confidence_region_is_covered(
                     self.order, pt_conf, pt_p_conf, self.cone_alpha_eps
                 ):
-                    is_index_pareto.append(False)
                     break
             else:
-                is_index_pareto.append(True)
+                new_pareto_pts.append(pt)
 
-        tmp_S = copy.deepcopy(self.S)
-        for is_pareto, pt in zip(is_index_pareto, tmp_S):
-            if is_pareto:
-                self.S.remove(pt)
-                self.P.add(pt)
+        for pt in new_pareto_pts:
+            self.S.remove(pt)
+            self.P.add(pt)
         logging.debug(f"Pareto: {str(self.P)}")
 
     def useful_updating(self):
@@ -111,7 +108,7 @@ class PaVeBa(PALAlgorithm):
                 pt_p_conf = self.design_space.confidence_regions[pt_prime]
 
                 if confidence_region_is_covered(
-                    self.order, pt_conf, pt_p_conf, self.cone_alpha_eps
+                    self.order, pt_p_conf, pt_conf, self.cone_alpha_eps
                 ):
                     self.U.add(pt)
                     break
