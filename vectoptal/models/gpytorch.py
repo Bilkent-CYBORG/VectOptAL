@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 from abc import ABC, abstractmethod
 
 import torch
@@ -7,8 +8,9 @@ from botorch.fit import fit_gpytorch_model
 
 import numpy as np
 
-from vectoptal.models import Model
+from vectoptal.models import GPModel
 from vectoptal.maximization_problem import Problem
+from vectoptal.utils.utils import generate_sobol_samples
 
 torch.set_default_dtype(torch.float64)
 
@@ -75,7 +77,7 @@ class BatchIndependentExactGPModel(gpytorch.models.ExactGP):
             gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
         )
 
-class GPyTorchExactModel(Model, ABC):
+class GPyTorchExactModel(GPModel, ABC):
     """Assumes known noise variance."""
     def __init__(
         self, input_dim, output_dim, noise_var, model_kind: gpytorch.models.ExactGP
@@ -157,6 +159,28 @@ class GPyTorchExactModel(Model, ABC):
         self.model.eval()
         self.likelihood.eval()
 
+    def evaluate_kernel(self, X=None):
+        assert self.model is not None, "Kernel evaluated before model initialization."
+        
+        if X is None:
+            X = self.X_T
+        Kn = self.model.covar_module(X, X).evaluate()
+        Kn = Kn.numpy(force=True)
+
+        return Kn
+
+    def get_lengthscale_and_var(self):
+        cov_module = self.model.covar_module
+        lengthscales = cov_module.data_covar_module.lengthscale.squeeze().numpy(force=True)
+        variances = cov_module.task_covar_module.var.squeeze().numpy(force=True)
+
+        return lengthscales, variances
+
+    def get_kernel_type(self):
+        if isinstance(self.model.covar_module.data_covar_module, gpytorch.kernels.RBFKernel):
+            return "RBF"
+        else:
+            return "Other"
 
 class CorrelatedExactGPyTorchModel(GPyTorchExactModel):
     def __init__(self, input_dim, output_dim, noise_var) -> None:
@@ -197,9 +221,18 @@ class IndependentExactGPyTorchModel(GPyTorchExactModel):
 
 
 def get_gpytorch_model_w_known_hyperparams(
-    model_class, problem: Problem, X:np.ndarray, Y:np.ndarray,
-    noise_var: float, initial_sample_cnt: int
+    model_class, problem: Problem, noise_var: float, initial_sample_cnt: int,
+    X: Optional[np.ndarray] = None, Y: Optional[np.ndarray] = None
 ) -> GPyTorchExactModel:
+    """
+    Creates and returns a GPyTorch model after training and freezing model parameters.
+    If X and Y is not given, sobol samples are evaluated to generate a learning dataset.
+    """
+    if X == None:
+        X = generate_sobol_samples(problem.in_dim, 1024)  # TODO: magic number
+    if Y == None:
+        Y = problem.evaluate(X)
+
     in_dim = X.shape[1]
     out_dim = Y.shape[1]
 
@@ -210,6 +243,7 @@ def get_gpytorch_model_w_known_hyperparams(
     model.train()
     model.clear_data()
 
+    # TODO: Initial sampling should be done outside. Can be a utility function.
     if initial_sample_cnt > 0:
         initial_indices = np.random.choice(len(X), initial_sample_cnt)
         initial_points = X[initial_indices]

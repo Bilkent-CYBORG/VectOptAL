@@ -55,8 +55,8 @@ class PaVeBaGP(PALAlgorithm):
         self.problem = ProblemFromDataset(dataset, noise_var)
 
         self.model = get_gpytorch_model_w_known_hyperparams(
-            model_class, self.problem, dataset.in_data, dataset.out_data,
-            noise_var, initial_sample_cnt=1
+            model_class, self.problem, noise_var, initial_sample_cnt=1,
+            X=dataset.in_data, Y=dataset.out_data
         )
 
         self.cone_alpha = self.order.ordering_cone.alpha.flatten()

@@ -3,6 +3,7 @@ import itertools
 import torch
 import numpy as np
 import cvxpy as cp
+from scipy.stats.qmc import Sobol
 from sklearn.metrics.pairwise import euclidean_distances
 
 
@@ -90,6 +91,11 @@ def get_noisy_evaluations_chol(means, cholesky_cov):
     
     return noisy_samples
 
+def generate_sobol_samples(dim, n):
+    sampler = Sobol(dim, scramble=False)
+    samples = sampler.random(n)
+
+    return samples
 
 def get_smallmij(vi, vj, W, alpha_vec):
     """
@@ -213,23 +219,6 @@ def is_covered(vi, vj, eps, W):
     # if np.dot((vi-vj).T, vi-vj) <= eps**2:
     #     return True
     return is_covered_SOCP(vi, vj, eps, W)
-
-def calculate_epsilonF1_score(dataset, order, true_indices, pred_indices, epsilon):
-    indices_of_missed_pareto = list(set(true_indices) - set(pred_indices))
-
-    uncovered_missed_pareto_indices = get_uncovered_set(
-        indices_of_missed_pareto, pred_indices, dataset.out_data, epsilon, order.ordering_cone.W
-    )
-
-    delta_values = get_delta(dataset.out_data, order.ordering_cone.W, order.ordering_cone.alpha)
-
-    true_eps = np.sum(delta_values[np.array(list(pred_indices)).astype(int)] <= epsilon, axis=0)[0]
-
-    tp_eps = true_eps
-    fp_eps = len(pred_indices) - true_eps
-    f1_eps = (2 * tp_eps) / (2*tp_eps + fp_eps + len(uncovered_missed_pareto_indices))
-
-    return f1_eps
 
 
 def hyperrectangle_check_intersection(

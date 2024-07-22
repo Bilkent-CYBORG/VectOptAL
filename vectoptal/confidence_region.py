@@ -26,7 +26,7 @@ class RectangularConfidenceRegion(ConfidenceRegion):
     ) -> None:
         super().__init__()
 
-        if lower is not None and self.upper is not None:
+        if lower is not None and upper is not None:
             self.lower = lower
             self.upper = upper
         else:
@@ -47,7 +47,7 @@ class RectangularConfidenceRegion(ConfidenceRegion):
             self.lower = np.maximum(self.lower, lower)
             self.upper = np.minimum(self.upper, upper)
         else:
-        # if there is no intersection,then use the new hyperrectangle
+        # if there is no intersection, then use the new hyperrectangle
             self.lower = lower
             self.upper = upper
 
@@ -94,11 +94,7 @@ class RectangularConfidenceRegion(ConfidenceRegion):
             cone_matrix @ (z_point2 - z_point - slackness) >= 0
         ]
         
-        #@: Here, they use the intersection version 
-        prob = cp.Problem(
-            cp.Minimize(0),
-            constraints=constraints
-        )
+        prob = cp.Problem(cp.Minimize(0), constraints=constraints)
 
         try:
             prob.solve(solver="OSQP", max_iter=10000)
