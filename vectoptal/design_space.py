@@ -14,7 +14,7 @@ from vectoptal.models import Model, GPModel
 class DesignSpace(ABC):
     def __init__(self):
         pass
-    
+
     @abstractmethod
     def update(self, model: Model):
         pass

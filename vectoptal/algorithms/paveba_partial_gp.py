@@ -1,6 +1,6 @@
 import copy
 import logging
-from typing import Literal
+from typing import Literal, Optional
 
 import numpy as np
 
@@ -8,26 +8,30 @@ from vectoptal.order import Order
 from vectoptal.datasets import get_dataset
 from vectoptal.design_space import DiscreteDesignSpace
 from vectoptal.algorithms.algorithm import PALAlgorithm
-from vectoptal.maximization_problem import ProblemFromDataset
-from vectoptal.acquisition import SumVarianceAcquisition, optimize_acqf_discrete
+from vectoptal.maximization_problem import ProblemFromDataset, DecoupledEvaluationProblem
+from vectoptal.acquisition import (
+    MaxVarianceDecoupledAcquisition, ThompsonEntropyDecoupledAcquisition,
+    optimize_decoupled_acqf_discrete
+)
 from vectoptal.confidence_region import (
     confidence_region_is_dominated,
     confidence_region_is_covered
 )
 from vectoptal.models import (
-    CorrelatedExactGPyTorchModel,
-    IndependentExactGPyTorchModel,
-    get_gpytorch_model_w_known_hyperparams
+    GPyTorchModelListExactModel,
+    get_gpytorch_modellist_w_known_hyperparams
 )
 
 
-class PaVeBaGP(PALAlgorithm):
+class PaVeBaPartialGP(PALAlgorithm):
     def __init__(
         self, epsilon, delta,
         dataset_name, order: Order,
         noise_var,
         conf_contraction=32,
-        type: Literal["IH", "DE"]="IH",
+        costs: Optional[list] = None,
+        cost_budget: Optional[float] = None,
+        confidence_type: Literal["hyperrectangle", "hyperellipsoid"]="hyperrectangle",
         batch_size=1,
     ) -> None:
         super().__init__(epsilon, delta)
@@ -35,25 +39,20 @@ class PaVeBaGP(PALAlgorithm):
         self.order = order
         self.batch_size = batch_size
         self.conf_contraction = conf_contraction
+        self.costs = np.array(costs) if costs is not None else costs
+        self.cost_budget = cost_budget if cost_budget is not None else np.inf
 
         dataset = get_dataset(dataset_name)
 
         self.m = dataset.out_dim
 
-        if type == "IH":
-            design_confidence_type = 'hyperrectangle'
-            model_class = IndependentExactGPyTorchModel
-        elif type == "DE":
-            design_confidence_type = 'hyperellipsoid'
-            model_class = CorrelatedExactGPyTorchModel
-
         self.design_space = DiscreteDesignSpace(
-            dataset.in_data, dataset.out_dim, confidence_type=design_confidence_type
+            dataset.in_data, dataset.out_dim, confidence_type=confidence_type
         )
-        self.problem = ProblemFromDataset(dataset, noise_var)
+        self.problem = DecoupledEvaluationProblem(ProblemFromDataset(dataset, noise_var))
 
-        self.model = get_gpytorch_model_w_known_hyperparams(
-            model_class, self.problem, noise_var, initial_sample_cnt=1,
+        self.model: GPyTorchModelListExactModel = get_gpytorch_modellist_w_known_hyperparams(
+            self.problem, noise_var, initial_sample_cnt=1,
             X=dataset.in_data, Y=dataset.out_data
         )
 
@@ -64,7 +63,9 @@ class PaVeBaGP(PALAlgorithm):
         self.P = set()
         self.U = set()
         self.round = 0
+        # TODO: Initial samples are managed in model preparation, they're not taken into account.
         self.sample_count = 0
+        self.total_cost = 0.0
 
     def modeling(self):
         self.alpha_t = self.compute_alpha()
@@ -133,14 +134,22 @@ class PaVeBaGP(PALAlgorithm):
 
     def evaluating(self):
         A = self.S.union(self.U)
-        acq = SumVarianceAcquisition(self.model)
+        acq = MaxVarianceDecoupledAcquisition(self.model, costs=self.costs)
         active_pts = self.design_space.points[list(A)]
-        candidate_list, _ = optimize_acqf_discrete(acq, self.batch_size, choices=active_pts)
+        candidate_list, acq_values, eval_indices = optimize_decoupled_acqf_discrete(
+            acq, self.batch_size, choices=active_pts
+        )
 
-        observations = self.problem.evaluate(candidate_list)
+        print("Points:", candidate_list)
+        print("Acq. values:", acq_values)
+        print("Obj. indices:", eval_indices)
+
+        observations = self.problem.evaluate(candidate_list, eval_indices)
 
         self.sample_count += len(candidate_list)
-        self.model.add_sample(candidate_list, observations)
+        if self.costs is not None:
+            self.total_cost += np.sum(self.costs[eval_indices])
+        self.model.add_sample(candidate_list, observations, eval_indices)
         self.model.update()
 
     def run_one_step(self) -> bool:
@@ -169,12 +178,12 @@ class PaVeBaGP(PALAlgorithm):
 
         print(f"Round {self.round}:Sample count {self.sample_count}")
 
-        return len(self.S) == 0
+        return len(self.S) == 0 or self.total_cost >= self.cost_budget
 
     def compute_alpha(self):
         alpha = (
-            8*self.m*np.log(6) + 4*np.log(
-                (np.pi**2 * self.round**2 * self.design_space.cardinality)/(6*self.delta)
+            2*np.log(
+                (np.pi**2 * self.round**2 * self.design_space.cardinality)/(3*self.delta)
             )
         )
 

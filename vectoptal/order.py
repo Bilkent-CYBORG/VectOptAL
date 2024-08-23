@@ -17,7 +17,8 @@ class Order(ABC):
         """Does a dominate b?"""
         return self.ordering_cone.is_inside(a-b)
     
-    def get_pareto_set(self, elements):
+    def get_pareto_set(self, elements: np.ndarray):
+        assert elements.ndim == 2, "Elements array should be N-by-dim."
         is_pareto = np.arange(len(elements))
 
         # Next index in the is_pareto array to search for

@@ -3,6 +3,7 @@ import itertools
 import torch
 import numpy as np
 import cvxpy as cp
+import scipy.special
 from scipy.stats.qmc import Sobol
 from sklearn.metrics.pairwise import euclidean_distances
 
@@ -285,3 +286,6 @@ def line_seg_pt_intersect_at_dim(P1, P2, target_pt, target_dim):
 
     point_on_line = P1 + t * (P2 - P1)
     return point_on_line
+
+def binary_entropy(x):
+    return -(scipy.special.xlogy(x, x) + scipy.special.xlog1py(1 - x, -x)) / np.log(2)

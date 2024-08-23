@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional, Union, List
 
 import numpy as np
 
@@ -28,11 +29,12 @@ class ProblemFromDataset(Problem):
         self.noise_cholesky = np.linalg.cholesky(noise_covar)
 
     def evaluate(self, x: np.ndarray, noisy: bool = True) -> np.ndarray:
-        if x.ndim == 1:
+        if x.ndim <= 1:
             x = x.reshape(1, -1)
 
         indices = get_closest_indices_from_points(x, self.dataset.in_data)
         f = self.dataset.out_data[indices].reshape(len(x), -1)
+        
         if not noisy:
             return f
         
@@ -103,3 +105,25 @@ class BraninCurrin(ContinuousProblem):
         
         y = get_noisy_evaluations_chol(f, self.noise_cholesky)
         return y
+
+class DecoupledEvaluationProblem(Problem):
+    def __init__(self, problem: Problem) -> None:
+        super().__init__()
+        self.problem = problem
+    
+    def evaluate(
+        self, x: np.ndarray, evaluation_index: Optional[Union[int, List[int]]]=None
+    ) -> np.ndarray:
+        values = self.problem.evaluate(x)
+
+        if evaluation_index is None:
+            return values
+        
+        if isinstance(evaluation_index, int):
+            return values[:, evaluation_index]
+        
+        assert len(x) == len(evaluation_index), \
+            "evaluation_index should be the same length as data"
+
+        evaluation_index = np.array(evaluation_index, dtype=np.int32)
+        return values[np.arange(len(evaluation_index)), evaluation_index]

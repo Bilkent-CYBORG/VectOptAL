@@ -20,6 +20,8 @@ class PALAlgorithm(Algorithm, ABC):
         self.epsilon = epsilon
         self.delta = delta
 
+        # TODO: Maybe make sample_count an ABC property. Will every child have it?
+
     @abstractmethod
     def run_one_step(self):
         pass

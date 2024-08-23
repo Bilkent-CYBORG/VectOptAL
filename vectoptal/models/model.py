@@ -2,6 +2,9 @@ from abc import ABC, abstractmethod
 
 
 class Model(ABC):
+    """
+    Defines the abstract model class.
+    """
     def __init__(self) -> None:
         super().__init__()
     
@@ -20,6 +23,10 @@ class Model(ABC):
     @abstractmethod
     def predict(self, test_X):
         pass
+
+class ModelList(Model):
+    def __init__(self) -> None:
+        super().__init__()
 
 class GPModel(Model):
     def __init__(self) -> None:
