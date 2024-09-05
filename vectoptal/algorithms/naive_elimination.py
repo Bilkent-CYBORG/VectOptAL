@@ -3,7 +3,7 @@ from typing import Optional
 
 import numpy as np
 
-from vectoptal.order import Order
+from vectoptal.order import Order, ConeTheta2DOrder
 from vectoptal.datasets import get_dataset
 from vectoptal.algorithms.algorithm import PALAlgorithm
 from vectoptal.maximization_problem import ProblemFromDataset
@@ -19,20 +19,20 @@ class NaiveElimination(PALAlgorithm):
         super().__init__(epsilon, delta)
 
         self.order = order
-        self.noise_var = noise_var
-        
-        self.ordering_complexity = order.ordering_cone.beta
 
         self.dataset = get_dataset(dataset_name)
         self.m = self.dataset.out_dim
 
         self.K = len(self.dataset.in_data)
         if L is None:  # Use theoretical sampling count if not given.
+            assert hasattr(order.ordering_cone, "beta"), "Ordering complexity needs to be defined."
+            ordering_complexity = order.ordering_cone.beta
+
             c = 1 + np.sqrt(2)  # Any c>0 should suffice according to Lemma B.12.
             self.L = np.ceil(
                 4
-                * ((c*self.noise_var*self.ordering_complexity/self.epsilon)**2)
-                * np.log(4*self.m /(2*delta/(self.K*(self.K-1))))
+                * ((c*noise_var*ordering_complexity/self.epsilon)**2)
+                * np.log(4*self.m /(2*self.delta/(self.K*(self.K-1))))
             ).astype(int)
         else:
             self.L = L

@@ -52,3 +52,16 @@ class DiskBrake(Dataset):
         self.in_data = np.copy(data[:, :self._in_dim])
 
         super().__init__()
+
+class VehicleSafety(Dataset):
+    _in_dim = 5
+    _out_dim = 3
+    _cardinality = 500
+
+    def __init__(self):
+        datafile = os.path.join('data', 'vehicle_safety', 'VehicleSafety.npy')
+        data = np.load(datafile, allow_pickle=True)
+        self.out_data = np.copy(data[:, self._in_dim:])
+        self.in_data = np.copy(data[:, :self._in_dim])
+
+        super().__init__()
