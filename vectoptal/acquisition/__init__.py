@@ -1,6 +1,7 @@
 from vectoptal.acquisition.acquisition import (
     AcquisitionStrategy,
     SumVarianceAcquisition,
+    MaxDiagonalAcquisition,
     MaxVarianceDecoupledAcquisition,
     ThompsonEntropyDecoupledAcquisition,
     optimize_acqf_discrete,

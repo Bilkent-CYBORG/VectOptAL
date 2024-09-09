@@ -3,17 +3,17 @@ from abc import ABC, abstractmethod
 from typing import Any, Tuple, Optional
 
 from vectoptal.order import Order
-from vectoptal.models import Model, ModelList
 from vectoptal.utils import binary_entropy
+from vectoptal.models import Model, ModelList
+from vectoptal.design_space import DiscreteDesignSpace
 
 import torch
 import numpy as np
 
 
 class AcquisitionStrategy(ABC):
-    def __init__(self, model: Model) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.model = model
 
     @abstractmethod
     def forward(self):
@@ -27,17 +27,18 @@ class DecoupledAcquisitionStrategy(AcquisitionStrategy):
     Acquisition values are inversely weighted by costs.
     """
     def __init__(
-        self, model: ModelList, evaluation_index: Optional[int] = None,
+        self, output_dim: int, evaluation_index: Optional[int] = None,
         costs: Optional[list] = None
     ) -> None:
-        super().__init__(model)
-        self.out_dim = self.model.output_dim
+        super().__init__()
+        self.out_dim = output_dim
         self.evaluation_index = evaluation_index
         self.costs = costs
 
 class SumVarianceAcquisition(AcquisitionStrategy):
     def __init__(self, model: Model) -> None:
-        super().__init__(model)
+        super().__init__()
+        self.model = model
 
     def forward(self, x):
         _, variances = self.model.predict(x)
@@ -45,10 +46,11 @@ class SumVarianceAcquisition(AcquisitionStrategy):
 
 class MaxVarianceDecoupledAcquisition(DecoupledAcquisitionStrategy):
     def __init__(
-        self, model: Model, evaluation_index: Optional[int] = None,
+        self, model: ModelList, evaluation_index: Optional[int] = None,
         costs: Optional[list] = None
     ) -> None:
-        super().__init__(model, evaluation_index, costs)
+        self.model = model
+        super().__init__(self.model.output_dim, evaluation_index, costs)
 
     def forward(self, x):
         assert self.evaluation_index is not None, "evaluation_index can't be None during forward."
@@ -60,10 +62,11 @@ class MaxVarianceDecoupledAcquisition(DecoupledAcquisitionStrategy):
 
 class ThompsonEntropyDecoupledAcquisition(DecoupledAcquisitionStrategy):
     def __init__(
-        self, model: Model, order: Order, evaluation_index: Optional[int] = None,
+        self, model: ModelList, order: Order, evaluation_index: Optional[int] = None,
         costs: Optional[list] = None, num_thompson_samples: int = 10
     ) -> None:
-        super().__init__(model, evaluation_index, costs)
+        self.model = model
+        super().__init__(self.model.output_dim, evaluation_index, costs)
         self.order = order
         self.num_thompson_samples = num_thompson_samples
         
@@ -108,6 +111,20 @@ class ThompsonEntropyDecoupledAcquisition(DecoupledAcquisitionStrategy):
 
         if self.costs is not None:
             value = value / self.costs[self.evaluation_index]
+        return value
+
+class MaxDiagonalAcquisition(AcquisitionStrategy):
+    def __init__(self, design_space: DiscreteDesignSpace) -> None:
+        super().__init__()
+        self.design_space = design_space
+
+    def forward(self, x):
+        indices = self.design_space.locate_points(x)
+        value = np.zeros(len(x))
+
+        for idx, design_i in enumerate(indices):
+            value[idx] = self.design_space.confidence_regions[design_i].diagonal()
+
         return value
 
 def optimize_acqf_discrete(

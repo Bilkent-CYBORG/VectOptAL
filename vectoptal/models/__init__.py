@@ -4,4 +4,4 @@ from vectoptal.models.gpytorch import (
     GPyTorchModelListExactModel,
     get_gpytorch_modellist_w_known_hyperparams
 )
-from vectoptal.models.paveba import PaVeBaModel
+from vectoptal.models.empirical_mean_var import EmpiricalMeanVarModel

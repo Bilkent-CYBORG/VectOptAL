@@ -65,11 +65,8 @@ class Order(ABC):
 
 class ComponentwiseOrder(Order):
     def __init__(self, dim: int) -> None:
-        if dim == 2:
-            ordering_cone = ConeTheta2D(cone_degree=90)
-        else:
-            W = np.eye(dim)
-            ordering_cone = OrderingCone(W)
+        W = np.eye(dim)
+        ordering_cone = OrderingCone(W)
 
         super().__init__(ordering_cone)
 

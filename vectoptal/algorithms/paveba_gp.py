@@ -6,7 +6,7 @@ import numpy as np
 
 from vectoptal.order import Order
 from vectoptal.datasets import get_dataset
-from vectoptal.design_space import DiscreteDesignSpace
+from vectoptal.design_space import FixedPointsDesignSpace
 from vectoptal.algorithms.algorithm import PALAlgorithm
 from vectoptal.maximization_problem import ProblemFromDataset
 from vectoptal.acquisition import SumVarianceAcquisition, optimize_acqf_discrete
@@ -47,7 +47,7 @@ class PaVeBaGP(PALAlgorithm):
             design_confidence_type = 'hyperellipsoid'
             model_class = CorrelatedExactGPyTorchModel
 
-        self.design_space = DiscreteDesignSpace(
+        self.design_space = FixedPointsDesignSpace(
             dataset.in_data, dataset.out_dim, confidence_type=design_confidence_type
         )
         self.problem = ProblemFromDataset(dataset, noise_var)

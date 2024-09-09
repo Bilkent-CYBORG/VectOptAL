@@ -74,12 +74,16 @@ def get_alpha_vec(W):
         alpha_vec[i] = get_alpha(i, W)
     return alpha_vec
 
-def get_closest_indices_from_points(pts_to_find, pts_to_check):
+def get_closest_indices_from_points(
+    pts_to_find, pts_to_check, return_distances=False, squared=False
+):
     if len(pts_to_find) == 0 or len(pts_to_check) == 0:
         return []
 
-    distances = euclidean_distances(pts_to_find, pts_to_check, squared=True)
+    distances = euclidean_distances(pts_to_find, pts_to_check, squared=squared)
     x_inds = np.argmin(distances, axis=1)
+    if return_distances:
+        return x_inds.astype(int), np.min(distances, axis=1)
     return x_inds.astype(int)
 
 def get_noisy_evaluations_chol(means, cholesky_cov):

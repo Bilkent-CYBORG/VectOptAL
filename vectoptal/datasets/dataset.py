@@ -5,6 +5,10 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 
 class Dataset:
+    _in_dim: int
+    _out_dim: int
+    _cardinality: int
+
     def __init__(self):
         # Standardize
         input_scaler = MinMaxScaler()

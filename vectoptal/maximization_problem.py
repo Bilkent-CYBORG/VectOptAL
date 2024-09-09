@@ -32,7 +32,7 @@ class ProblemFromDataset(Problem):
         if x.ndim <= 1:
             x = x.reshape(1, -1)
 
-        indices = get_closest_indices_from_points(x, self.dataset.in_data)
+        indices = get_closest_indices_from_points(x, self.dataset.in_data, squared=True)
         f = self.dataset.out_data[indices].reshape(len(x), -1)
         
         if not noisy:

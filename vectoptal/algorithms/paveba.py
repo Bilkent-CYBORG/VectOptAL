@@ -5,11 +5,11 @@ import numpy as np
 
 from vectoptal.order import Order
 from vectoptal.datasets import get_dataset
-from vectoptal.design_space import DiscreteDesignSpace
+from vectoptal.design_space import FixedPointsDesignSpace
 from vectoptal.algorithms.algorithm import PALAlgorithm
 from vectoptal.maximization_problem import ProblemFromDataset
 from vectoptal.acquisition import SumVarianceAcquisition, optimize_acqf_discrete
-from vectoptal.models import PaVeBaModel
+from vectoptal.models import EmpiricalMeanVarModel
 from vectoptal.confidence_region import (
     confidence_region_is_dominated,
     confidence_region_check_dominates,
@@ -34,14 +34,16 @@ class PaVeBa(PALAlgorithm):
 
         self.m = dataset.out_dim
 
-        # Trick to keep indices alongside points. This is for predictions from PaVeBa model.
+        # Trick to keep indices alongside points. This is for predictions from the model.
         in_data = np.hstack((dataset.in_data, np.arange(len(dataset.in_data))[:, None]))
-        self.design_space = DiscreteDesignSpace(
+        self.design_space = FixedPointsDesignSpace(
             in_data, dataset.out_dim, confidence_type='hyperellipsoid'
         )
         self.problem = ProblemFromDataset(dataset, noise_var)
 
-        self.model = PaVeBaModel(dataset.in_dim, self.m, noise_var, self.design_space.cardinality)
+        self.model = EmpiricalMeanVarModel(
+            dataset.in_dim, self.m, noise_var, self.design_space.cardinality, track_variances=False
+        )
 
         self.cone_alpha = self.order.ordering_cone.alpha.flatten()
         self.cone_alpha_eps = self.cone_alpha * self.epsilon
@@ -53,6 +55,8 @@ class PaVeBa(PALAlgorithm):
         self.sample_count = 0
 
     def modeling(self):
+        # All active designs have the same radius. We provide it as scale parameter.
+        # Model does not track variances, so scale*var = scale.
         self.r_t = self.compute_radius()
         A = self.S.union(self.U)
         self.design_space.update(self.model, self.r_t, list(A))
@@ -155,7 +159,10 @@ class PaVeBa(PALAlgorithm):
     def compute_radius(self):
         t1 = (8 * self.noise_var / self.round)
         t2 = np.log(  # ni**2 is equal to t**2 since only active arms are sampled
-            (np.pi**2 * (self.m + 1) * self.design_space.cardinality * self.round**2) / (6 * self.delta)
+            (np.pi**2 * (self.m + 1) * self.design_space.cardinality * self.round**2)
+            / (6 * self.delta)
         )
         r = np.sqrt(t1 * t2)
+
+        # TODO: Do we need to scale because of norm-subgaussianity?
         return (r / self.conf_contraction) * np.ones(self.m, )

@@ -233,9 +233,9 @@ def get_gpytorch_model_w_known_hyperparams(
     Creates and returns a GPyTorch model after training and freezing model parameters.
     If X and Y is not given, sobol samples are evaluated to generate a learning dataset.
     """
-    if X == None:
+    if X is None:
         X = generate_sobol_samples(problem.in_dim, 1024)  # TODO: magic number
-    if Y == None:
+    if Y is None:
         Y = problem.evaluate(X)
 
     in_dim = X.shape[1]

@@ -9,6 +9,7 @@ from vectoptal.confidence_region import (
     RectangularConfidenceRegion, EllipsoidalConfidenceRegion,
 )
 from vectoptal.models import Model, GPModel
+from vectoptal.utils import get_closest_indices_from_points
 
 
 class DesignSpace(ABC):
@@ -20,7 +21,27 @@ class DesignSpace(ABC):
         pass
 
 class DiscreteDesignSpace(DesignSpace):
-    def __init__(self, points, objective_dim, confidence_type='hyperrectangle') -> None:
+    points: np.ndarray
+    confidence_regions: list
+
+    def __init__(self):
+        super().__init__()
+
+    def locate_points(self, x: np.ndarray, atol: float=1e-6) -> list[int]:
+        """
+        Find positions of points given as x in the design space.
+        Instead of exact equality, allclose is used.
+        """
+        indices, distances = get_closest_indices_from_points(x, self.points, return_distances=True)
+        if distances.max() > atol:
+            raise ValueError("Some points are not in the design space.")
+
+        return indices
+
+class FixedPointsDesignSpace(DiscreteDesignSpace):
+    def __init__(
+        self, points: np.ndarray, objective_dim, confidence_type='hyperrectangle'
+    ) -> None:
         super().__init__()
 
         if confidence_type == 'hyperrectangle':
@@ -30,22 +51,29 @@ class DiscreteDesignSpace(DesignSpace):
         else:
             raise NotImplementedError
 
-        self.cardinality = len(points)
-
         self.points = points
         self.confidence_regions = []
         for _ in range(len(points)):
             self.confidence_regions.append(confidence_cls(objective_dim))
+        
+        self.cardinality = len(self.points)
 
     def update(self, model: Model, scale: np.ndarray, indices_to_update: Optional[list]=None):
         if indices_to_update is None:
             indices_to_update = list(range(self.cardinality))
 
-        mus, covs = model.predict(self.points[indices_to_update])
-        for pt_i, mu, cov in zip(indices_to_update, mus, covs):
-            self.confidence_regions[pt_i].update(mu, cov, scale)
+        # If scale is a scalar, it is broadcasted to the length of indices_to_update.
+        # Note that scale can have different values for each objective.
+        if scale.ndim < 2:
+            scale = np.repeat(np.atleast_1d(scale)[None, :], len(indices_to_update), axis=0)
+        else:
+            assert scale.ndim == 2 and len(scale) == len(indices_to_update), "Invalid scale shape."
 
-class AdaptivelyDiscretizedDesignSpace(DesignSpace):
+        mus, covs = model.predict(self.points[indices_to_update])
+        for pt_i, mu, cov, s in zip(indices_to_update, mus, covs, scale):
+            self.confidence_regions[pt_i].update(mu, cov, s)
+
+class AdaptivelyDiscretizedDesignSpace(DiscreteDesignSpace):
     def __init__(
         self, domain_dim, objective_dim, delta, max_depth, confidence_type='hyperrectangle'
     ) -> None:
@@ -71,18 +99,27 @@ class AdaptivelyDiscretizedDesignSpace(DesignSpace):
         self.cells = [[[0, 1] for _ in range(domain_dim)]]
         self.confidence_regions = [confidence_cls(objective_dim)]
 
+        self.cardinality = len(self.points)
+
     def update(self, model: GPModel, scale: np.ndarray, indices_to_update: Optional[list]=None):
         if indices_to_update is None:
             indices_to_update = list(range(len(self.points)))
-        
+
+        # If scale is a scalar, it is broadcasted to the length of indices_to_update.
+        # Note that scale can have different values for each objective.
+        if scale.ndim < 2:
+            scale = np.repeat(np.atleast_1d(scale)[None, :], len(indices_to_update), axis=0)
+        else:
+            assert scale.ndim == 2 and len(scale) == len(indices_to_update), "Invalid scale shape."
+
         mus, covs = model.predict(self.points[indices_to_update])
-        for pt_i, mu, cov in zip(indices_to_update, mus, covs):
-            self.confidence_regions[pt_i].update(mu, cov, scale)
+        for pt_i, mu, cov, s in zip(indices_to_update, mus, covs, scale):
+            self.confidence_regions[pt_i].update(mu, cov, s)
 
     def refine_design(self, index_to_refine: int) -> list:
-        return self.get_child_designs(index_to_refine)
+        return self.generate_child_designs(index_to_refine)
 
-    def get_child_designs(self, design_index: int) -> list:
+    def generate_child_designs(self, design_index: int) -> list:
         options = []
         for dim_i in range(self.domain_dim):
             options.append([
@@ -113,6 +150,8 @@ class AdaptivelyDiscretizedDesignSpace(DesignSpace):
                     self.confidence_regions[design_index].upper,
                 )
             )
+        
+        self.cardinality = len(self.points)
 
         return list_children
 

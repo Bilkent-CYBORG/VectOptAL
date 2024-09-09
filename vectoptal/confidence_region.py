@@ -22,24 +22,40 @@ class ConfidenceRegion(ABC):
 
 class RectangularConfidenceRegion(ConfidenceRegion):
     def __init__(
-        self, dim: int, lower: Optional[np.ndarray]=None, upper: Optional[np.ndarray]=None
+        self, dim: int, lower: Optional[np.ndarray]=None, upper: Optional[np.ndarray]=None,
+        intersect_iteratively: Optional[bool]=True
     ) -> None:
         super().__init__()
+
+        self.intersect_iteratively = intersect_iteratively
 
         if lower is not None and upper is not None:
             self.lower = lower
             self.upper = upper
         else:
-            self.lower = np.array([-np.inf] * dim)
-            self.upper = np.array([ np.inf] * dim)
+            self.lower = np.array([-1e12] * dim)  # TODO: Magic large number.
+            self.upper = np.array([ 1e12] * dim)
+
+    def diagonal(self):
+        """Returns the euclidean norm of the diagonal of the hyperrectangle"""
+        return np.linalg.norm(self.upper - self.lower)
 
     def update(self, mean: np.ndarray, covariance: np.ndarray, scale: np.ndarray=np.array(1.)):
+        assert covariance.shape[-1] == covariance.shape[-2], "Covariance matrix must be square."
         std = np.sqrt(np.diag(covariance.squeeze()))
 
         L = mean - std * scale
         U = mean + std * scale
 
-        self.intersect(L, U)
+        if self.intersect_iteratively:
+            self.intersect(L, U)
+        else:
+            self.lower = L
+            self.upper = U
+
+    @property
+    def center(self):
+        return (self.lower + self.upper) / 2
 
     def intersect(self, lower: np.ndarray, upper: np.ndarray):
         # if the two rectangles overlap
@@ -68,7 +84,7 @@ class RectangularConfidenceRegion(ConfidenceRegion):
 
         verts1 = hyperrectangle_get_vertices(obj1.lower, obj1.upper) @ cone_matrix.transpose()
         verts2 = hyperrectangle_get_vertices(obj2.lower, obj2.upper) @ cone_matrix.transpose()
-        
+
         # For every vertex of x', check if element of x+C. Return False if any vertex is not.
         for ref_point in verts1:
             if is_pt_in_extended_polytope(ref_point, verts2) is False:
@@ -109,7 +125,7 @@ class RectangularConfidenceRegion(ConfidenceRegion):
 
 class EllipsoidalConfidenceRegion(ConfidenceRegion):
     def __init__(
-        self, dim, center: Optional[np.ndarray]=None,sigma: Optional[np.ndarray]=None,
+        self, dim, center: Optional[np.ndarray]=None, sigma: Optional[np.ndarray]=None,
         alpha: Optional[float]=None
     ) -> None:
         super().__init__()
@@ -124,6 +140,8 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
             self.alpha = 1.0
 
     def update(self, mean: np.ndarray, covariance: np.ndarray, scale: np.ndarray=np.array(1.)):
+        assert covariance.shape[-1] == covariance.shape[-2], "Covariance matrix must be square."
+
         self.center = mean
         self.sigma = covariance
         self.alpha = scale

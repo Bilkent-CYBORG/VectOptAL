@@ -8,7 +8,7 @@ from vectoptal.order import Order
 from vectoptal.datasets import get_dataset
 from vectoptal.algorithms.algorithm import PALAlgorithm
 from vectoptal.maximization_problem import ContinuousProblem
-from vectoptal.acquisition import SumVarianceAcquisition, optimize_acqf_discrete
+from vectoptal.acquisition import MaxDiagonalAcquisition, optimize_acqf_discrete
 from vectoptal.design_space import AdaptivelyDiscretizedDesignSpace
 from vectoptal.models import CorrelatedExactGPyTorchModel, get_gpytorch_model_w_known_hyperparams
 from vectoptal.confidence_region import (
@@ -114,7 +114,7 @@ class VOGP_AD(PALAlgorithm):
 
     def evaluate_refine(self):
         W = self.S.union(self.P)
-        acq = SumVarianceAcquisition(self.model)
+        acq = MaxDiagonalAcquisition(self.design_space)
         active_pts = self.design_space.points[list(W)]
         candidate_list, _ = optimize_acqf_discrete(acq, self.batch_size, choices=active_pts)
 

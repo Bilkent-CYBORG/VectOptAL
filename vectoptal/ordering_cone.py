@@ -8,7 +8,7 @@ from vectoptal.utils import get_2d_w, get_alpha_vec
 from vectoptal.utils.plotting import plot_2d_cone, plot_3d_cone
 
 
-class OrderingCone(ABC):
+class OrderingCone():
     def __init__(self, W: np.ndarray) -> None:
         """
         Ordering cone in the format C := {x | Wx >= 0}

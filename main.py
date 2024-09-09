@@ -1,11 +1,11 @@
 from vectoptal.utils.seed import SEED
 from vectoptal.datasets.dataset import *
 from vectoptal.maximization_problem import *
-from vectoptal.order import ConeTheta2DOrder
+from vectoptal.order import ConeTheta2DOrder, ComponentwiseOrder
 from vectoptal.algorithms import (
     NaiveElimination,
-    PaVeBa, PaVeBaGP, PaVeBaPartialGP, DecoupledGP,
-    VOGP, VOGP_AD
+    Auer, PaVeBa, PaVeBaGP, PaVeBaPartialGP, DecoupledGP,
+    EpsilonPAL, VOGP, VOGP_AD,
 )
 from vectoptal.utils import set_seed
 from vectoptal.utils.evaluate import (
@@ -17,7 +17,7 @@ from vectoptal.models import GPyTorchModelListExactModel
 def test_discrete():
     set_seed(SEED)
 
-    order = ConeTheta2DOrder(cone_degree=135)
+    order = ConeTheta2DOrder(cone_degree=90)
     dataset_name = "DiskBrake"
     dataset = globals()[dataset_name]()
 
@@ -33,7 +33,7 @@ def test_discrete():
         algorithm = VOGP(
             epsilon=epsilon, delta=delta,
             dataset_name=dataset_name, order=order, noise_var=noise_var,
-            conf_contraction=16,
+            conf_contraction=32,
         )
 
         while True:
@@ -70,7 +70,7 @@ def test_continuous():
         algorithm = VOGP_AD(
             epsilon=epsilon, delta=delta,
             problem=problem, order=order, noise_var=noise_var,
-            conf_contraction=16,
+            conf_contraction=32,
         )
 
         while True:
@@ -134,7 +134,7 @@ def test_partial_model():
     print(model.predict(train_x)[0])
     print(model.predict(train_x)[1])
 
-    exit()
+    return
         
     model.add_sample(train_x, np.array([[4], [20], [3], [5]]), dim_index=0)
     model.add_sample(train_x, np.array([[5], [-20], [4], [4]]), dim_index=1)
@@ -242,9 +242,47 @@ def test_partial_fixed_budget():
         f" {sum(eps_f1_values)/len(eps_f1_values):.2f}"
     )
 
+def test_moo():
+    set_seed(SEED)
+    
+    dataset_name = "DiskBrake"
+    dataset: Dataset = globals()[dataset_name]()
+    order = ComponentwiseOrder(dataset._out_dim)
+
+    epsilon = 0.01
+    delta = 0.05
+    noise_var = epsilon
+
+    iter_count = 5
+    eps_f1_values = []
+    for iter_i in range(iter_count):
+        set_seed(SEED + iter_i + 1)
+
+        algorithm = Auer(
+            epsilon=epsilon, delta=delta,
+            dataset_name=dataset_name, noise_var=noise_var,
+            conf_contraction=128, use_empirical_beta=False
+        )
+
+        while True:
+            is_done = algorithm.run_one_step()
+
+            if is_done:
+                break
+
+        pareto_indices = order.get_pareto_set(dataset.out_data)
+        eps_f1 = calculate_epsilonF1_score(dataset, order, pareto_indices, list(algorithm.P), epsilon)
+        eps_f1_values.append(eps_f1)
+
+    print(
+        f"Avg. eps-F1 score over {iter_count} iterations:"
+        f" {sum(eps_f1_values)/len(eps_f1_values):.2f}"
+    )
+
 if __name__ == "__main__":
     # test_discrete()
     # test_continuous()
     # test_partial_model()
     # test_partial()
-    test_partial_fixed_budget()
+    # test_partial_fixed_budget()
+    test_moo()

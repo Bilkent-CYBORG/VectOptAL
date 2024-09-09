@@ -1,16 +1,14 @@
 import copy
-import logging
 
 import numpy as np
-from scipy.optimize import minimize
 
-from vectoptal.order import Order
+from vectoptal.order import ComponentwiseOrder
 from vectoptal.datasets import get_dataset
 from vectoptal.algorithms.algorithm import PALAlgorithm
 from vectoptal.maximization_problem import ProblemFromDataset
 from vectoptal.acquisition import MaxDiagonalAcquisition, optimize_acqf_discrete
-from vectoptal.design_space import FixedPointsDesignSpace, AdaptivelyDiscretizedDesignSpace
-from vectoptal.models import CorrelatedExactGPyTorchModel, get_gpytorch_model_w_known_hyperparams
+from vectoptal.design_space import FixedPointsDesignSpace
+from vectoptal.models import IndependentExactGPyTorchModel, get_gpytorch_model_w_known_hyperparams
 from vectoptal.confidence_region import (
     confidence_region_is_dominated,
     confidence_region_check_dominates,
@@ -18,23 +16,23 @@ from vectoptal.confidence_region import (
 )
 
 
-class VOGP(PALAlgorithm):
+class EpsilonPAL(PALAlgorithm):
     def __init__(
         self, epsilon, delta,
-        dataset_name, order: Order,
+        dataset_name,
         noise_var,
-        conf_contraction=32,
+        conf_contraction=9,
         batch_size=1,
     ) -> None:
         super().__init__(epsilon, delta)
 
-        self.order = order
         self.batch_size = batch_size
         self.conf_contraction = conf_contraction
 
         dataset = get_dataset(dataset_name)
 
         self.m = dataset.out_dim
+        self.order = ComponentwiseOrder(dim=self.m)
 
         self.design_space = FixedPointsDesignSpace(
             dataset.in_data, dataset.out_dim, confidence_type='hyperrectangle'
@@ -42,12 +40,9 @@ class VOGP(PALAlgorithm):
         self.problem = ProblemFromDataset(dataset, noise_var)
 
         self.model = get_gpytorch_model_w_known_hyperparams(
-            CorrelatedExactGPyTorchModel, self.problem, noise_var, initial_sample_cnt=1,
+            IndependentExactGPyTorchModel, self.problem, noise_var, initial_sample_cnt=1,
             X=dataset.in_data, Y=dataset.out_data,
         )
-
-        self.u_star, self.d1 = self.compute_u_star()
-        self.u_star_eps = self.u_star * epsilon
 
         self.S = set(range(self.design_space.cardinality))
         self.P = set()
@@ -69,8 +64,7 @@ class VOGP(PALAlgorithm):
             pt_conf = self.design_space.confidence_regions[pt]
             for pt_prime in pessimistic_set:
                 pt_p_conf = self.design_space.confidence_regions[pt_prime]
-                # Function to check if ∃z' in R(x') such that R(x) <_C z + u, where u < epsilon
-                if confidence_region_is_dominated(self.order, pt_conf, pt_p_conf, self.u_star_eps):
+                if confidence_region_is_dominated(self.order, pt_conf, pt_p_conf, self.epsilon):
                     to_be_discarded.append(pt)
                     break
 
@@ -89,7 +83,7 @@ class VOGP(PALAlgorithm):
 
                 pt_p_conf = self.design_space.confidence_regions[pt_prime]
 
-                if confidence_region_is_covered(self.order, pt_conf, pt_p_conf, self.u_star_eps):
+                if confidence_region_is_covered(self.order, pt_conf, pt_p_conf, self.epsilon):
                     is_index_pareto.append(False)
                     break
             else:
@@ -144,90 +138,9 @@ class VOGP(PALAlgorithm):
         # This is according to the proofs.
         beta_sqr = 2 * np.log(
             self.m * self.design_space.cardinality
-            * (np.pi**2) * ((self.round+1)**2) / (3 * self.delta)
+            * (np.pi**2) * ((self.round+1)**2) / (6 * self.delta)
         )
         return np.sqrt(beta_sqr / self.conf_contraction) * np.ones(self.m, )
-
-    def compute_u_star(self):
-        """
-        Given a matrix W that corresponds to a polyhedral ordering cone, this function 
-        computes the ordering difficulty of the cone and u^* direction of the cone.
-        
-        The function solves an optimization problem where the objective is to minimize the
-        Euclidean norm of `z`, subject to the constraint that W @ z >= 1 for each row
-        of W. 
-        
-        Parameters
-        ----------
-        W : numpy.ndarray
-            A numpy array representing the matrix that defines the half-spaces of the
-            polyhedral cone. Each row of W corresponds to a linear constraint on `z`.
-        
-        Returns
-        -------
-        u_star of cone : numpy.ndarray
-            The normalized optimized vector `z`.
-        d(1) of cone : float
-            The Euclidean norm of the optimized `z`.
-
-        Prints
-        ------
-
-        d(1) of cone : float
-            The Euclidean norm of the optimized `z`.
-            
-        Are constraints obeyed : bool
-            A boolean flag indicating whether all cone constraints are satisfied. 
-            This corresponds to the unit sphere to be inside of the cone.
-            
-        If the constraints are not obeyed, it also prints:
-        
-        Distance to cone hyperplanes : numpy.ndarray
-            The distances from the optimized `z` to the hyperplanes defined by W.
-        
-        Notes
-        -----
-        The optimization problem is solved using the Sequential Least SQuares Programming (SLSQP)
-        method provided by scipy.optimize.minimize. The initial guess is a vector of ones, and
-        the optimization runs with a very high maximum iteration limit and tight function tolerance
-        to ensure convergence.
-        
-        Examples
-        --------
-        >>> W = W = np.sqrt(21)*np.array([[1, -2, 4], [4, 1, -2], [-2, 4, 1]])
-        >>> u_star_optimized,d_1 = compute_ustar_scipy(W)
-        """
-        cone_matrix = self.order.ordering_cone.W
-
-        n = cone_matrix.shape[0]
-
-        def objective(z):
-            return np.linalg.norm(z)
-        def constraint_func(z):
-            constraints = []
-            constraint = cone_matrix @ (z) - np.ones((n,))
-            constraints.extend(constraint)
-            return np.array(constraints)
-
-        z_init = np.ones(self.m)  # Initial guess
-        cons = [{'type': 'ineq', 'fun': lambda z: constraint_func(z)}] # Constraints 
-        # Solving the problem
-        res = minimize(
-            objective, z_init, method='SLSQP', constraints=cons,
-            options={'maxiter': 1000000, 'ftol': 1e-30}
-        )
-        norm = np.linalg.norm(res.x)
-        construe = np.all(constraint_func(res.x) + 1e-14)
-        
-        # print(f"Optimized d(1) was found to be {norm}")
-        # print(f"Optimized u_star was found to be {res.x/norm}")
-        # print(f"Are constraints obeyed: {construe}")
-        
-        if not construe: 
-            # print(f"Distance to cone hyperplanes: {constraint_func(res.x)}")
-            pass
-        
-        return res.x/norm, norm
 
     def compute_pessimistic_set(self) -> set:
         """
