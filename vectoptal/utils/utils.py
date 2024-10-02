@@ -157,6 +157,18 @@ def get_uncovered_set(p_opt_miss, p_opt_hat, mu, eps, W):
         
     return uncovered_set
 
+def get_uncovered_size(p_opt_miss, p_opt_hat, eps, W) -> int:
+    count = 0
+    
+    for i, ip in enumerate(p_opt_miss):
+        for jp in p_opt_hat:
+            if is_covered(ip.reshape(-1, 1), jp.reshape(-1, 1), eps, W):
+                break
+        else:
+            count += 1
+        
+    return count
+
 def is_covered_SOCP(vi, vj, eps, W):
     """
     Check if vi is eps covered by vj for cone matrix W 

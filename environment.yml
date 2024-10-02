@@ -26,3 +26,5 @@ dependencies:
 - jupyter
 - gurobi
 - mosek
+- pytest
+- pytest-cov

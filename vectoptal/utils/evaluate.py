@@ -7,7 +7,7 @@ from vectoptal.order import Order
 from vectoptal.models import Model
 from vectoptal.datasets import Dataset
 from vectoptal.maximization_problem import ContinuousProblem
-from vectoptal.utils import get_uncovered_set, get_delta, generate_sobol_samples
+from vectoptal.utils import get_uncovered_size, get_delta, generate_sobol_samples
 
 
 def calculate_epsilonF1_score(
@@ -16,8 +16,9 @@ def calculate_epsilonF1_score(
 ):
     indices_of_missed_pareto = list(set(true_indices) - set(pred_indices))
 
-    uncovered_missed_pareto_indices = get_uncovered_set(
-        indices_of_missed_pareto, pred_indices, dataset.out_data, epsilon, order.ordering_cone.W
+    uncovered_missed_pareto_count = get_uncovered_size(
+        dataset.out_data[indices_of_missed_pareto], dataset.out_data[pred_indices],
+        epsilon, order.ordering_cone.W
     )
 
     delta_values = get_delta(dataset.out_data, order.ordering_cone.W, order.ordering_cone.alpha)
@@ -26,7 +27,7 @@ def calculate_epsilonF1_score(
 
     tp_eps = true_eps
     fp_eps = len(pred_indices) - true_eps
-    f1_eps = (2 * tp_eps) / (2*tp_eps + fp_eps + len(uncovered_missed_pareto_indices))
+    f1_eps = (2 * tp_eps) / (2*tp_eps + fp_eps + uncovered_missed_pareto_count)
 
     return f1_eps
 
@@ -47,7 +48,8 @@ def calculate_hypervolume_discrepancy_for_model(
     hypervolume_true = hypervolume_instance.compute(torch.tensor(f_W[true_pareto_indices]))
     hypervolume_pred = hypervolume_instance.compute(torch.tensor(f_W[pred_pareto_indices]))
 
-    assert hypervolume_true - hypervolume_pred > 0, "Hypervolumes are the same."
+    assert hypervolume_true - hypervolume_pred > 1e-4, \
+        "Hypervolumes are the same."  # TODO: magic number
     log_hv_disc = np.log(hypervolume_true - hypervolume_pred)
 
     return log_hv_disc
