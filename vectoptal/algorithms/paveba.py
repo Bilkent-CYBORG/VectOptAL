@@ -19,7 +19,7 @@ from vectoptal.confidence_region import (
 
 class PaVeBa(PALAlgorithm):
     """
-    Implements the Pareto Vector Bandits (PaVeBa) algorithm.
+    Implement the Pareto Vector Bandits (PaVeBa) algorithm.
 
     :param float epsilon: Determines the accuracy of the PAC-learning framework.
     :param float delta: Determines the success probability of the PAC-learning framework.
@@ -34,12 +34,12 @@ class PaVeBa(PALAlgorithm):
     Returns None.
 
     Example:
-        >>> from vectoptal.order import ConeTheta2DOrder
+        >>> from vectoptal.order import ComponentwiseOrder
         >>> from vectoptal.algorithms import PaVeBa
         >>>
         >>> epsilon, delta, noise_var = 0.01, 0.01, 0.01
         >>> dataset_name = "DiskBrake"
-        >>> order_acute = ConeTheta2DOrder(cone_degree = 45)
+        >>> order_acute = ComponentwiseOrder(2)
         >>>
         >>> PaVeBa = PaVeBa(epsilon, delta, dataset_name, order_acute, noise_var)
         >>>
@@ -94,7 +94,7 @@ class PaVeBa(PALAlgorithm):
 
     def modeling(self):
         """
-        Constructs the confidence regions of all active designs given all past observations.
+        Construct the confidence regions of all active designs given all past observations.
         """
         # All active designs have the same radius. We provide it as scale parameter.
         # Model does not track variances, so scale*var = scale.
@@ -104,7 +104,7 @@ class PaVeBa(PALAlgorithm):
 
     def discarding(self):
         """
-        Discards the designs that are highly likely to be suboptimal using the confidence regions.
+        Discard the designs that are highly likely to be suboptimal using the confidence regions.
         """
         A = self.S.union(self.U)
 
@@ -126,7 +126,7 @@ class PaVeBa(PALAlgorithm):
 
     def pareto_updating(self):
         """
-        Identifies the designs that are highly likely to be `epsilon`-optimal using the confidence regions.
+        Identify the designs that are highly likely to be `epsilon`-optimal using the confidence regions.
         """
         A = self.S.union(self.U)
 
@@ -153,7 +153,7 @@ class PaVeBa(PALAlgorithm):
 
     def useful_updating(self):
         """
-        Identifies the useful designs.
+        Identify the useful designs.
         """
         self.U = set()
         for pt in self.P:
@@ -170,7 +170,7 @@ class PaVeBa(PALAlgorithm):
 
     def evaluating(self):
         """
-        Observes the active designs via sampling.
+        Observe the active designs via sampling.
         """
         A = self.S.union(self.U)
         active_pts = self.design_space.points[list(A)]
@@ -183,7 +183,7 @@ class PaVeBa(PALAlgorithm):
 
     def run_one_step(self) -> bool:
         """
-        Runs one step of the algorithm.
+        Run one step of the algorithm.
 
         Returns True if the algorithm is over.
         """
@@ -216,7 +216,7 @@ class PaVeBa(PALAlgorithm):
 
     def compute_radius(self):
         """
-        Computes the radii of the confidence regions to be used in modeling.
+        Compute the radii of the confidence regions to be used in modeling.
         """
         t1 = (8 * self.noise_var / self.round)
         t2 = np.log(  # ni**2 is equal to t**2 since only active arms are sampled

@@ -3,7 +3,6 @@ from unittest import mock, TestCase
 import numpy as np
 
 from vectoptal.models import EmpiricalMeanVarModel
-from vectoptal.order import Order
 from vectoptal.datasets import Dataset
 
 

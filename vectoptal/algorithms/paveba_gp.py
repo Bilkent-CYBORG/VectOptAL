@@ -23,7 +23,7 @@ from vectoptal.models import (
 
 class PaVeBaGP(PALAlgorithm):
     """
-    Implements the GP-based Pareto Vector Bandits (PaVeBa) algorithm.
+    Implement the GP-based Pareto Vector Bandits (PaVeBa) algorithm.
 
     :param float epsilon: Determines the accuracy of the PAC-learning framework.
     :param float delta: Determines the success probability of the PAC-learning framework.
@@ -40,12 +40,12 @@ class PaVeBaGP(PALAlgorithm):
     Returns None.
 
     Example:
-        >>> from vectoptal.order import ConeTheta2DOrder
+        >>> from vectoptal.order import ComponentwiseOrder(4)
         >>> from vectoptal.algorithms import PaVeBaGP
         >>>
         >>> epsilon, delta, noise_var = 0.01, 0.01, 0.01
         >>> dataset_name = "DiskBrake"
-        >>> order_acute = ConeTheta2DOrder(cone_degree = 45)
+        >>> order_acute = ComponentwiseOrder(2)
         >>>
         >>> PaVeBaGP = PaVeBaGP(epsilon, delta, dataset_name, order_acute, noise_var)
         >>>
@@ -108,7 +108,7 @@ class PaVeBaGP(PALAlgorithm):
 
     def modeling(self):
         """
-        Constructs the confidence regions of all active designs given all past observations.
+        Construct the confidence regions of all active designs given all past observations.
         """
         self.alpha_t = self.compute_alpha()
         A = self.S.union(self.U)
@@ -116,7 +116,7 @@ class PaVeBaGP(PALAlgorithm):
 
     def discarding(self):
         """
-        Discards the designs that are highly likely to be suboptimal using the confidence regions.
+        Discard the designs that are highly likely to be suboptimal using the confidence regions.
         """
         A = self.S.union(self.U)
 
@@ -138,7 +138,7 @@ class PaVeBaGP(PALAlgorithm):
 
     def pareto_updating(self):
         """
-        Identifies the designs that are highly likely to be `epsilon`-optimal using the confidence regions.
+        Identify the designs that are highly likely to be `epsilon`-optimal using the confidence regions.
         """
         A = self.S.union(self.U)
 
@@ -168,7 +168,7 @@ class PaVeBaGP(PALAlgorithm):
 
     def useful_updating(self):
         """
-        Identifies the useful designs.
+        Identify the useful designs.
         """
         self.U = set()
         for pt in self.P:
@@ -185,7 +185,7 @@ class PaVeBaGP(PALAlgorithm):
 
     def evaluating(self):
         """
-        Observes the active designs via sampling.
+        Observe the active designs via sampling.
         """
         A = self.S.union(self.U)
         acq = SumVarianceAcquisition(self.model)
@@ -200,7 +200,7 @@ class PaVeBaGP(PALAlgorithm):
 
     def run_one_step(self) -> bool:
         """
-        Runs one step of the algorithm.
+        Run one step of the algorithm.
 
         Returns True if the algorithm is over.
         """
@@ -233,7 +233,7 @@ class PaVeBaGP(PALAlgorithm):
 
     def compute_alpha(self):
         """
-        Computes the radii of the confidence regions to be used in modeling.
+        Compute the radii of the confidence regions to be used in modeling.
         """
         alpha = (
             8*self.m*np.log(6) + 4*np.log(
