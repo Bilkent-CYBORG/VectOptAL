@@ -24,6 +24,43 @@ from vectoptal.models import (
 
 
 class PaVeBaPartialGP(PALAlgorithm):
+    """
+    Implements the partially observable GP-based Pareto Vector Bandits (PaVeBa) algorithm.
+
+    :param float epsilon: Determines the accuracy of the PAC-learning framework.
+    :param float delta: Determines the success probability of the PAC-learning framework.
+    :param str dataset_name: Name of the dataset to be used.
+    :param order: Order to be used.
+    :param float noise_var: Variance of the Gaussian sampling noise.
+    :param float conf_contraction: Contraction coefficient to shrink the confidence regions empirically.
+    :param list costs: Cost associated with sampling each objective.
+    :param str confidence_type: Specifies if the algorithm uses hyperellipsoidal or hyperrectangular confidence regions.
+    :param int batch_size: Number of samples taken in each round.
+
+    The algorithm sequentially samples design rewards with a multivariate white Gaussian noise whose diagonal
+    entries are specified by the user.
+
+    Returns None.
+
+    Example:
+        >>> from vectoptal.order import ConeTheta2DOrder
+        >>> from vectoptal.algorithms import PaVeBaPartialGP
+        >>>
+        >>> epsilon, delta, noise_var = 0.01, 0.01, 0.01
+        >>> dataset_name = "DiskBrake"
+        >>> order_acute = ConeTheta2DOrder(cone_degree = 45)
+        >>>
+        >>> PaVeBaPartialGP = PaVeBaPartialGP(epsilon, delta, dataset_name, order_acute, noise_var)
+        >>>
+        >>> while True:
+        >>>     is_done = PaVeBaPartialGP.run_one_step()
+        >>>
+        >>>     if is_done:
+        >>>          break
+        >>>
+        >>> pareto_indices = PaVeBaPartialGP.P
+    """
+
     def __init__(
         self, epsilon, delta,
         dataset_name, order: Order,
@@ -68,11 +105,17 @@ class PaVeBaPartialGP(PALAlgorithm):
         self.total_cost = 0.0
 
     def modeling(self):
+        """
+        Constructs the confidence regions of all active designs given all past observations.
+        """
         self.alpha_t = self.compute_alpha()
         A = self.S.union(self.U)
         self.design_space.update(self.model, self.alpha_t, list(A))
 
     def discarding(self):
+        """
+        Discards the designs that are highly likely to be suboptimal using the confidence regions.
+        """
         A = self.S.union(self.U)
 
         to_be_discarded = []
@@ -92,6 +135,9 @@ class PaVeBaPartialGP(PALAlgorithm):
             self.S.remove(pt)
 
     def pareto_updating(self):
+        """
+        Identifies the designs that are highly likely to be `epsilon`-optimal using the confidence regions.
+        """
         A = self.S.union(self.U)
 
         is_index_pareto = []
@@ -119,6 +165,9 @@ class PaVeBaPartialGP(PALAlgorithm):
         logging.debug(f"Pareto: {str(self.P)}")
 
     def useful_updating(self):
+        """
+        Identifies the useful designs.
+        """
         self.U = set()
         for pt in self.P:
             pt_conf = self.design_space.confidence_regions[pt]
@@ -133,6 +182,9 @@ class PaVeBaPartialGP(PALAlgorithm):
         logging.debug(f"Useful: {str(self.U)}")
 
     def evaluating(self):
+        """
+        Observes the active designs via sampling.
+        """
         A = self.S.union(self.U)
         acq = MaxVarianceDecoupledAcquisition(self.model, costs=self.costs)
         active_pts = self.design_space.points[list(A)]
@@ -153,6 +205,11 @@ class PaVeBaPartialGP(PALAlgorithm):
         self.model.update()
 
     def run_one_step(self) -> bool:
+        """
+        Runs one step of the algorithm.
+
+        Returns True if the algorithm is over.
+        """
         self.round += 1
         print(f"Round {self.round}")
 
@@ -181,6 +238,9 @@ class PaVeBaPartialGP(PALAlgorithm):
         return len(self.S) == 0 or self.total_cost >= self.cost_budget
 
     def compute_alpha(self):
+        """
+        Computes the radii of the confidence regions to be used in modeling.
+        """
         alpha = (
             2*np.log(
                 (np.pi**2 * self.round**2 * self.design_space.cardinality)/(3*self.delta)

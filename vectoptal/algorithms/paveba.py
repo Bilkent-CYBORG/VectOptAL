@@ -23,10 +23,10 @@ class PaVeBa(PALAlgorithm):
 
     :param float epsilon: Determines the accuracy of the PAC-learning framework.
     :param float delta: Determines the success probability of the PAC-learning framework.
-    :param string dataset_name: Name of the dataset to be used.
+    :param str dataset_name: Name of the dataset to be used.
     :param order: Order to be used.
     :param float noise_var: Variance of the Gaussian sampling noise.
-    :param conf_contraction: Contraction coefficient to shrink the confidence regions empirically.
+    :param float conf_contraction: Contraction coefficient to shrink the confidence regions empirically.
 
     The algorithm sequentially samples design rewards with a multivariate white Gaussian noise whose diagonal
     entries are specified by the user.
@@ -39,7 +39,7 @@ class PaVeBa(PALAlgorithm):
         >>>
         >>> epsilon, delta, noise_var = 0.01, 0.01, 0.01
         >>> dataset_name = "DiskBrake"
-        >>> order_acute = ConeTheta2DOrder(cone_degree =45)
+        >>> order_acute = ConeTheta2DOrder(cone_degree = 45)
         >>>
         >>> PaVeBa = PaVeBa(epsilon, delta, dataset_name, order_acute, noise_var)
         >>>
