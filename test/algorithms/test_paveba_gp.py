@@ -2,13 +2,13 @@ from unittest import mock, TestCase
 
 import numpy as np
 
-from vectoptal.algorithms import PaVeBa
+from vectoptal.algorithms import PaVeBaGP
 from vectoptal.order import ComponentwiseOrder
 from vectoptal.datasets import Dataset, get_dataset
 from vectoptal.utils.evaluate import calculate_epsilonF1_score
 
 
-class TestPaVeBa(TestCase):
+class TestPaVeBaGP(TestCase):
     """Test the PaVeBa class."""
 
     def setUp(self):
@@ -19,7 +19,7 @@ class TestPaVeBa(TestCase):
         self.order = ComponentwiseOrder(2)
         self.noise_var = 0.00001
         self.conf_contraction = 1
-        self.algo = PaVeBa(
+        self.algo = PaVeBaGP(
             epsilon=self.epsilon,
             delta=self.delta,
             dataset_name=self.dataset_name,
@@ -70,18 +70,18 @@ class TestPaVeBa(TestCase):
         self.assertTrue(len(S3) >= len(S))
         self.assertTrue(len(P) >= len(P3))
 
-    def test_compute_radius(self):
-        """Test the compute_radius method."""
+    def test_compute_alpha(self):
+        """Test the compute_alpha method."""
         self.algo.run_one_step()
-        t1 = 8 * self.noise_var
-        t2 = np.log(
-            (np.pi**2 * (3) * 128)
-            / (6 * 0.1)
+        alpha = (
+            8*2*np.log(6) + 4*np.log(
+                (np.pi**2 * 128)/(6*self.delta)
+            )
         )
-        r1 = np.sqrt(t1 * t2)
+        r1 = alpha
         r2 = self.algo.compute_radius()
-        self.assertEqual(np.array([r1, r1]), r2)
+        self.assertEqual(np.array([r1, r1])/self.conf_contraction, r2)
 
         self.algo.run_one_step()
-        r3 = self.algo.compute_radius()
+        r3 = self.algo.compute_alpha()
         self.assertTrue((r3 < r2).all())

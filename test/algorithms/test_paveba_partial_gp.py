@@ -2,13 +2,13 @@ from unittest import mock, TestCase
 
 import numpy as np
 
-from vectoptal.algorithms import PaVeBa
+from vectoptal.algorithms import PaVeBaPartialGP
 from vectoptal.order import ComponentwiseOrder
 from vectoptal.datasets import Dataset, get_dataset
 from vectoptal.utils.evaluate import calculate_epsilonF1_score
 
 
-class TestPaVeBa(TestCase):
+class TestPaVeBaPartialGP(TestCase):
     """Test the PaVeBa class."""
 
     def setUp(self):
@@ -19,13 +19,17 @@ class TestPaVeBa(TestCase):
         self.order = ComponentwiseOrder(2)
         self.noise_var = 0.00001
         self.conf_contraction = 1
-        self.algo = PaVeBa(
+        self.costs = [1,3]
+        self.cost_budget = 31
+        self.algo = PaVeBaPartialGP(
             epsilon=self.epsilon,
             delta=self.delta,
             dataset_name=self.dataset_name,
             order=self.order,
             noise_var=self.noise_var,
             conf_contraction=self.conf_contraction,
+            costs = self.costs,
+            cost_budget = self.cost_budget
         )
 
     def test_modeling(self):
@@ -70,18 +74,15 @@ class TestPaVeBa(TestCase):
         self.assertTrue(len(S3) >= len(S))
         self.assertTrue(len(P) >= len(P3))
 
-    def test_compute_radius(self):
-        """Test the compute_radius method."""
+    def test_compute_alpha(self):
+        """Test the compute_alpha method."""
         self.algo.run_one_step()
-        t1 = 8 * self.noise_var
-        t2 = np.log(
-            (np.pi**2 * (3) * 128)
-            / (6 * 0.1)
-        )
-        r1 = np.sqrt(t1 * t2)
-        r2 = self.algo.compute_radius()
-        self.assertEqual(np.array([r1, r1]), r2)
+        alpha = 2*np.log(
+                (np.pi**2 * 128)/(3*self.delta))
+        r1 = alpha
+        r2 = self.algo.compute_alpha()
+        self.assertEqual(np.array([r1, r1])/self.conf_contraction, r2)
 
         self.algo.run_one_step()
-        r3 = self.algo.compute_radius()
+        r3 = self.algo.compute_alpha()
         self.assertTrue((r3 < r2).all())
