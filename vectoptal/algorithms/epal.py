@@ -108,6 +108,9 @@ class EpsilonPAL(PALAlgorithm):
         self.model.update()
 
     def run_one_step(self) -> bool:
+        if len(self.S) == 0:
+            return True
+
         print(f"Round {self.round}")
 
         print(f"Round {self.round}:Modeling")

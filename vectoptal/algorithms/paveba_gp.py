@@ -144,6 +144,9 @@ class PaVeBaGP(PALAlgorithm):
         self.model.update()
 
     def run_one_step(self) -> bool:
+        if len(self.S) == 0:
+            return True
+
         self.round += 1
         print(f"Round {self.round}")
 
