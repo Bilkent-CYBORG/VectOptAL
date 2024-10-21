@@ -139,7 +139,8 @@ def get_noisy_evaluations_chol(means: np.ndarray, cholesky_cov: np.ndarray) -> n
     :type cholesky_cov: np.ndarray
     :return: An array of noisy samples.
     :rtype: np.ndarray
-    :raises AssertionError: If `cholesky_cov` is not a 2D array or if the dimensions of `means` and `cholesky_cov` do not match.
+    :raises AssertionError: If `cholesky_cov` is not a 2D array or if the dimensions of `means`
+    and `cholesky_cov` do not match.
     """
     assert cholesky_cov.ndim == 2, means.shape[1] == cholesky_cov.shape[1]
     n, d = means.shape[0], len(cholesky_cov)
@@ -150,7 +151,7 @@ def get_noisy_evaluations_chol(means: np.ndarray, cholesky_cov: np.ndarray) -> n
     
     return noisy_samples
 
-def generate_sobol_samples(dim, n):
+def generate_sobol_samples(dim: int, n: int) -> np.ndarray:
     """
     This method generates `n` samples from a Sobol sequence of dimension `dim`. `n` should be a
     power of 2 in order to generate a balanced sequence.
@@ -167,39 +168,52 @@ def generate_sobol_samples(dim, n):
     
     return samples
 
-def get_smallmij(vi, vj, W, alpha_vec):
+def get_smallmij(vi: np.ndarray, vj: np.ndarray, W: np.ndarray, alpha_vec: np.ndarray) -> float:
     """
-    Compute m(i,j) for designs i and j 
-    :param vi, vj: (D,1) ndarrays
-    :param W: (n_constraint,D) ndarray
-    :param alpha_vec: (n_constraint,1) ndarray of alphas of W
-    :return: m(i,j).
+    This method calculates the m(i,j) value, which is used to measure the difference between two
+    designs `vi` and `vj` based on the constraint matrix `W` and the alpha vector `alpha_vec`.
+
+    :param vi: A D-vector representing the design vector i.
+    :type vi: np.ndarray
+    :param vj: A D-vector representing the design vector j.
+    :type vj: np.ndarray
+    :param W: A (n_constraint, D) ndarray representing the constraint matrix.
+    :type W: np.ndarray
+    :param alpha_vec: A (n_constraint, 1) ndarray representing the alphas of W.
+    :type alpha_vec: np.ndarray
+    :return: The computed m(i,j) value.
+    :rtype: float
     """
     prod = np.matmul(W, vj - vi)
     prod[prod < 0] = 0
-    smallmij = (prod/alpha_vec).min()
+    smallmij = (prod / alpha_vec).min()
     
     return smallmij
 
-def get_delta(mu, W, alpha_vec):
+def get_delta(mu: np.ndarray, W: np.ndarray, alpha_vec: np.ndarray) -> np.ndarray:
     """
-    Computes Delta^*_i for each i in [n.points]
-    :param mu: An (n_points, D) array
-    :param W: (n_constraint,D) ndarray
-    :param alpha_vec: (n_constraint,1) ndarray of alphas of W
-    :return: An (n_points, D) array of Delta^*_i for each i in [n.points]
+    This method computes Delta^*_i gap value for each point in the input array `mu`. Delta^*_i is
+    calculated based on the provided constraint matrix `W` and the alpha vector `alpha_vec`.
+
+    :param mu: An array of shape (n_points, D) representing the points.
+    :type mu: np.ndarray
+    :param W: An array of shape (n_constraint, D) representing the constraint matrix.
+    :type W: np.ndarray
+    :param alpha_vec: An array of shape (n_constraint, 1) representing the alphas of W.
+    :type alpha_vec: np.ndarray
+    :return: An array of shape (n_points, 1) containing Delta^*_i for each point.
+    :rtype: np.ndarray
     """
-    n = mu.shape[0]
-    Delta = np.zeros(n)
-    for i in range(n):
-        for j in range(n):
-            vi = mu[i,:].reshape(-1,1)
-            vj = mu[j,:].reshape(-1,1)
+    num_points = mu.shape[0]
+    delta_values = np.zeros(num_points)
+    for i in range(num_points):
+        for j in range(num_points):
+            vi = mu[i, :]
+            vj = mu[j, :]
             mij = get_smallmij(vi, vj, W, alpha_vec)
-            if mij>Delta[i]:
-                Delta[i] = mij
+            delta_values[i] = max(delta_values[i], mij)
     
-    return Delta.reshape(-1,1)
+    return delta_values.reshape(-1, 1)
 
 def get_uncovered_set(p_opt_miss, p_opt_hat, mu, eps, W):
     """

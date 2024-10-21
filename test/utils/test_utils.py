@@ -144,15 +144,15 @@ class TestGetSmallmij(TestCase):
                 )
 
 class TestGetDelta(TestCase):
-    """Test delta computation."""
+    """Test delta gap computation."""
 
     def test_get_delta(self):
         """Test the get_delta function."""
-        means = np.array(
+        means = np.array([
             [1, 0],
             [1.1, 0.2],
             [0.5, 0.8]
-        )
+        ])
 
         angles = [45, 60, 90, 120, 135]
         for angle in angles:
@@ -160,8 +160,13 @@ class TestGetDelta(TestCase):
                 W = get_2d_w(angle)
                 alpha_vec = get_alpha_vec(W)
 
-                delta = get_delta(means, W, alpha_vec)
-                np.testing.assert_allclose(
-                    delta,
-                    
-                )
+                delta_true = get_delta(means, W, alpha_vec)
+                delta_expected = np.zeros_like(delta_true)
+                for i in range(means.shape[0]):
+                    vi = means[i]
+                    for j in range(means.shape[0]):
+                        vj = means[j]
+                        mij = get_smallmij(vi, vj, W, alpha_vec)
+                        delta_expected[i] = max(delta_expected[i], mij)
+                        self.assertLessEqual(mij, delta_true[i])
+                np.testing.assert_allclose(delta_true, delta_expected)
