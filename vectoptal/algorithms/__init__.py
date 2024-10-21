@@ -7,3 +7,15 @@ from vectoptal.algorithms.paveba_gp import PaVeBaGP
 from vectoptal.algorithms.decoupled import DecoupledGP
 from vectoptal.algorithms.paveba_partial_gp import PaVeBaPartialGP
 from vectoptal.algorithms.naive_elimination import NaiveElimination
+
+__all__ = [
+    "VOGP",
+    "VOGP_AD",
+    "EpsilonPAL",
+    "Auer",
+    "PaVeBa",
+    "PaVeBaGP",
+    "DecoupledGP",
+    "PaVeBaPartialGP",
+    "NaiveElimination",
+]

@@ -1,6 +1,4 @@
-import logging
-from itertools import product
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Optional, List, Union
 
 import torch
@@ -16,6 +14,7 @@ from vectoptal.utils.utils import generate_sobol_samples
 
 torch.set_default_dtype(torch.float64)
 
+
 class GPyTorchModel(GPModel, ABC):
     def __init__(self) -> None:
         super().__init__()
@@ -23,7 +22,7 @@ class GPyTorchModel(GPModel, ABC):
     def to_tensor(self, data) -> torch.Tensor:
         if not isinstance(data, torch.Tensor):
             data = torch.tensor(data, dtype=torch.float64).to(self.device)
-        
+
         return data
 
     def get_kernel_type(self):
@@ -34,11 +33,12 @@ class GPyTorchModel(GPModel, ABC):
             elif isinstance(kernel, gpytorch.kernels.MultitaskKernel):
                 kernel = kernel.data_covar_module
                 continue
-            elif hasattr(kernel, 'base_kernel'):
+            elif hasattr(kernel, "base_kernel"):
                 kernel = kernel.base_kernel
                 continue
             else:
                 return "Other"
+
 
 # TODO: Make GPyTorch models optionally take covar_module and mean_module.
 class MultitaskExactGPModel(gpytorch.models.ExactGP):
@@ -54,8 +54,7 @@ class MultitaskExactGPModel(gpytorch.models.ExactGP):
 
         # self.base_covar_module = gpytorch.kernels.ScaleKernel(kernel(ard_num_dims=input_dim))
         self.base_covar_module = kernel(
-            ard_num_dims=input_dim,
-            lengthscale_prior=gpytorch.priors.GammaPrior(3.0, 6.0)
+            ard_num_dims=input_dim, lengthscale_prior=gpytorch.priors.GammaPrior(3.0, 6.0)
         )  # Scale kernel is unnecessary
         self.covar_module = gpytorch.kernels.MultitaskKernel(
             self.base_covar_module, num_tasks=output_dim, rank=output_dim
@@ -69,6 +68,7 @@ class MultitaskExactGPModel(gpytorch.models.ExactGP):
         covar_x = self.covar_module(x)
         return gpytorch.distributions.MultitaskMultivariateNormal(mean_x, covar_x)
 
+
 class BatchIndependentExactGPModel(gpytorch.models.ExactGP):
     def __init__(self, train_inputs, train_targets, likelihood, kernel):
         super().__init__(train_inputs, train_targets, likelihood)
@@ -80,12 +80,12 @@ class BatchIndependentExactGPModel(gpytorch.models.ExactGP):
 
         self.covar_module = gpytorch.kernels.ScaleKernel(
             kernel(batch_shape=torch.Size([output_dim]), ard_num_dims=input_dim),
-            batch_shape=torch.Size([output_dim])
+            batch_shape=torch.Size([output_dim]),
         )
-        
+
         self.mean_module.requires_grad_(True)
         self.covar_module.requires_grad_(True)
-    
+
     def forward(self, x):
         mean_x = self.mean_module(x)
         covar_x = self.covar_module(x)
@@ -93,14 +93,16 @@ class BatchIndependentExactGPModel(gpytorch.models.ExactGP):
             gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
         )
 
+
 class GPyTorchMultioutputExactModel(GPyTorchModel, ABC):
     """Assumes known noise variance."""
+
     def __init__(
         self, input_dim, output_dim, noise_var, model_kind: gpytorch.models.ExactGP
     ) -> None:
         super().__init__()
 
-        self.device = 'cpu'
+        self.device = "cpu"
 
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -116,7 +118,7 @@ class GPyTorchMultioutputExactModel(GPyTorchModel, ABC):
                 num_tasks=self.output_dim,
                 rank=len(self.noise_var),
                 noise_constraint=gpytorch.constraints.GreaterThan(1e-10),
-                has_global_noise=False
+                has_global_noise=False,
             ).to(self.device)
             self.likelihood.task_noise_covar = self.noise_var
         else:
@@ -124,7 +126,7 @@ class GPyTorchMultioutputExactModel(GPyTorchModel, ABC):
                 num_tasks=self.output_dim,
                 rank=0,
                 noise_constraint=gpytorch.constraints.GreaterThan(1e-10),
-                has_task_noise=False
+                has_task_noise=False,
             ).to(self.device)
             self.likelihood.noise = self.noise_var
         self.likelihood.requires_grad_(False)
@@ -133,12 +135,13 @@ class GPyTorchMultioutputExactModel(GPyTorchModel, ABC):
         self.model = None
 
     def add_sample(self, X_t, Y_t):
-        X_t = self.to_tensor(X_t[..., :self.input_dim])
+        X_t = self.to_tensor(X_t[..., : self.input_dim])
         Y_t = self.to_tensor(Y_t)
 
-        assert X_t.ndim == 2 and Y_t.ndim == 2, \
-            "Model expects a 2D and 1D tensors for X_t and Y_t," \
+        assert X_t.ndim == 2 and Y_t.ndim == 2, (
+            "Model expects a 2D and 1D tensors for X_t and Y_t,"
             f"but got {X_t.ndim} and {Y_t.ndim} instead."
+        )
 
         self.train_inputs = torch.cat([self.train_inputs, X_t], 0)
         self.train_targets = torch.cat([self.train_targets, Y_t], 0)
@@ -148,7 +151,7 @@ class GPyTorchMultioutputExactModel(GPyTorchModel, ABC):
         self.train_targets = torch.empty((0, self.output_dim)).to(self.device)
 
     def update(self):
-        if self.model == None:
+        if self.model is None:
             self.model = self.model_kind(
                 self.train_inputs, self.train_targets, self.likelihood, self.kernel_type
             ).to(self.device)
@@ -173,7 +176,7 @@ class GPyTorchMultioutputExactModel(GPyTorchModel, ABC):
 
     def evaluate_kernel(self, X=None):
         assert self.model is not None, "Kernel evaluated before model initialization."
-        
+
         if X is None:
             X = self.train_inputs
         Kn = self.model.covar_module(X, X).evaluate()
@@ -188,13 +191,14 @@ class GPyTorchMultioutputExactModel(GPyTorchModel, ABC):
 
         return lengthscales, variances
 
+
 class CorrelatedExactGPyTorchModel(GPyTorchMultioutputExactModel):
     def __init__(self, input_dim, output_dim, noise_var) -> None:
         super().__init__(input_dim, output_dim, noise_var, MultitaskExactGPModel)
 
     def predict(self, test_X):
         # Last column of X_t are sample space indices.
-        test_X = self.to_tensor(test_X[:, :self.input_dim])
+        test_X = self.to_tensor(test_X[:, : self.input_dim])
 
         test_X = test_X[:, None, :]  # Prepare for batch inference
 
@@ -204,30 +208,36 @@ class CorrelatedExactGPyTorchModel(GPyTorchMultioutputExactModel):
             means = res.mean.squeeze().cpu().numpy()  # Squeeze the sample dimension
             variances = res.covariance_matrix
             variances = variances.cpu().numpy()
-        
+
         return means, variances
+
 
 class IndependentExactGPyTorchModel(GPyTorchMultioutputExactModel):
     def __init__(self, input_dim, output_dim, noise_var) -> None:
         super().__init__(input_dim, output_dim, noise_var, BatchIndependentExactGPModel)
-    
+
     def predict(self, test_X):
         # Last column of X_t are sample space indices.
-        test_X = self.to_tensor(test_X[..., :self.input_dim])
+        test_X = self.to_tensor(test_X[..., : self.input_dim])
 
         with torch.no_grad(), torch.autograd.set_detect_anomaly(True):
             res = self.model(test_X)
 
             means = res.mean.squeeze().cpu().numpy()  # Squeeze the sample dimension
-            variances = torch.einsum(
-                'ij,ki->kij', torch.eye(self.output_dim), res.variance
-            ).cpu().numpy()
-        
+            variances = (
+                torch.einsum("ij,ki->kij", torch.eye(self.output_dim), res.variance).cpu().numpy()
+            )
+
         return means, variances
 
+
 def get_gpytorch_model_w_known_hyperparams(
-    model_class, problem: Problem, noise_var: float, initial_sample_cnt: int,
-    X: Optional[np.ndarray] = None, Y: Optional[np.ndarray] = None
+    model_class,
+    problem: Problem,
+    noise_var: float,
+    initial_sample_cnt: int,
+    X: Optional[np.ndarray] = None,
+    Y: Optional[np.ndarray] = None,
 ) -> GPyTorchMultioutputExactModel:
     """
     Creates and returns a GPyTorch model after training and freezing model parameters.
@@ -259,6 +269,7 @@ def get_gpytorch_model_w_known_hyperparams(
 
     return model
 
+
 class SingleTaskGP(gpytorch.models.ExactGP):
     def __init__(self, train_inputs, train_targets, likelihood, kernel):
         super().__init__(train_inputs, train_targets, likelihood)
@@ -266,9 +277,7 @@ class SingleTaskGP(gpytorch.models.ExactGP):
         input_dim = train_inputs.shape[-1]
 
         self.mean_module = gpytorch.means.ConstantMean()
-        self.covar_module = gpytorch.kernels.ScaleKernel(
-            kernel(ard_num_dims=input_dim)
-        )
+        self.covar_module = gpytorch.kernels.ScaleKernel(kernel(ard_num_dims=input_dim))
 
         self.mean_module.requires_grad_(True)
         self.covar_module.requires_grad_(True)
@@ -278,11 +287,12 @@ class SingleTaskGP(gpytorch.models.ExactGP):
         covar = self.covar_module(x)
         return gpytorch.distributions.MultivariateNormal(mean, covar)
 
+
 class GPyTorchModelListExactModel(GPyTorchModel, ModelList):
     def __init__(self, input_dim, output_dim, noise_var) -> None:
         super().__init__()
 
-        self.device = 'cpu'
+        self.device = "cpu"
 
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -307,12 +317,13 @@ class GPyTorchModelListExactModel(GPyTorchModel, ModelList):
         self.train_targets[dim_index] = torch.cat([self.train_targets[dim_index], Y_t], 0)
 
     def add_sample(self, X_t, Y_t, dim_index: Union[int, List[int]]):
-        X_t = self.to_tensor(X_t[..., :self.input_dim])
+        X_t = self.to_tensor(X_t[..., : self.input_dim])
         Y_t = self.to_tensor(Y_t)
 
-        assert X_t.ndim == 2 and Y_t.ndim == 1, \
-            "Model expects a 2D and 1D tensors for X_t and Y_t," \
+        assert X_t.ndim == 2 and Y_t.ndim == 1, (
+            "Model expects a 2D and 1D tensors for X_t and Y_t,"
             f"but got {X_t.ndim} and {Y_t.ndim} instead."
+        )
 
         # All samples belongs to same model
         if isinstance(dim_index, int):
@@ -327,26 +338,25 @@ class GPyTorchModelListExactModel(GPyTorchModel, ModelList):
         for dim_i in unique_dims:
             sample_indices_dim = dim_index == dim_i
             self._add_sample_single(
-                X_t[sample_indices_dim].reshape(-1, self.input_dim),
-                Y_t[sample_indices_dim],
-                dim_i
+                X_t[sample_indices_dim].reshape(-1, self.input_dim), Y_t[sample_indices_dim], dim_i
             )
 
     def clear_data(self):
         self.train_inputs = [
-            torch.empty((0, self.input_dim)).to(self.device)  for _ in range(self.output_dim)
+            torch.empty((0, self.input_dim)).to(self.device) for _ in range(self.output_dim)
         ]
-        self.train_targets = [
-            torch.empty((0)).to(self.device) for _ in range(self.output_dim)
-        ]
+        self.train_targets = [torch.empty((0)).to(self.device) for _ in range(self.output_dim)]
 
     def update(self):
-        if self.model == None:
+        if self.model is None:
             models = [
                 SingleTaskGP(
-                    self.train_inputs[obj_i], self.train_targets[obj_i],
-                    self.likelihoods[obj_i], kernel=self.kernel_type
-                ) for obj_i in range(self.output_dim)
+                    self.train_inputs[obj_i],
+                    self.train_targets[obj_i],
+                    self.likelihoods[obj_i],
+                    kernel=self.kernel_type,
+                )
+                for obj_i in range(self.output_dim)
             ]
             self.model = gpytorch.models.IndependentModelList(*models)
             self.likelihood = gpytorch.likelihoods.LikelihoodList(
@@ -385,11 +395,10 @@ class GPyTorchModelListExactModel(GPyTorchModel, ModelList):
         N = len(self.model.models)
         M = len(X)
 
-
         Kn_i = torch.stack([model.covar_module(X, X).evaluate() for model in self.model.models])
-        Kn = Kn_i.unsqueeze(2).expand(-1, -1, N, -1).reshape(N*M, N*M)
+        Kn = Kn_i.unsqueeze(2).expand(-1, -1, N, -1).reshape(N * M, N * M)
         Kn = Kn.numpy(force=True)
-        
+
         return Kn
 
     def get_lengthscale_and_var(self):
@@ -438,16 +447,14 @@ class GPyTorchModelListExactModel(GPyTorchModel, ModelList):
         )
 
         samples = posterior.sample(torch.Size([sample_count])).numpy(force=True)
-        
+
         return samples
 
     def sample_from_single_posterior(self, test_X, dim_index: int, sample_count=1):
         test_X = self.to_tensor(test_X)
 
         # Generate MultivariateNormal from the model
-        posterior: gpytorch.distributions.MultivariateNormal = self.model.models[dim_index](
-            test_X
-        )
+        posterior: gpytorch.distributions.MultivariateNormal = self.model.models[dim_index](test_X)
 
         samples = posterior.sample(torch.Size([sample_count])).numpy(force=True)
 
@@ -455,8 +462,11 @@ class GPyTorchModelListExactModel(GPyTorchModel, ModelList):
 
 
 def get_gpytorch_modellist_w_known_hyperparams(
-    problem: Problem, noise_var: float, initial_sample_cnt: int,
-    X: Optional[np.ndarray] = None, Y: Optional[np.ndarray] = None
+    problem: Problem,
+    noise_var: float,
+    initial_sample_cnt: int,
+    X: Optional[np.ndarray] = None,
+    Y: Optional[np.ndarray] = None,
 ) -> GPyTorchModelListExactModel:
     """
     Creates and returns a GPyTorch modellist after training and freezing model parameters.
@@ -480,10 +490,13 @@ def get_gpytorch_modellist_w_known_hyperparams(
 
     # TODO: Initial sampling should be done outside of here. Can be a utility function.
     if initial_sample_cnt > 0:
-        choices = np.stack([  # Expand X to also include dimensions
-            np.arange(len(X)).repeat(out_dim),
-            np.tile(np.arange(out_dim), len(X))
-        ], axis=-1)
+        choices = np.stack(
+            [  # Expand X to also include dimensions
+                np.arange(len(X)).repeat(out_dim),
+                np.tile(np.arange(out_dim), len(X)),
+            ],
+            axis=-1,
+        )
         selected_pt_obj_indices = np.random.choice(len(choices), initial_sample_cnt)
         initial_pt_obj_indices = choices[selected_pt_obj_indices]
         initial_points = X[initial_pt_obj_indices[:, 0]]
@@ -492,7 +505,7 @@ def get_gpytorch_modellist_w_known_hyperparams(
         model.add_sample(
             initial_points,
             initial_values[np.arange(initial_sample_cnt), initial_pt_obj_indices[:, 1]],
-            initial_pt_obj_indices[:, 1]
+            initial_pt_obj_indices[:, 1],
         )
         model.update()
 

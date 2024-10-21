@@ -5,33 +5,27 @@ from typing import Literal, Optional
 import numpy as np
 
 from vectoptal.order import Order
-from vectoptal.datasets import get_dataset
+from vectoptal.datasets import get_dataset_instance
 from vectoptal.design_space import FixedPointsDesignSpace
 from vectoptal.algorithms.algorithm import PALAlgorithm
 from vectoptal.maximization_problem import ProblemFromDataset, DecoupledEvaluationProblem
-from vectoptal.acquisition import (
-    MaxVarianceDecoupledAcquisition,
-    optimize_decoupled_acqf_discrete
-)
-from vectoptal.confidence_region import (
-    confidence_region_is_dominated,
-    confidence_region_is_covered
-)
-from vectoptal.models import (
-    GPyTorchModelListExactModel,
-    get_gpytorch_modellist_w_known_hyperparams
-)
+from vectoptal.acquisition import MaxVarianceDecoupledAcquisition, optimize_decoupled_acqf_discrete
+from vectoptal.confidence_region import confidence_region_is_dominated, confidence_region_is_covered
+from vectoptal.models import GPyTorchModelListExactModel, get_gpytorch_modellist_w_known_hyperparams
 
 
 class PaVeBaPartialGP(PALAlgorithm):
     def __init__(
-        self, epsilon, delta,
-        dataset_name, order: Order,
+        self,
+        epsilon,
+        delta,
+        dataset_name,
+        order: Order,
         noise_var,
         conf_contraction=32,
         costs: Optional[list] = None,
         cost_budget: Optional[float] = None,
-        confidence_type: Literal["hyperrectangle", "hyperellipsoid"]="hyperrectangle",
+        confidence_type: Literal["hyperrectangle", "hyperellipsoid"] = "hyperrectangle",
         batch_size=1,
     ) -> None:
         super().__init__(epsilon, delta)
@@ -42,7 +36,7 @@ class PaVeBaPartialGP(PALAlgorithm):
         self.costs = np.array(costs) if costs is not None else costs
         self.cost_budget = cost_budget if cost_budget is not None else np.inf
 
-        dataset = get_dataset(dataset_name)
+        dataset = get_dataset_instance(dataset_name)
 
         self.m = dataset.out_dim
 
@@ -52,8 +46,7 @@ class PaVeBaPartialGP(PALAlgorithm):
         self.problem = DecoupledEvaluationProblem(ProblemFromDataset(dataset, noise_var))
 
         self.model: GPyTorchModelListExactModel = get_gpytorch_modellist_w_known_hyperparams(
-            self.problem, noise_var, initial_sample_cnt=1,
-            X=dataset.in_data, Y=dataset.out_data
+            self.problem, noise_var, initial_sample_cnt=1, X=dataset.in_data, Y=dataset.out_data
         )
 
         self.cone_alpha = self.order.ordering_cone.alpha.flatten()
@@ -175,8 +168,7 @@ class PaVeBaPartialGP(PALAlgorithm):
         self.useful_updating()
 
         print(
-            f"There are {len(self.S)} designs left in set S and"
-            f" {len(self.P)} designs in set P."
+            f"There are {len(self.S)} designs left in set S and" f" {len(self.P)} designs in set P."
         )
 
         print(f"Round {self.round}:Sample count {self.sample_count}")
@@ -184,10 +176,10 @@ class PaVeBaPartialGP(PALAlgorithm):
         return len(self.S) == 0 or self.total_cost >= self.cost_budget
 
     def compute_alpha(self):
-        alpha = (
-            2*np.log(
-                (np.pi**2 * self.round**2 * self.design_space.cardinality)/(3*self.delta)
-            )
+        alpha = 2 * np.log(
+            (np.pi**2 * self.round**2 * self.design_space.cardinality) / (3 * self.delta)
         )
 
-        return (alpha / self.conf_contraction) * np.ones(self.m, )
+        return (alpha / self.conf_contraction) * np.ones(
+            self.m,
+        )

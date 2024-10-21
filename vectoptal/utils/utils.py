@@ -7,7 +7,6 @@ import numpy as np
 import cvxpy as cp
 import scipy.special
 from scipy.stats.qmc import Sobol
-from torch.quasirandom import SobolEngine
 from sklearn.metrics.pairwise import euclidean_distances
 
 
@@ -20,6 +19,7 @@ def set_seed(seed: int) -> None:
     np.random.seed(seed)
     torch.random.manual_seed(seed)
 
+
 def get_2d_w(cone_angle: float) -> np.ndarray:
     """
     This function generates a 2D cone matrix W with boundaries at an angle cone_angle and
@@ -30,18 +30,19 @@ def get_2d_w(cone_angle: float) -> np.ndarray:
     :return: A 2x2 numpy array where each row is a normalized normal vector.
     :rtype: numpy.ndarray
     """
-    angle_radian = (cone_angle/180) * np.pi
+    angle_radian = (cone_angle / 180) * np.pi
     if cone_angle <= 90:
-        W_1 = np.array([-np.tan(np.pi/4-angle_radian/2), 1])
-        W_2 = np.array([+np.tan(np.pi/4+angle_radian/2), -1])
+        W_1 = np.array([-np.tan(np.pi / 4 - angle_radian / 2), 1])
+        W_2 = np.array([+np.tan(np.pi / 4 + angle_radian / 2), -1])
     else:
-        W_1 = np.array([-np.tan(np.pi/4-angle_radian/2), 1])
-        W_2 = np.array([-np.tan(np.pi/4+angle_radian/2), 1])
-    W_1 = W_1/np.linalg.norm(W_1)
-    W_2 = W_2/np.linalg.norm(W_2)
+        W_1 = np.array([-np.tan(np.pi / 4 - angle_radian / 2), 1])
+        W_2 = np.array([-np.tan(np.pi / 4 + angle_radian / 2), 1])
+    W_1 = W_1 / np.linalg.norm(W_1)
+    W_2 = W_2 / np.linalg.norm(W_2)
     W = np.vstack((W_1, W_2))
 
     return W
+
 
 def get_alpha(rind: int, W: np.ndarray) -> np.ndarray:
     """
@@ -64,9 +65,9 @@ def get_alpha(rind: int, W: np.ndarray) -> np.ndarray:
     for i in range(W.shape[0]):
         A.append(np.zeros((1, D)))
         b.append(np.zeros(1))
-        c.append(W[i,:])
+        c.append(W[i, :])
         d.append(np.zeros(1))
-    
+
     A.append(np.eye(D))
     b.append(np.zeros(D))
     c.append(np.zeros(D))
@@ -75,14 +76,12 @@ def get_alpha(rind: int, W: np.ndarray) -> np.ndarray:
     # Define and solve the CVXPY problem.
     x = cp.Variable(D)
     # We use cp.SOC(t, x) to create the SOC constraint ||x||_2 <= t.
-    soc_constraints = [
-          cp.SOC(c[i].T @ x + d[i], A[i] @ x + b[i]) for i in range(m)
-    ]
-    prob = cp.Problem(cp.Minimize(f.T@x),
-                  soc_constraints)
+    soc_constraints = [cp.SOC(c[i].T @ x + d[i], A[i] @ x + b[i]) for i in range(m)]
+    prob = cp.Problem(cp.Minimize(f.T @ x), soc_constraints)
     prob.solve(solver="ECOS")
 
     return -prob.value
+
 
 def get_alpha_vec(W: np.ndarray) -> np.ndarray:
     """
@@ -92,15 +91,18 @@ def get_alpha_vec(W: np.ndarray) -> np.ndarray:
     :type W: numpy.ndarray
     :return: An ndarray of shape (n_constraint, 1) representing the computed alpha vector.
     :rtype: numpy.ndarray
-    """    
+    """
     alpha_vec = np.zeros((W.shape[0], 1))
     for i in range(W.shape[0]):
         alpha_vec[i] = get_alpha(i, W)
     return alpha_vec
 
+
 def get_closest_indices_from_points(
-    pts_to_find: Iterable, pts_to_check: Iterable,
-    return_distances: bool=False, squared: bool=False
+    pts_to_find: Iterable,
+    pts_to_check: Iterable,
+    return_distances: bool = False,
+    squared: bool = False,
 ) -> Union[np.ndarray, tuple[np.ndarray, np.ndarray]]:
     """
     This method calculates the closest indices in `pts_to_check` for each point in `pts_to_find`
@@ -127,6 +129,7 @@ def get_closest_indices_from_points(
         return x_inds.astype(int), np.min(distances, axis=1)
     return x_inds.astype(int)
 
+
 def get_noisy_evaluations_chol(means: np.ndarray, cholesky_cov: np.ndarray) -> np.ndarray:
     """
     This method generates noisy samples from a multivariate normal distribution using the provided
@@ -148,8 +151,9 @@ def get_noisy_evaluations_chol(means: np.ndarray, cholesky_cov: np.ndarray) -> n
     complicated_X = np.dot(X, cholesky_cov)
 
     noisy_samples = means + complicated_X
-    
+
     return noisy_samples
+
 
 def generate_sobol_samples(dim: int, n: int) -> np.ndarray:
     """
@@ -165,8 +169,9 @@ def generate_sobol_samples(dim: int, n: int) -> np.ndarray:
     """
     sampler = Sobol(dim, scramble=True)
     samples = sampler.random(n)
-    
+
     return samples
+
 
 def get_smallmij(vi: np.ndarray, vj: np.ndarray, W: np.ndarray, alpha_vec: np.ndarray) -> float:
     """
@@ -187,8 +192,9 @@ def get_smallmij(vi: np.ndarray, vj: np.ndarray, W: np.ndarray, alpha_vec: np.nd
     prod = np.matmul(W, vj - vi)
     prod[prod < 0] = 0
     smallmij = (prod / alpha_vec).min()
-    
+
     return smallmij
+
 
 def get_delta(mu: np.ndarray, W: np.ndarray, alpha_vec: np.ndarray) -> np.ndarray:
     """
@@ -212,8 +218,9 @@ def get_delta(mu: np.ndarray, W: np.ndarray, alpha_vec: np.ndarray) -> np.ndarra
             vj = mu[j, :]
             mij = get_smallmij(vi, vj, W, alpha_vec)
             delta_values[i] = max(delta_values[i], mij)
-    
+
     return delta_values.reshape(-1, 1)
+
 
 def get_uncovered_set(p_opt_miss, p_opt_hat, mu, eps, W):
     """
@@ -226,37 +233,39 @@ def get_uncovered_set(p_opt_miss, p_opt_hat, mu, eps, W):
     :return: ndarray of indices of points in p_opt_miss that are not epsilon covered
     """
     uncovered_set = []
-    
+
     for i in p_opt_miss:
         for j in p_opt_hat:
-            if is_covered(mu[i,:].reshape(-1,1), mu[j,:].reshape(-1,1), eps, W):
+            if is_covered(mu[i, :].reshape(-1, 1), mu[j, :].reshape(-1, 1), eps, W):
                 break
         else:
             uncovered_set.append(i)
-        
+
     return uncovered_set
+
 
 def get_uncovered_size(p_opt_miss, p_opt_hat, eps, W) -> int:
     count = 0
-    
+
     for i, ip in enumerate(p_opt_miss):
         for jp in p_opt_hat:
             if is_covered(ip.reshape(-1, 1), jp.reshape(-1, 1), eps, W):
                 break
         else:
             count += 1
-        
+
     return count
+
 
 def is_covered_SOCP(vi, vj, eps, W):
     """
-    Check if vi is eps covered by vj for cone matrix W 
+    Check if vi is eps covered by vj for cone matrix W.
     :param vi, vj: (D,1) ndarrays
     :param W: An (n_constraint,D) ndarray
     :param eps: float
     :return: Boolean.
-    """    
-    m = 2*W.shape[0]+1 # number of constraints
+    """
+    m = 2 * W.shape[0] + 1  # number of constraints
     D = W.shape[1]
     f = np.zeros(D)
     A = []
@@ -267,28 +276,25 @@ def is_covered_SOCP(vi, vj, eps, W):
     for i in range(W.shape[0]):
         A.append(np.zeros((1, D)))
         b.append(np.zeros(1))
-        c.append(W[i,:])
+        c.append(W[i, :])
         d.append(np.zeros(1))
-    
+
     A.append(np.eye(D))
-    b.append((vi-vj).ravel())
+    b.append((vi - vj).ravel())
     c.append(np.zeros(D))
-    d.append(eps*np.ones(1))
+    d.append(eps * np.ones(1))
 
     for i in range(W.shape[0]):
         A.append(np.zeros((1, D)))
         b.append(np.zeros(1))
-        c.append(W[i,:])
-        d.append(np.dot(W[i,:],(vi-vj)))
-        
+        c.append(W[i, :])
+        d.append(np.dot(W[i, :], (vi - vj)))
+
     # Define and solve the CVXPY problem.
     x = cp.Variable(D)
     # We use cp.SOC(t, x) to create the SOC constraint ||x||_2 <= t.
-    soc_constraints = [
-          cp.SOC(c[i].T @ x + d[i], A[i] @ x + b[i]) for i in range(m)
-    ]
-    prob = cp.Problem(cp.Minimize(f.T@x),
-                  soc_constraints)
+    soc_constraints = [cp.SOC(c[i].T @ x + d[i], A[i] @ x + b[i]) for i in range(m)]
+    prob = cp.Problem(cp.Minimize(f.T @ x), soc_constraints)
     prob.solve(solver="ECOS")
 
     """
@@ -300,12 +306,13 @@ def is_covered_SOCP(vi, vj, eps, W):
     for i in range(m):
         print("SOC constraint %i dual variable solution" % i)
         print(soc_constraints[i].dual_value)
-    """     
+    """
     return x.value is not None
+
 
 def is_covered(vi, vj, eps, W):
     """
-    Check if vi is eps covered by vj for cone matrix W 
+    Check if vi is eps covered by vj for cone matrix W.
     :param vi, vj: (D,1) ndarrays
     :param W: An (n_constraint,D) ndarray
     :param eps: float
@@ -322,13 +329,15 @@ def hyperrectangle_check_intersection(
 ):
     if np.any(lower1 >= upper2) or np.any(upper1 <= lower2):
         return False
-    
+
     return True
+
 
 def hyperrectangle_get_vertices(lower: np.ndarray, upper: np.ndarray):
     a = [[l1, l2] for l1, l2 in zip(lower, upper)]
     vertex_list = [element for element in itertools.product(*a)]
     return np.array(vertex_list)
+
 
 def hyperrectangle_get_region_matrix(lower: np.ndarray, upper: np.ndarray):
     dim = len(lower)
@@ -337,13 +346,19 @@ def hyperrectangle_get_region_matrix(lower: np.ndarray, upper: np.ndarray):
 
     return region_matrix, region_boundary
 
+
 def is_pt_in_extended_polytope(pt, polytope, invert_extension=False):
     dim = polytope.shape[1]
-    
+
     if invert_extension:
-        comp_func = lambda x, y: x >= y
+
+        def comp_func(x, y):
+            return x >= y
+
     else:
-        comp_func = lambda x, y: x <= y
+
+        def comp_func(x, y):
+            return x <= y
 
     # Vertex is trivially an element
     for vert in polytope:
@@ -359,10 +374,9 @@ def is_pt_in_extended_polytope(pt, polytope, invert_extension=False):
                     continue
 
                 if vert1[dim_i] <= pt[dim_i] and pt[dim_i] <= vert2[dim_i]:
-                    edges_of_interest = np.vstack((
-                        edges_of_interest,
-                        np.expand_dims(np.vstack((vert1, vert2)), axis=0)
-                    ))
+                    edges_of_interest = np.vstack(
+                        (edges_of_interest, np.expand_dims(np.vstack((vert1, vert2)), axis=0))
+                    )
 
         for edge in edges_of_interest:
             intersection = line_seg_pt_intersect_at_dim(edge[0], edge[1], pt, dim_i)
@@ -371,6 +385,7 @@ def is_pt_in_extended_polytope(pt, polytope, invert_extension=False):
                 return True
 
     return False
+
 
 def line_seg_pt_intersect_at_dim(P1, P2, target_pt, target_dim):
     t = (target_pt[target_dim] - P1[target_dim]) / (P2[target_dim] - P1[target_dim])
@@ -381,6 +396,7 @@ def line_seg_pt_intersect_at_dim(P1, P2, target_pt, target_dim):
 
     point_on_line = P1 + t * (P2 - P1)
     return point_on_line
+
 
 def binary_entropy(x):
     return -(scipy.special.xlogy(x, x) + scipy.special.xlog1py(1 - x, -x)) / np.log(2)

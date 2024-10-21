@@ -1,11 +1,9 @@
 import copy
-import logging
 
 import numpy as np
 from scipy.optimize import minimize
 
 from vectoptal.order import Order
-from vectoptal.datasets import get_dataset
 from vectoptal.algorithms.algorithm import PALAlgorithm
 from vectoptal.maximization_problem import ContinuousProblem
 from vectoptal.acquisition import MaxDiagonalAcquisition, optimize_acqf_discrete
@@ -14,14 +12,17 @@ from vectoptal.models import CorrelatedExactGPyTorchModel, get_gpytorch_model_w_
 from vectoptal.confidence_region import (
     confidence_region_is_dominated,
     confidence_region_check_dominates,
-    confidence_region_is_covered
+    confidence_region_is_covered,
 )
 
 
 class VOGP_AD(PALAlgorithm):
     def __init__(
-        self, epsilon, delta,
-        problem: ContinuousProblem, order: Order,
+        self,
+        epsilon,
+        delta,
+        problem: ContinuousProblem,
+        order: Order,
         noise_var,
         conf_contraction=32,
         batch_size=1,
@@ -30,10 +31,11 @@ class VOGP_AD(PALAlgorithm):
 
         self.order = order
         self.conf_contraction = conf_contraction
-        
+
         self.batch_size = batch_size
-        assert self.batch_size == 1, \
-            "Only batch size of 1 is supported with adaptive discretization."
+        assert (
+            self.batch_size == 1
+        ), "Only batch size of 1 is supported with adaptive discretization."
 
         assert hasattr(problem, "depth_max"), "Problem does not have a max depth defined."
         self.max_discretization_depth = problem.depth_max
@@ -41,8 +43,11 @@ class VOGP_AD(PALAlgorithm):
         self.m = problem.out_dim
 
         self.design_space = AdaptivelyDiscretizedDesignSpace(
-            problem.in_dim, problem.out_dim, delta=self.delta,
-            max_depth=self.max_discretization_depth, confidence_type='hyperrectangle'
+            problem.in_dim,
+            problem.out_dim,
+            delta=self.delta,
+            max_depth=self.max_discretization_depth,
+            confidence_type="hyperrectangle",
         )
         self.problem = problem
 
@@ -158,8 +163,7 @@ class VOGP_AD(PALAlgorithm):
             self.evaluate_refine()
 
         print(
-            f"There are {len(self.S)} designs left in set S and"
-            f" {len(self.P)} designs in set P."
+            f"There are {len(self.S)} designs left in set S and" f" {len(self.P)} designs in set P."
         )
 
         self.round += 1
@@ -172,29 +176,31 @@ class VOGP_AD(PALAlgorithm):
         Kn = self.model.evaluate_kernel()
         rkhs_bound = 0.1
         beta_sqr = rkhs_bound + np.sqrt(
-            self.problem.noise_var * np.log(
-                (1 / self.problem.noise_var) * np.linalg.det(Kn + np.eye(len(Kn)))
-            ) - 2 * np.log(self.delta)
+            self.problem.noise_var
+            * np.log((1 / self.problem.noise_var) * np.linalg.det(Kn + np.eye(len(Kn))))
+            - 2 * np.log(self.delta)
         )
 
         beta_sqr = beta_sqr**2  # Instead of dividing with sqrt of conf_contraction.
-        return np.sqrt(beta_sqr / self.conf_contraction) * np.ones(self.m, )
+        return np.sqrt(beta_sqr / self.conf_contraction) * np.ones(
+            self.m,
+        )
 
     def compute_u_star(self):
         """
-        Given a matrix W that corresponds to a polyhedral ordering cone, this function 
+        Given a matrix W that corresponds to a polyhedral ordering cone, this function
         computes the ordering difficulty of the cone and u^* direction of the cone.
-        
+
         The function solves an optimization problem where the objective is to minimize the
         Euclidean norm of `z`, subject to the constraint that W @ z >= 1 for each row
-        of W. 
-        
+        of W.
+
         Parameters
         ----------
         W : numpy.ndarray
             A numpy array representing the matrix that defines the half-spaces of the
             polyhedral cone. Each row of W corresponds to a linear constraint on `z`.
-        
+
         Returns
         -------
         u_star of cone : numpy.ndarray
@@ -207,23 +213,23 @@ class VOGP_AD(PALAlgorithm):
 
         d(1) of cone : float
             The Euclidean norm of the optimized `z`.
-            
+
         Are constraints obeyed : bool
-            A boolean flag indicating whether all cone constraints are satisfied. 
+            A boolean flag indicating whether all cone constraints are satisfied.
             This corresponds to the unit sphere to be inside of the cone.
-            
+
         If the constraints are not obeyed, it also prints:
-        
+
         Distance to cone hyperplanes : numpy.ndarray
             The distances from the optimized `z` to the hyperplanes defined by W.
-        
+
         Notes
         -----
         The optimization problem is solved using the Sequential Least SQuares Programming (SLSQP)
         method provided by scipy.optimize.minimize. The initial guess is a vector of ones, and
         the optimization runs with a very high maximum iteration limit and tight function tolerance
         to ensure convergence.
-        
+
         Examples
         --------
         >>> W = W = np.sqrt(21)*np.array([[1, -2, 4], [4, 1, -2], [-2, 4, 1]])
@@ -235,6 +241,7 @@ class VOGP_AD(PALAlgorithm):
 
         def objective(z):
             return np.linalg.norm(z)
+
         def constraint_func(z):
             constraints = []
             constraint = cone_matrix @ (z) - np.ones((n,))
@@ -242,24 +249,27 @@ class VOGP_AD(PALAlgorithm):
             return np.array(constraints)
 
         z_init = np.ones(self.m)  # Initial guess
-        cons = [{'type': 'ineq', 'fun': lambda z: constraint_func(z)}] # Constraints 
+        cons = [{"type": "ineq", "fun": lambda z: constraint_func(z)}]  # Constraints
         # Solving the problem
         res = minimize(
-            objective, z_init, method='SLSQP', constraints=cons,
-            options={'maxiter': 1000000, 'ftol': 1e-30}
+            objective,
+            z_init,
+            method="SLSQP",
+            constraints=cons,
+            options={"maxiter": 1000000, "ftol": 1e-30},
         )
         norm = np.linalg.norm(res.x)
         construe = np.all(constraint_func(res.x) + 1e-14)
-        
+
         # print(f"Optimized d(1) was found to be {norm}")
         # print(f"Optimized u_star was found to be {res.x/norm}")
         # print(f"Are constraints obeyed: {construe}")
-        
-        if not construe: 
+
+        if not construe:
             # print(f"Distance to cone hyperplanes: {constraint_func(res.x)}")
             pass
-        
-        return res.x/norm, norm
+
+        return res.x / norm, norm
 
     def compute_pessimistic_set(self) -> set:
         """
@@ -274,7 +284,7 @@ class VOGP_AD(PALAlgorithm):
             for pt_prime in W:
                 if pt_prime == pt:
                     continue
-                
+
                 pt_p_conf = self.design_space.confidence_regions[pt_prime]
 
                 # Check if there is another point j that dominates i, if so,

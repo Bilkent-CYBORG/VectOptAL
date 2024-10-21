@@ -1,26 +1,24 @@
-import copy
 import logging
 from typing import Optional
 
 import numpy as np
 
 from vectoptal.order import Order
-from vectoptal.datasets import get_dataset
+from vectoptal.datasets import get_dataset_instance
 from vectoptal.algorithms.algorithm import Algorithm
 from vectoptal.maximization_problem import ProblemFromDataset, DecoupledEvaluationProblem
 from vectoptal.acquisition import (
-    ThompsonEntropyDecoupledAcquisition, optimize_decoupled_acqf_discrete
+    ThompsonEntropyDecoupledAcquisition,
+    optimize_decoupled_acqf_discrete,
 )
-from vectoptal.models import (
-    GPyTorchModelListExactModel,
-    get_gpytorch_modellist_w_known_hyperparams
-)
+from vectoptal.models import GPyTorchModelListExactModel, get_gpytorch_modellist_w_known_hyperparams
 
 
 class DecoupledGP(Algorithm):
     def __init__(
         self,
-        dataset_name, order: Order,
+        dataset_name,
+        order: Order,
         noise_var,
         costs: Optional[list],
         cost_budget: Optional[float],
@@ -33,7 +31,7 @@ class DecoupledGP(Algorithm):
         self.costs = np.array(costs)
         self.cost_budget = cost_budget
 
-        dataset = get_dataset(dataset_name)
+        dataset = get_dataset_instance(dataset_name)
 
         self.m = dataset.out_dim
 
@@ -41,8 +39,7 @@ class DecoupledGP(Algorithm):
         self.problem = DecoupledEvaluationProblem(ProblemFromDataset(dataset, noise_var))
 
         self.model: GPyTorchModelListExactModel = get_gpytorch_modellist_w_known_hyperparams(
-            self.problem, noise_var, initial_sample_cnt=1,
-            X=dataset.in_data, Y=dataset.out_data
+            self.problem, noise_var, initial_sample_cnt=1, X=dataset.in_data, Y=dataset.out_data
         )
 
         self.P = set()
@@ -87,13 +84,10 @@ class DecoupledGP(Algorithm):
         print(f"Round {self.round}:Pareto update")
         self.pareto_updating()
 
-        print(
-            f"There are {len(self.P)} designs in set P."
-        )
+        print(f"There are {len(self.P)} designs in set P.")
 
         print(
-            f"Round {self.round}:"
-            f"Sample count {self.sample_count}, Cost {self.total_cost:.2f}"
+            f"Round {self.round}:" f"Sample count {self.sample_count}, Cost {self.total_cost:.2f}"
         )
 
         return self.total_cost >= self.cost_budget
