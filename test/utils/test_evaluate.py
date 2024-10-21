@@ -60,4 +60,4 @@ class TestHypervolumeDiscrepancy(TestCase):
 
         self.assertEqual(mock_problem.evaluate.call_count, 2)
         self.assertEqual(mock_model.predict.call_count, 2)
-        np.testing.assert_allclose(result, 0.8109302)
+        self.assertAlmostEqual(result, 0.8109302)

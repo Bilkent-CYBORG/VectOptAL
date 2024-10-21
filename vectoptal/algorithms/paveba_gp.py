@@ -204,6 +204,9 @@ class PaVeBaGP(PALAlgorithm):
 
         Returns True if the algorithm is over.
         """
+        if len(self.S) == 0:
+            return True
+
         self.round += 1
         print(f"Round {self.round}")
 

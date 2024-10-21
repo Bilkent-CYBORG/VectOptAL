@@ -84,7 +84,7 @@ class EmpiricalMeanVarModel(Model):
         :return: A tuple containing two numpy arrays: the predicted means and variances.
         :rtype: tuple[np.ndarray, np.ndarray]
         """
-        assert test_X.shape[1] == self.output_dim + 1, \
+        assert test_X.shape[1] == self.input_dim + 1, \
             "Test data needs to have an additional column for indices."
 
         indices = test_X[..., -1].astype(int)

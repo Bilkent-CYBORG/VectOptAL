@@ -45,6 +45,9 @@ class NaiveElimination(PALAlgorithm):
         self.sample_count = 0
 
     def run_one_step(self) -> bool:
+        if self.round == self.L:
+            return True
+
         self.round += 1
 
         new_samples = self.problem.evaluate(self.dataset.in_data)

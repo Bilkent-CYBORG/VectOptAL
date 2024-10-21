@@ -1,18 +1,35 @@
 import itertools
 
+from typing import Union, Iterable
+
 import torch
 import numpy as np
 import cvxpy as cp
 import scipy.special
 from scipy.stats.qmc import Sobol
+from torch.quasirandom import SobolEngine
 from sklearn.metrics.pairwise import euclidean_distances
 
 
-def set_seed(seed):
+def set_seed(seed: int) -> None:
+    """
+    This function sets the seed for both NumPy and PyTorch random number generators.
+    :param seed: The seed value to set for the random number generators.
+    :type seed: int
+    """
     np.random.seed(seed)
     torch.random.manual_seed(seed)
 
-def get_2d_w(cone_angle):
+def get_2d_w(cone_angle: float) -> np.ndarray:
+    """
+    This function generates a 2D cone matrix W with boundaries at an angle cone_angle and
+    symmetric around `y=x`.
+
+    :param cone_angle: The angle of the cone in degrees.
+    :type cone_angle: float
+    :return: A 2x2 numpy array where each row is a normalized normal vector.
+    :rtype: numpy.ndarray
+    """
     angle_radian = (cone_angle/180) * np.pi
     if cone_angle <= 90:
         W_1 = np.array([-np.tan(np.pi/4-angle_radian/2), 1])
@@ -26,16 +43,20 @@ def get_2d_w(cone_angle):
 
     return W
 
-def get_alpha(rind, W):
+def get_alpha(rind: int, W: np.ndarray) -> np.ndarray:
     """
-    Compute alpha_rind for row rind of W 
-    :param rind: row index
-    :param W: (n_constraint,D) ndarray
-    :return: alpha_rind.
+    Compute alpha_rind for row rind of W.
+
+    :param rind: The row index of W for which to compute alpha.
+    :type rind: int
+    :param W: The cone matrix.
+    :type W: numpy.ndarray
+    :return: The computed alpha value for the specified row of W.
+    :rtype: numpy.ndarray
     """
-    m = W.shape[0]+1 #number of constraints
+    m = W.shape[0] + 1  # number of constraints
     D = W.shape[1]
-    f = -W[rind,:]
+    f = -W[rind, :]
     A = []
     b = []
     c = []
@@ -61,22 +82,42 @@ def get_alpha(rind, W):
                   soc_constraints)
     prob.solve(solver="ECOS")
 
-    return -prob.value   
+    return -prob.value
 
-def get_alpha_vec(W):
+def get_alpha_vec(W: np.ndarray) -> np.ndarray:
     """
-    Compute alpha_vec for W 
-    :param W: an (n_constraint,D) ndarray
-    :return: alpha_vec, an (n_constraint,1) ndarray
+    The alpha vector is computed using the `get_alpha` function for each row index.
+
+    :param W: The cone matrix.
+    :type W: numpy.ndarray
+    :return: An ndarray of shape (n_constraint, 1) representing the computed alpha vector.
+    :rtype: numpy.ndarray
     """    
-    alpha_vec = np.zeros((W.shape[0],1))
+    alpha_vec = np.zeros((W.shape[0], 1))
     for i in range(W.shape[0]):
         alpha_vec[i] = get_alpha(i, W)
     return alpha_vec
 
 def get_closest_indices_from_points(
-    pts_to_find, pts_to_check, return_distances=False, squared=False
-):
+    pts_to_find: Iterable, pts_to_check: Iterable,
+    return_distances: bool=False, squared: bool=False
+) -> Union[np.ndarray, tuple[np.ndarray, np.ndarray]]:
+    """
+    This method calculates the closest indices in `pts_to_check` for each point in `pts_to_find`
+    using Euclidean distances. Optionally, it can return the distances as well.
+
+    :param pts_to_find: An array of points for which the closest indices need to be found.
+    :type pts_to_find: np.ndarray
+    :param pts_to_check: An array of points to check against.
+    :type pts_to_check: np.ndarray
+    :param return_distances: If True, the method also returns the distances to the closest points.
+    :type return_distances: bool, optional
+    :param squared: If True, the squared Euclidean distances are used and returned.
+    :type squared: bool, optional
+    :return: An array of the closest indices, or a tuple containing the closest indices and the
+    distances.
+    :rtype: Union[np.ndarray, tuple[np.ndarray, np.ndarray]]
+    """
     if len(pts_to_find) == 0 or len(pts_to_check) == 0:
         return []
 
@@ -86,55 +127,93 @@ def get_closest_indices_from_points(
         return x_inds.astype(int), np.min(distances, axis=1)
     return x_inds.astype(int)
 
-def get_noisy_evaluations_chol(means, cholesky_cov):
-    """Used for vectorized multivariate normal sampling."""
+def get_noisy_evaluations_chol(means: np.ndarray, cholesky_cov: np.ndarray) -> np.ndarray:
+    """
+    This method generates noisy samples from a multivariate normal distribution using the provided
+    means and Cholesky decomposition of the covariance matrix. It is used for vectorized
+    multivariate normal sampling.
+
+    :param means: An array of mean values for the multivariate normal distribution.
+    :type means: np.ndarray
+    :param cholesky_cov: The Cholesky decomposition of the covariance matrix, this is a 2D array.
+    :type cholesky_cov: np.ndarray
+    :return: An array of noisy samples.
+    :rtype: np.ndarray
+    :raises AssertionError: If `cholesky_cov` is not a 2D array or if the dimensions of `means`
+    and `cholesky_cov` do not match.
+    """
+    assert cholesky_cov.ndim == 2, means.shape[1] == cholesky_cov.shape[1]
     n, d = means.shape[0], len(cholesky_cov)
     X = np.random.normal(size=(n, d))
-    complicated_X = X.dot(cholesky_cov)
+    complicated_X = np.dot(X, cholesky_cov)
 
-    noisy_samples = complicated_X + means
+    noisy_samples = means + complicated_X
     
     return noisy_samples
 
-def generate_sobol_samples(dim, n):
-    sampler = Sobol(dim, scramble=False)
-    samples = sampler.random(n)
+def generate_sobol_samples(dim: int, n: int) -> np.ndarray:
+    """
+    This method generates `n` samples from a Sobol sequence of dimension `dim`. `n` should be a
+    power of 2 in order to generate a balanced sequence.
 
+    :param dim: The dimension of the Sobol sequence.
+    :type dim: int
+    :param n: The number of samples to generate.
+    :type n: int
+    :return: An array of Sobol sequence samples.
+    :rtype: np.ndarray
+    """
+    sampler = Sobol(dim, scramble=True)
+    samples = sampler.random(n)
+    
     return samples
 
-def get_smallmij(vi, vj, W, alpha_vec):
+def get_smallmij(vi: np.ndarray, vj: np.ndarray, W: np.ndarray, alpha_vec: np.ndarray) -> float:
     """
-    Compute m(i,j) for designs i and j 
-    :param vi, vj: (D,1) ndarrays
-    :param W: (n_constraint,D) ndarray
-    :param alpha_vec: (n_constraint,1) ndarray of alphas of W
-    :return: m(i,j).
+    This method calculates the m(i,j) value, which is used to measure the difference between two
+    designs `vi` and `vj` based on the constraint matrix `W` and the alpha vector `alpha_vec`.
+
+    :param vi: A D-vector representing the design vector i.
+    :type vi: np.ndarray
+    :param vj: A D-vector representing the design vector j.
+    :type vj: np.ndarray
+    :param W: A (n_constraint, D) ndarray representing the constraint matrix.
+    :type W: np.ndarray
+    :param alpha_vec: A (n_constraint, 1) ndarray representing the alphas of W.
+    :type alpha_vec: np.ndarray
+    :return: The computed m(i,j) value.
+    :rtype: float
     """
     prod = np.matmul(W, vj - vi)
-    prod[prod<0] = 0
-    smallmij = (prod/alpha_vec).min()
+    prod[prod < 0] = 0
+    smallmij = (prod / alpha_vec).min()
     
     return smallmij
 
-def get_delta(mu, W, alpha_vec):
+def get_delta(mu: np.ndarray, W: np.ndarray, alpha_vec: np.ndarray) -> np.ndarray:
     """
-    Computes Delta^*_i for each i in [n.points]
-    :param mu: An (n_points, D) array
-    :param W: (n_constraint,D) ndarray
-    :param alpha_vec: (n_constraint,1) ndarray of alphas of W
-    :return: An (n_points, D) array of Delta^*_i for each i in [n.points]
+    This method computes Delta^*_i gap value for each point in the input array `mu`. Delta^*_i is
+    calculated based on the provided constraint matrix `W` and the alpha vector `alpha_vec`.
+
+    :param mu: An array of shape (n_points, D) representing the points.
+    :type mu: np.ndarray
+    :param W: An array of shape (n_constraint, D) representing the constraint matrix.
+    :type W: np.ndarray
+    :param alpha_vec: An array of shape (n_constraint, 1) representing the alphas of W.
+    :type alpha_vec: np.ndarray
+    :return: An array of shape (n_points, 1) containing Delta^*_i for each point.
+    :rtype: np.ndarray
     """
-    n = mu.shape[0]
-    Delta = np.zeros(n)
-    for i in range(n):
-        for j in range(n):
-            vi = mu[i,:].reshape(-1,1)
-            vj = mu[j,:].reshape(-1,1)
+    num_points = mu.shape[0]
+    delta_values = np.zeros(num_points)
+    for i in range(num_points):
+        for j in range(num_points):
+            vi = mu[i, :]
+            vj = mu[j, :]
             mij = get_smallmij(vi, vj, W, alpha_vec)
-            if mij>Delta[i]:
-                Delta[i] = mij
+            delta_values[i] = max(delta_values[i], mij)
     
-    return Delta.reshape(-1,1)
+    return delta_values.reshape(-1, 1)
 
 def get_uncovered_set(p_opt_miss, p_opt_hat, mu, eps, W):
     """
