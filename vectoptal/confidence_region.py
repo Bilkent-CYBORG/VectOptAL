@@ -15,6 +15,8 @@ from vectoptal.utils import (
 
 
 class ConfidenceRegion(ABC):
+    """Abstract class for confidence regions"""
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -24,6 +26,16 @@ class ConfidenceRegion(ABC):
 
 
 class RectangularConfidenceRegion(ConfidenceRegion):
+    """
+    Implements the hyperrectangular confidence region object. Note that the edges should be parall`el to the axes.
+
+    :param int dim: Dimension of the space of the hyperrectangle.
+    :param lower: Bottom-left corner of the hyperrectangle.
+    :param upper: Upper-right corner of the hyperrectangle.
+    :param intersect_iteratively: If True, the hyperrectangle will be intersected with the new one iteratively.
+
+    """
+
     def __init__(
         self,
         dim: int,
@@ -47,6 +59,13 @@ class RectangularConfidenceRegion(ConfidenceRegion):
         return np.linalg.norm(self.upper - self.lower)
 
     def update(self, mean: np.ndarray, covariance: np.ndarray, scale: np.ndarray = np.array(1.0)):
+        """
+        Update the hyperrectangle using a new mean and covariance matrix.
+
+        :param mean: Mean for the new hyperrectangle.
+        :param covariance: Covariance matrix for the new hyperrectangle.
+        :param scale: Scaling factor for the covariance matrix.
+        """
         assert covariance.shape[-1] == covariance.shape[-2], "Covariance matrix must be square."
         std = np.sqrt(np.diag(covariance.squeeze()))
 
@@ -61,9 +80,16 @@ class RectangularConfidenceRegion(ConfidenceRegion):
 
     @property
     def center(self):
+        """Returns the center of the hyperrectangle"""
         return (self.lower + self.upper) / 2
 
     def intersect(self, lower: np.ndarray, upper: np.ndarray):
+        """
+        Intersect the hyperrectangle with a new hyperrectangle.
+
+        :param lower: Bottom-left corner of the new hyperrectangle.
+        :param upper: Upper-right corner of the new hyperrectangle.
+        """
         # if the two rectangles overlap
         if hyperrectangle_check_intersection(self.lower, self.upper, lower, upper):
             self.lower = np.maximum(self.lower, lower)
@@ -75,6 +101,14 @@ class RectangularConfidenceRegion(ConfidenceRegion):
 
     @classmethod
     def is_dominated(cls, order: Order, obj1, obj2, slackness: np.ndarray):
+        """
+        Checks if the second hyperrectangle dominates the first one at each possible pair of points.
+
+        :param order: Ordering object.
+        :param obj1: First hyperrectangle.
+        :param obj2: Second hyperrectangle.
+        :param slackness: Slackness parameter. Gives a bonus the second hyperrectangle.
+        """
         verts1 = hyperrectangle_get_vertices(obj1.lower, obj1.upper)
         verts2 = hyperrectangle_get_vertices(obj2.lower, obj2.upper)
 
@@ -86,6 +120,15 @@ class RectangularConfidenceRegion(ConfidenceRegion):
 
     @classmethod
     def check_dominates(cls, order: Order, obj1, obj2, slackness: np.ndarray = np.array(0.0)):
+        """
+        Checks if all corners of the first hyperrectangle has a corresponding point in the second
+         hyperrectangle dominated by it.
+
+        :param order: Ordering object.
+        :param obj1: First hyperrectangle.
+        :param obj2: Second hyperrectangle.
+        :param slackness: Slackness parameter. Gives a bonus the second hyperrectangle.
+        """
         cone_matrix = order.ordering_cone.W
 
         verts1 = hyperrectangle_get_vertices(obj1.lower, obj1.upper) @ cone_matrix.transpose()
@@ -100,6 +143,15 @@ class RectangularConfidenceRegion(ConfidenceRegion):
 
     @classmethod
     def is_covered(cls, order, obj1, obj2, slackness):
+        """
+        Checks if there is at least one point in the second hyperrectangle
+        that dominates at least one point from the first hyperrectangle.
+
+        :param order: Ordering object.
+        :param obj1: First hyperrectangle.
+        :param obj2: Second hyperrectangle.
+        :param slackness: Slackness parameter. Gives a bonus the second hyperrectangle.
+        """
         cone_matrix = order.ordering_cone.W
         n = cone_matrix.shape[1]
 
@@ -128,6 +180,14 @@ class RectangularConfidenceRegion(ConfidenceRegion):
 
 
 class EllipsoidalConfidenceRegion(ConfidenceRegion):
+    """
+    Implements the ellipsoidal confidence region object.
+    
+    :param int dim: Dimension of the space of the ellipsoid.
+    :param center: Center of the ellipsoid.
+    :param sigma: Covariance matrix of the ellipsoid.
+    :param alpha: Scaling factor for the covariance matrix.
+    """
     def __init__(
         self,
         dim,
@@ -146,6 +206,8 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
             self.sigma = np.eye(dim)
             self.alpha = 1.0
 
+        #WARNING: ALPHA IS FLOAT ABOVE, BUT NDARRAY BELOW
+
     def update(self, mean: np.ndarray, covariance: np.ndarray, scale: np.ndarray = np.array(1.0)):
         assert covariance.shape[-1] == covariance.shape[-2], "Covariance matrix must be square."
 
@@ -155,6 +217,14 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
 
     @classmethod
     def is_dominated(cls, order: Order, obj1, obj2, slackness: np.ndarray):
+        """
+        Checks if the second ellipsoid dominates the first one at each possible pair of points.
+        
+        :param order: Ordering object.
+        :param obj1: First ellipsoid.
+        :param obj2: Second ellipsoid.
+        :param slackness: Slackness parameter. Gives a bonus the second ellipsoid.
+        """
         output_dim = len(obj1.center)
         cone_matrix = order.ordering_cone.W
 
@@ -193,6 +263,15 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
 
     @classmethod
     def is_covered(cls, order, obj1, obj2, slackness):
+        """
+        Checks if there is at least one point in the second ellipsoid
+        that dominates at least one point from the first ellipsoid.
+        
+        :param order: Ordering object.
+        :param obj1: First ellipsoid.
+        :param obj2: Second ellipsoid.
+        :param slackness: Slackness parameter. Gives a bonus the second ellipsoid.
+        """
         cone_matrix = order.ordering_cone.W
         output_dim = cone_matrix.shape[1]
         mux = cp.Variable(output_dim)
