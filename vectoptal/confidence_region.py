@@ -27,12 +27,14 @@ class ConfidenceRegion(ABC):
 
 class RectangularConfidenceRegion(ConfidenceRegion):
     """
-    Implements the hyperrectangular confidence region object. Note that the edges should be parall`el to the axes.
+    Implements the hyperrectangular confidence region object.
+    Note that the edges should be parall`el to the axes.
 
     :param int dim: Dimension of the space of the hyperrectangle.
     :param lower: Bottom-left corner of the hyperrectangle.
     :param upper: Upper-right corner of the hyperrectangle.
-    :param intersect_iteratively: If True, the hyperrectangle will be intersected with the new one iteratively.
+    :param intersect_iteratively: If True, the hyperrectangle will be
+        intersected with the new one iteratively.
 
     """
 
@@ -182,12 +184,13 @@ class RectangularConfidenceRegion(ConfidenceRegion):
 class EllipsoidalConfidenceRegion(ConfidenceRegion):
     """
     Implements the ellipsoidal confidence region object.
-    
+
     :param int dim: Dimension of the space of the ellipsoid.
     :param center: Center of the ellipsoid.
     :param sigma: Covariance matrix of the ellipsoid.
     :param alpha: Scaling factor for the covariance matrix.
     """
+
     def __init__(
         self,
         dim,
@@ -206,7 +209,7 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
             self.sigma = np.eye(dim)
             self.alpha = 1.0
 
-        #WARNING: ALPHA IS FLOAT ABOVE, BUT NDARRAY BELOW
+        # WARNING: ALPHA IS FLOAT ABOVE, BUT NDARRAY BELOW
 
     def update(self, mean: np.ndarray, covariance: np.ndarray, scale: np.ndarray = np.array(1.0)):
         assert covariance.shape[-1] == covariance.shape[-2], "Covariance matrix must be square."
@@ -219,7 +222,7 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
     def is_dominated(cls, order: Order, obj1, obj2, slackness: np.ndarray):
         """
         Checks if the second ellipsoid dominates the first one at each possible pair of points.
-        
+
         :param order: Ordering object.
         :param obj1: First ellipsoid.
         :param obj2: Second ellipsoid.
@@ -266,7 +269,7 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
         """
         Checks if there is at least one point in the second ellipsoid
         that dominates at least one point from the first ellipsoid.
-        
+
         :param order: Ordering object.
         :param obj1: First ellipsoid.
         :param obj2: Second ellipsoid.

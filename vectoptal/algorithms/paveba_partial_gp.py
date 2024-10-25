@@ -176,12 +176,9 @@ class PaVeBaPartialGP(PALAlgorithm):
         return len(self.S) == 0 or self.total_cost >= self.cost_budget
 
     def compute_alpha(self):
-<<<<<<< Updated upstream
-=======
         """
         Compute the radii of the confidence regions to be used in modeling.
         """
->>>>>>> Stashed changes
         alpha = 2 * np.log(
             (np.pi**2 * self.round**2 * self.design_space.cardinality) / (3 * self.delta)
         )

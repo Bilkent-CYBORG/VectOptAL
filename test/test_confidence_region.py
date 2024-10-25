@@ -1,13 +1,9 @@
-from unittest import mock, TestCase
+from unittest import TestCase
 import copy
 
 import numpy as np
 
 from vectoptal.confidence_region import RectangularConfidenceRegion, EllipsoidalConfidenceRegion
-from vectoptal.algorithms import PaVeBa
-from vectoptal.order import ComponentwiseOrder
-from vectoptal.datasets import Dataset, get_dataset_instance
-from vectoptal.utils.evaluate import calculate_epsilonF1_score
 from vectoptal.order import ComponentwiseOrder
 
 
@@ -76,34 +72,96 @@ class TestRectangularConfidenceRegion(TestCase):
         """Test the intersect method."""
         self.confidence_region.intersect(np.array([1.1, 1.1]), np.array([1.3, 1.3]))
         self.assertTrue((self.confidence_region.lower == np.array([1.1, 1.1])).all())
-        #WARNING: Does not return the center correctly now. I don't know why.
+        # WARNING: Does not return the center correctly now. I don't know why.
 
     def test_is_dominated(self):
         """Test the is_dominated method."""
-        self.assertTrue(self.confidence_region.is_dominated(self.order, self.confidence_region, self.confidence_region2, self.slackness))
-        self.assertFalse(self.confidence_region.is_dominated(self.order, self.confidence_region, self.confidence_region3, self.slackness))
-        self.assertFalse(self.confidence_region.is_dominated(self.order, self.confidence_region, self.confidence_region4, self.slackness))
-        self.assertFalse(self.confidence_region.is_dominated(self.order, self.confidence_region, self.confidence_region5, self.slackness))
-        self.assertFalse(self.confidence_region.is_dominated(self.order, self.confidence_region, self.confidence_region6, self.slackness))
+        self.assertTrue(
+            self.confidence_region.is_dominated(
+                self.order, self.confidence_region, self.confidence_region2, self.slackness
+            )
+        )
+        self.assertFalse(
+            self.confidence_region.is_dominated(
+                self.order, self.confidence_region, self.confidence_region3, self.slackness
+            )
+        )
+        self.assertFalse(
+            self.confidence_region.is_dominated(
+                self.order, self.confidence_region, self.confidence_region4, self.slackness
+            )
+        )
+        self.assertFalse(
+            self.confidence_region.is_dominated(
+                self.order, self.confidence_region, self.confidence_region5, self.slackness
+            )
+        )
+        self.assertFalse(
+            self.confidence_region.is_dominated(
+                self.order, self.confidence_region, self.confidence_region6, self.slackness
+            )
+        )
 
     def test_check_dominates(self):
         """Test the check_dominates method."""
-        self.assertTrue(self.confidence_region.check_dominates(self.order, self.confidence_region2, self.confidence_region, self.slackness))
-        self.assertTrue(self.confidence_region.check_dominates(self.order, self.confidence_region3, self.confidence_region, self.slackness))
-        self.assertFalse(self.confidence_region.check_dominates(self.order, self.confidence_region4, self.confidence_region, self.slackness))
-        self.assertFalse(self.confidence_region.check_dominates(self.order, self.confidence_region5, self.confidence_region, self.slackness))
-        self.assertFalse(self.confidence_region.check_dominates(self.order, self.confidence_region6, self.confidence_region, self.slackness))
+        self.assertTrue(
+            self.confidence_region.check_dominates(
+                self.order, self.confidence_region2, self.confidence_region, self.slackness
+            )
+        )
+        self.assertTrue(
+            self.confidence_region.check_dominates(
+                self.order, self.confidence_region3, self.confidence_region, self.slackness
+            )
+        )
+        self.assertFalse(
+            self.confidence_region.check_dominates(
+                self.order, self.confidence_region4, self.confidence_region, self.slackness
+            )
+        )
+        self.assertFalse(
+            self.confidence_region.check_dominates(
+                self.order, self.confidence_region5, self.confidence_region, self.slackness
+            )
+        )
+        self.assertFalse(
+            self.confidence_region.check_dominates(
+                self.order, self.confidence_region6, self.confidence_region, self.slackness
+            )
+        )
 
     def test_is_covered(self):
         """Test the is_covered method."""
-        self.assertTrue(self.confidence_region.is_covered(self.order, self.confidence_region, self.confidence_region2, self.slackness))
-        self.assertTrue(self.confidence_region.is_covered(self.order, self.confidence_region, self.confidence_region3, self.slackness))
-        self.assertTrue(self.confidence_region.is_covered(self.order, self.confidence_region, self.confidence_region4, self.slackness))
-        self.assertFalse(self.confidence_region.is_covered(self.order, self.confidence_region, self.confidence_region5, self.slackness))
-        self.assertTrue(self.confidence_region.is_covered(self.order, self.confidence_region, self.confidence_region6, self.slackness))
+        self.assertTrue(
+            self.confidence_region.is_covered(
+                self.order, self.confidence_region, self.confidence_region2, self.slackness
+            )
+        )
+        self.assertTrue(
+            self.confidence_region.is_covered(
+                self.order, self.confidence_region, self.confidence_region3, self.slackness
+            )
+        )
+        self.assertTrue(
+            self.confidence_region.is_covered(
+                self.order, self.confidence_region, self.confidence_region4, self.slackness
+            )
+        )
+        self.assertFalse(
+            self.confidence_region.is_covered(
+                self.order, self.confidence_region, self.confidence_region5, self.slackness
+            )
+        )
+        self.assertTrue(
+            self.confidence_region.is_covered(
+                self.order, self.confidence_region, self.confidence_region6, self.slackness
+            )
+        )
+
 
 class TestEllipsoidalConfidenceRegion(TestCase):
     """Test the EllipsoidalConfidenceRegion class."""
+
     def setUp(self):
         self.dim = 2
         self.center = np.array([1, 1])
@@ -156,24 +214,64 @@ class TestEllipsoidalConfidenceRegion(TestCase):
     def test_update(self):
         """Test the update method."""
         with self.assertRaises(AssertionError):
-            self.confidence_region.update(np.array([1, 1]), np.ones([2,3]))
-        
+            self.confidence_region.update(np.array([1, 1]), np.ones([2, 3]))
+
         self.confidence_region_new = copy.deepcopy(self.confidence_region)
         self.confidence_region.update(self.center, self.sigma)
         self.assertTrue((self.confidence_region.center == self.confidence_region_new.center).all())
 
     def test_is_dominated(self):
         """Test the is_dominated method."""
-        self.assertTrue(self.confidence_region.is_dominated(self.order, self.confidence_region, self.confidence_region2, self.slackness))
-        self.assertFalse(self.confidence_region.is_dominated(self.order, self.confidence_region, self.confidence_region3, self.slackness))
-        self.assertFalse(self.confidence_region.is_dominated(self.order, self.confidence_region, self.confidence_region4, self.slackness))
-        self.assertFalse(self.confidence_region.is_dominated(self.order, self.confidence_region, self.confidence_region5, self.slackness))
-        self.assertFalse(self.confidence_region.is_dominated(self.order, self.confidence_region, self.confidence_region6, self.slackness))
+        self.assertTrue(
+            self.confidence_region.is_dominated(
+                self.order, self.confidence_region, self.confidence_region2, self.slackness
+            )
+        )
+        self.assertFalse(
+            self.confidence_region.is_dominated(
+                self.order, self.confidence_region, self.confidence_region3, self.slackness
+            )
+        )
+        self.assertFalse(
+            self.confidence_region.is_dominated(
+                self.order, self.confidence_region, self.confidence_region4, self.slackness
+            )
+        )
+        self.assertFalse(
+            self.confidence_region.is_dominated(
+                self.order, self.confidence_region, self.confidence_region5, self.slackness
+            )
+        )
+        self.assertFalse(
+            self.confidence_region.is_dominated(
+                self.order, self.confidence_region, self.confidence_region6, self.slackness
+            )
+        )
 
     def test_is_covered(self):
         """Test the is_covered method."""
-        self.assertTrue(self.confidence_region.is_covered(self.order, self.confidence_region, self.confidence_region2, self.slackness))
-        self.assertTrue(self.confidence_region.is_covered(self.order, self.confidence_region, self.confidence_region3, self.slackness))
-        self.assertTrue(self.confidence_region.is_covered(self.order, self.confidence_region, self.confidence_region4, self.slackness))
-        self.assertFalse(self.confidence_region.is_covered(self.order, self.confidence_region, self.confidence_region5, self.slackness))
-        self.assertTrue(self.confidence_region.is_covered(self.order, self.confidence_region, self.confidence_region6, self.slackness))
+        self.assertTrue(
+            self.confidence_region.is_covered(
+                self.order, self.confidence_region, self.confidence_region2, self.slackness
+            )
+        )
+        self.assertTrue(
+            self.confidence_region.is_covered(
+                self.order, self.confidence_region, self.confidence_region3, self.slackness
+            )
+        )
+        self.assertTrue(
+            self.confidence_region.is_covered(
+                self.order, self.confidence_region, self.confidence_region4, self.slackness
+            )
+        )
+        self.assertFalse(
+            self.confidence_region.is_covered(
+                self.order, self.confidence_region, self.confidence_region5, self.slackness
+            )
+        )
+        self.assertTrue(
+            self.confidence_region.is_covered(
+                self.order, self.confidence_region, self.confidence_region6, self.slackness
+            )
+        )
