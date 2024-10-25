@@ -1,10 +1,10 @@
-from unittest import mock, TestCase
+from unittest import TestCase
 
 import numpy as np
 
 from vectoptal.algorithms import PaVeBaPartialGP
 from vectoptal.order import ComponentwiseOrder
-from vectoptal.datasets import Dataset, get_dataset_instance
+from vectoptal.datasets import get_dataset_instance
 from vectoptal.utils.evaluate import calculate_epsilonF1_score
 
 

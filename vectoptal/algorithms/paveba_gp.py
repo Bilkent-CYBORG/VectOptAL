@@ -178,12 +178,9 @@ class PaVeBaGP(PALAlgorithm):
         return len(self.S) == 0
 
     def compute_alpha(self):
-<<<<<<< Updated upstream
-=======
         """
         Compute the radii of the confidence regions to be used in modeling.
         """
->>>>>>> Stashed changes
         alpha = 8 * self.m * np.log(6) + 4 * np.log(
             (np.pi**2 * self.round**2 * self.design_space.cardinality) / (6 * self.delta)
         )
