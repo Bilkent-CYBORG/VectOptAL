@@ -18,6 +18,7 @@ class Problem(ABC):
     def evaluate(self, x: np.ndarray) -> np.ndarray:
         pass
 
+
 class ProblemFromDataset(Problem):
     def __init__(self, dataset: Dataset, noise_var: float) -> None:
         super().__init__()
@@ -34,21 +35,30 @@ class ProblemFromDataset(Problem):
 
         indices = get_closest_indices_from_points(x, self.dataset.in_data, squared=True)
         f = self.dataset.out_data[indices].reshape(len(x), -1)
-        
+
         if not noisy:
             return f
-        
+
         y = get_noisy_evaluations_chol(f, self.noise_cholesky)
         return y
+
 
 class ContinuousProblem(Problem):
     def __init__(self, noise_var: float) -> None:
         super().__init__()
-        
+
         self.noise_var = noise_var
 
         noise_covar = np.eye(self.out_dim) * noise_var
         self.noise_cholesky = np.linalg.cholesky(noise_covar)
+
+
+def get_continuous_problem(name: str, noise_var: float) -> ContinuousProblem:
+    if name in globals():
+        return globals()[name](noise_var)
+
+    raise ValueError(f"Unknown continuous problem: {name}")
+
 
 class BraninCurrin(ContinuousProblem):
     bounds = [(0.0, 1.0), (0.0, 1.0)]
@@ -65,12 +75,7 @@ class BraninCurrin(ContinuousProblem):
         x_1 = 15 * X[..., 1]
         X = np.stack([x_0, x_1], axis=1)
 
-        t1 = (
-            X[..., 1]
-            - 5.1 / (4 * np.pi**2) * X[..., 0] ** 2
-            + 5 / np.pi * X[..., 0]
-            - 6
-        )
+        t1 = X[..., 1] - 5.1 / (4 * np.pi**2) * X[..., 0] ** 2 + 5 / np.pi * X[..., 0] - 6
         t2 = 10 * (1 - 1 / (8 * np.pi)) * np.cos(X[..., 0])
         return t1**2 + t2 + 10
 
@@ -90,7 +95,7 @@ class BraninCurrin(ContinuousProblem):
         # Normalize the results
         branin = (branin - 54.3669) / 51.3086
         currin = (currin - 7.5926) / 2.6496
-        
+
         Y = np.stack([-branin, -currin], axis=1)
         return Y
 
@@ -102,28 +107,28 @@ class BraninCurrin(ContinuousProblem):
 
         if not noisy:
             return f
-        
+
         y = get_noisy_evaluations_chol(f, self.noise_cholesky)
         return y
+
 
 class DecoupledEvaluationProblem(Problem):
     def __init__(self, problem: Problem) -> None:
         super().__init__()
         self.problem = problem
-    
+
     def evaluate(
-        self, x: np.ndarray, evaluation_index: Optional[Union[int, List[int]]]=None
+        self, x: np.ndarray, evaluation_index: Optional[Union[int, List[int]]] = None
     ) -> np.ndarray:
         values = self.problem.evaluate(x)
 
         if evaluation_index is None:
             return values
-        
+
         if isinstance(evaluation_index, int):
             return values[:, evaluation_index]
-        
-        assert len(x) == len(evaluation_index), \
-            "evaluation_index should be the same length as data"
+
+        assert len(x) == len(evaluation_index), "evaluation_index should be the same length as data"
 
         evaluation_index = np.array(evaluation_index, dtype=np.int32)
         return values[np.arange(len(evaluation_index)), evaluation_index]

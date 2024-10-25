@@ -1,10 +1,9 @@
 import logging
-from typing import Optional
 
 import numpy as np
 
 from vectoptal.order import ComponentwiseOrder
-from vectoptal.datasets import get_dataset
+from vectoptal.datasets import get_dataset_instance
 from vectoptal.design_space import FixedPointsDesignSpace
 from vectoptal.algorithms.algorithm import PALAlgorithm
 from vectoptal.maximization_problem import ProblemFromDataset
@@ -13,11 +12,7 @@ from vectoptal.models import EmpiricalMeanVarModel
 
 class Auer(PALAlgorithm):
     def __init__(
-        self, epsilon, delta,
-        dataset_name,
-        noise_var,
-        conf_contraction=32,
-        use_empirical_beta=False
+        self, epsilon, delta, dataset_name, noise_var, conf_contraction=32, use_empirical_beta=False
     ) -> None:
         super().__init__(epsilon, delta)
 
@@ -25,7 +20,7 @@ class Auer(PALAlgorithm):
         self.conf_contraction = conf_contraction
         self.use_empirical_beta = use_empirical_beta
 
-        dataset = get_dataset(dataset_name)
+        dataset = get_dataset_instance(dataset_name)
 
         self.m = dataset.out_dim
         self.order = ComponentwiseOrder(self.m)
@@ -33,13 +28,16 @@ class Auer(PALAlgorithm):
         # Trick to keep indices alongside points. This is for predictions from the model.
         in_data = np.hstack((dataset.in_data, np.arange(len(dataset.in_data))[:, None]))
         self.design_space = FixedPointsDesignSpace(
-            in_data, dataset.out_dim, confidence_type='hyperrectangle'
+            in_data, dataset.out_dim, confidence_type="hyperrectangle"
         )
         self.problem = ProblemFromDataset(dataset, noise_var)
 
         self.model = EmpiricalMeanVarModel(
-            dataset.in_dim, self.m, noise_var, self.design_space.cardinality,
-            track_variances=self.use_empirical_beta
+            dataset.in_dim,
+            self.m,
+            noise_var,
+            self.design_space.cardinality,
+            track_variances=self.use_empirical_beta,
         )
 
         self.S = set(range(self.design_space.cardinality))
@@ -48,10 +46,10 @@ class Auer(PALAlgorithm):
         self.sample_count = 0
 
     def small_m(self, i, j):
-        return max(0, np.min(j-i))
+        return max(0, np.min(j - i))
 
     def big_m(self, i, j):
-        return max(0, np.max((i+self.epsilon)-j))
+        return max(0, np.max((i + self.epsilon) - j))
 
     def modeling(self):
         # All active designs have the same beta value if empirical beta is not used. In that case;
@@ -104,12 +102,12 @@ class Auer(PALAlgorithm):
             else:
                 P1_pt_is.append(pt_i)
                 P1_pts.append(pt)
-        
+
         new_pareto_pts = []
         for p1_pt_i, p1_pt in zip(P1_pt_is, P1_pts):
             p1_pt_conf = self.design_space.confidence_regions[p1_pt]
             p1_pt_beta = self.beta_t[p1_pt_i]
-            for pt_i, pt in enumerate(self.S):                
+            for pt_i, pt in enumerate(self.S):
                 if pt in P1_pts:
                     continue
 
@@ -158,8 +156,7 @@ class Auer(PALAlgorithm):
         self.pareto_updating()
 
         print(
-            f"There are {len(self.S)} designs left in set S and"
-            f" {len(self.P)} designs in set P."
+            f"There are {len(self.S)} designs left in set S and" f" {len(self.P)} designs in set P."
         )
 
         print(f"Round {self.round}:Sample count {self.sample_count}")
@@ -171,7 +168,7 @@ class Auer(PALAlgorithm):
         if not self.use_empirical_beta:
             t1 = np.log((4 * self.design_space.cardinality * self.m * self.round**2) / self.delta)
             t2 = np.ones((len(self.S), self.m))
-        else: # Empirical beta
+        else:  # Empirical beta
             # Indices are enough for prediction.
             active_pts = np.array(list(self.S)).reshape(-1, 1)
 
@@ -182,4 +179,4 @@ class Auer(PALAlgorithm):
 
         beta = np.sqrt((2 * t1 * t2) / self.round)
 
-        return (beta / self.conf_contraction)
+        return beta / self.conf_contraction

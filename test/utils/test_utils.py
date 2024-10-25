@@ -4,8 +4,15 @@ import torch
 import numpy as np
 
 from vectoptal.utils import (
-    set_seed, get_2d_w, get_alpha, get_alpha_vec, get_closest_indices_from_points,
-    get_noisy_evaluations_chol, generate_sobol_samples, get_smallmij, get_delta
+    set_seed,
+    get_2d_w,
+    get_alpha,
+    get_alpha_vec,
+    get_closest_indices_from_points,
+    get_noisy_evaluations_chol,
+    generate_sobol_samples,
+    get_smallmij,
+    get_delta,
 )
 
 
@@ -20,7 +27,11 @@ class TestSetSeed(TestCase):
                 set_seed(seed)
 
                 self.assertEqual(np.random.get_state()[1][0], seed)
-                self.assertListEqual(torch.random.get_rng_state().tolist(), torch.manual_seed(seed).get_state().tolist())
+                self.assertListEqual(
+                    torch.random.get_rng_state().tolist(),
+                    torch.manual_seed(seed).get_state().tolist(),
+                )
+
 
 class TestGet2DW(TestCase):
     """Test 2D cone matrix generation."""
@@ -37,6 +48,7 @@ class TestGet2DW(TestCase):
 
                 self.assertAlmostEqual(-np.dot(W[0], W[1]), np.cos(np.deg2rad(cone_angle)))
 
+
 class TestGetAlpha(TestCase):
     """Test alpha computation."""
 
@@ -44,7 +56,7 @@ class TestGetAlpha(TestCase):
         """Test the get_alpha function."""
         angles = [45, 60, 90, 120, 135]
         for angle in angles:
-            cos_ang = np.cos(np.deg2rad(max(90-angle, 0)))
+            cos_ang = np.cos(np.deg2rad(max(90 - angle, 0)))
             W = get_2d_w(angle)
             for rind in range(W.shape[0]):
                 with self.subTest(rind=rind):
@@ -54,11 +66,12 @@ class TestGetAlpha(TestCase):
     def test_get_alpha_vec(self):
         """Test the get_alpha_vec function."""
         angle = 45
-        cos_ang = np.cos(np.deg2rad(max(90-angle, 0)))
+        cos_ang = np.cos(np.deg2rad(max(90 - angle, 0)))
         W = get_2d_w(angle)
         alphas = get_alpha_vec(W)
 
-        np.testing.assert_allclose(alphas, [[cos_ang]]*W.shape[0])
+        np.testing.assert_allclose(alphas, [[cos_ang]] * W.shape[0])
+
 
 class TestGetClosestIndicesFromPoints(TestCase):
     """Test closest indices computation."""
@@ -89,10 +102,11 @@ class TestGetClosestIndicesFromPoints(TestCase):
         np.testing.assert_allclose(dists_sq, dists**2)
         np.testing.assert_allclose(dists_sq, [0.02, 0.26, 0.08])
 
+
 class TestGetNoisyEvaluationsChol(TestCase):
     """Test noisy evaluations generation."""
 
-    @mock.patch("vectoptal.utils.np.random.normal")
+    @mock.patch("vectoptal.utils.utils.np.random.normal")
     def test_get_noisy_evaluations_chol(self, mock_normal):
         """Test the get_noisy_evaluations_chol function."""
         n = 10
@@ -101,11 +115,12 @@ class TestGetNoisyEvaluationsChol(TestCase):
 
         mock_normal.return_value = x
         np.testing.assert_allclose(get_noisy_evaluations_chol(y, np.zeros((1, 1))), y)
-        
+
         sigma = np.ones((1, 1)) * 0.1
         y_noisy = get_noisy_evaluations_chol(y, sigma)
         self.assertEqual(y_noisy.shape, y.shape)
         np.testing.assert_allclose(y_noisy, y + sigma * x)
+
 
 class TestGenerateSobolSamples(TestCase):
     """Test Sobol samples generation."""
@@ -120,6 +135,7 @@ class TestGenerateSobolSamples(TestCase):
         self.assertTrue(np.all(samples >= 0))
         self.assertTrue(np.all(samples < 1))
         self.assertEqual(len(np.unique(samples, axis=0)), n)
+
 
 class TestGetSmallmij(TestCase):
     """Test m(i, j) computation."""
@@ -143,16 +159,13 @@ class TestGetSmallmij(TestCase):
                     m, min(np.clip(W_normalized @ diff, a_min=0, a_max=None))
                 )
 
+
 class TestGetDelta(TestCase):
     """Test delta gap computation."""
 
     def test_get_delta(self):
         """Test the get_delta function."""
-        means = np.array([
-            [1, 0],
-            [1.1, 0.2],
-            [0.5, 0.8]
-        ])
+        means = np.array([[1, 0], [1.1, 0.2], [0.5, 0.8]])
 
         angles = [45, 60, 90, 120, 135]
         for angle in angles:

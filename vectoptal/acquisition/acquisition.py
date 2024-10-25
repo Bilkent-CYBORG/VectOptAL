@@ -21,19 +21,21 @@ class AcquisitionStrategy(ABC):
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         return self.forward(*args, **kwds)
-    
+
+
 class DecoupledAcquisitionStrategy(AcquisitionStrategy):
     """
     Acquisition values are inversely weighted by costs.
     """
+
     def __init__(
-        self, output_dim: int, evaluation_index: Optional[int] = None,
-        costs: Optional[list] = None
+        self, output_dim: int, evaluation_index: Optional[int] = None, costs: Optional[list] = None
     ) -> None:
         super().__init__()
         self.out_dim = output_dim
         self.evaluation_index = evaluation_index
         self.costs = costs
+
 
 class SumVarianceAcquisition(AcquisitionStrategy):
     def __init__(self, model: Model) -> None:
@@ -44,10 +46,10 @@ class SumVarianceAcquisition(AcquisitionStrategy):
         _, variances = self.model.predict(x)
         return np.sum(np.diagonal(variances, axis1=-2, axis2=-1), axis=-1)
 
+
 class MaxVarianceDecoupledAcquisition(DecoupledAcquisitionStrategy):
     def __init__(
-        self, model: ModelList, evaluation_index: Optional[int] = None,
-        costs: Optional[list] = None
+        self, model: ModelList, evaluation_index: Optional[int] = None, costs: Optional[list] = None
     ) -> None:
         self.model = model
         super().__init__(self.model.output_dim, evaluation_index, costs)
@@ -60,16 +62,21 @@ class MaxVarianceDecoupledAcquisition(DecoupledAcquisitionStrategy):
             value = value / self.costs[self.evaluation_index]
         return value
 
+
 class ThompsonEntropyDecoupledAcquisition(DecoupledAcquisitionStrategy):
     def __init__(
-        self, model: ModelList, order: Order, evaluation_index: Optional[int] = None,
-        costs: Optional[list] = None, num_thompson_samples: int = 10
+        self,
+        model: ModelList,
+        order: Order,
+        evaluation_index: Optional[int] = None,
+        costs: Optional[list] = None,
+        num_thompson_samples: int = 10,
     ) -> None:
         self.model = model
         super().__init__(self.model.output_dim, evaluation_index, costs)
         self.order = order
         self.num_thompson_samples = num_thompson_samples
-        
+
         self._clear_cache()
 
     def _clear_cache(self):
@@ -92,16 +99,16 @@ class ThompsonEntropyDecoupledAcquisition(DecoupledAcquisitionStrategy):
                 )
             t_samples = np.stack(t_samples)
             self._cache_pareto_mask = np.zeros(
-                shape=(*[self.num_thompson_samples]*self.out_dim, len(x)), dtype=bool
+                shape=(*[self.num_thompson_samples] * self.out_dim, len(x)), dtype=bool
             )
             for comb in combinations(range(self.num_thompson_samples), r=self.out_dim):
                 sample = np.stack(t_samples[np.arange(self.out_dim), np.array(comb)]).T
                 self._cache_pareto_mask[comb][self.order.get_pareto_set(sample)] = True
-            
+
             prior_prob_mean_axes = np.arange(self.out_dim)
             prior_prob = np.mean(self._cache_pareto_mask, axis=tuple(prior_prob_mean_axes))
             self._cache_prior_entropy = binary_entropy(prior_prob)
-        
+
         posterior_prob_mean_axes = np.arange(self.out_dim)
         posterior_prob_mean_axes = np.delete(posterior_prob_mean_axes, [self.evaluation_index])
         posterior_prob = np.mean(self._cache_pareto_mask, axis=tuple(posterior_prob_mean_axes))
@@ -112,6 +119,7 @@ class ThompsonEntropyDecoupledAcquisition(DecoupledAcquisitionStrategy):
         if self.costs is not None:
             value = value / self.costs[self.evaluation_index]
         return value
+
 
 class MaxDiagonalAcquisition(AcquisitionStrategy):
     def __init__(self, design_space: DiscreteDesignSpace) -> None:
@@ -127,10 +135,9 @@ class MaxDiagonalAcquisition(AcquisitionStrategy):
 
         return value
 
+
 def optimize_acqf_discrete(
-    acq: AcquisitionStrategy,
-    q: int,
-    choices: np.ndarray
+    acq: AcquisitionStrategy, q: int, choices: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
     candidate_list, acq_value_list = [], []
 
@@ -146,21 +153,18 @@ def optimize_acqf_discrete(
         candidate_list.append(choices[best_idx])
         acq_value_list.append(acq_values[best_idx])
 
-        choices = np.concatenate(
-            [choices[:best_idx], choices[best_idx+1:]]
-        )
+        choices = np.concatenate([choices[:best_idx], choices[best_idx + 1 :]])
 
         chosen += 1
-    
+
     return np.stack(candidate_list, axis=-2), np.array(acq_value_list)
 
+
 def optimize_decoupled_acqf_discrete(
-    acq: DecoupledAcquisitionStrategy,
-    q: int,
-    choices: np.ndarray
+    acq: DecoupledAcquisitionStrategy, q: int, choices: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
     saved_eval_i = acq.evaluation_index
-    
+
     candidate_list = np.empty((0, choices.shape[-1]))
     acq_values = np.empty(0)
     eval_indices = np.empty(0, dtype=np.int32)

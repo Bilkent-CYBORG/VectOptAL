@@ -7,8 +7,10 @@ import scipy as sp
 
 from vectoptal.order import Order
 from vectoptal.utils import (
-    hyperrectangle_check_intersection, hyperrectangle_get_vertices, is_pt_in_extended_polytope,
-    hyperrectangle_get_region_matrix
+    hyperrectangle_check_intersection,
+    hyperrectangle_get_vertices,
+    is_pt_in_extended_polytope,
+    hyperrectangle_get_region_matrix,
 )
 
 
@@ -20,10 +22,14 @@ class ConfidenceRegion(ABC):
     def update(self):
         pass
 
+
 class RectangularConfidenceRegion(ConfidenceRegion):
     def __init__(
-        self, dim: int, lower: Optional[np.ndarray]=None, upper: Optional[np.ndarray]=None,
-        intersect_iteratively: Optional[bool]=True
+        self,
+        dim: int,
+        lower: Optional[np.ndarray] = None,
+        upper: Optional[np.ndarray] = None,
+        intersect_iteratively: Optional[bool] = True,
     ) -> None:
         super().__init__()
 
@@ -34,13 +40,13 @@ class RectangularConfidenceRegion(ConfidenceRegion):
             self.upper = upper
         else:
             self.lower = np.array([-1e12] * dim)  # TODO: Magic large number.
-            self.upper = np.array([ 1e12] * dim)
+            self.upper = np.array([1e12] * dim)
 
     def diagonal(self):
         """Returns the euclidean norm of the diagonal of the hyperrectangle"""
         return np.linalg.norm(self.upper - self.lower)
 
-    def update(self, mean: np.ndarray, covariance: np.ndarray, scale: np.ndarray=np.array(1.)):
+    def update(self, mean: np.ndarray, covariance: np.ndarray, scale: np.ndarray = np.array(1.0)):
         assert covariance.shape[-1] == covariance.shape[-2], "Covariance matrix must be square."
         std = np.sqrt(np.diag(covariance.squeeze()))
 
@@ -63,7 +69,7 @@ class RectangularConfidenceRegion(ConfidenceRegion):
             self.lower = np.maximum(self.lower, lower)
             self.upper = np.minimum(self.upper, upper)
         else:
-        # if there is no intersection, then use the new hyperrectangle
+            # if there is no intersection, then use the new hyperrectangle
             self.lower = lower
             self.upper = upper
 
@@ -79,7 +85,7 @@ class RectangularConfidenceRegion(ConfidenceRegion):
         return True
 
     @classmethod
-    def check_dominates(cls, order: Order, obj1, obj2, slackness: np.ndarray=np.array(0.)):
+    def check_dominates(cls, order: Order, obj1, obj2, slackness: np.ndarray = np.array(0.0)):
         cone_matrix = order.ordering_cone.W
 
         verts1 = hyperrectangle_get_vertices(obj1.lower, obj1.upper) @ cone_matrix.transpose()
@@ -107,26 +113,30 @@ class RectangularConfidenceRegion(ConfidenceRegion):
         constraints = [
             obj1_matrix @ z_point >= obj1_boundary,
             obj2_matrix @ z_point2 >= obj2_boundary,
-            cone_matrix @ (z_point2 - z_point - slackness) >= 0
+            cone_matrix @ (z_point2 - z_point - slackness) >= 0,
         ]
-        
+
         prob = cp.Problem(cp.Minimize(0), constraints=constraints)
 
         try:
             prob.solve(solver="OSQP", max_iter=10000)
-        except:
-            prob.solve(solver = "ECOS")
+        except RuntimeError:
+            prob.solve(solver="ECOS")
 
-        if prob.status == None:
+        if prob.status is None:
             return True
 
-        condition = prob.status == 'optimal'  
+        condition = prob.status == "optimal"
         return condition
+
 
 class EllipsoidalConfidenceRegion(ConfidenceRegion):
     def __init__(
-        self, dim, center: Optional[np.ndarray]=None, sigma: Optional[np.ndarray]=None,
-        alpha: Optional[float]=None
+        self,
+        dim,
+        center: Optional[np.ndarray] = None,
+        sigma: Optional[np.ndarray] = None,
+        alpha: Optional[float] = None,
     ) -> None:
         super().__init__()
 
@@ -139,7 +149,7 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
             self.sigma = np.eye(dim)
             self.alpha = 1.0
 
-    def update(self, mean: np.ndarray, covariance: np.ndarray, scale: np.ndarray=np.array(1.)):
+    def update(self, mean: np.ndarray, covariance: np.ndarray, scale: np.ndarray = np.array(1.0)):
         assert covariance.shape[-1] == covariance.shape[-2], "Covariance matrix must be square."
 
         self.center = mean
@@ -158,22 +168,24 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
         # cons1 = cp.quad_form((mux - mx).T, np.linalg.inv(sigma_x)) <= alpha
         # cons2 = cp.quad_form((muy - my).T, np.linalg.inv(sigma_y)) <= alpha
         # # norm( Qsqrt * ( A * x - b ) ) <= 1
-        cons1 = cp.norm(
-            sp.linalg.sqrtm(np.linalg.inv(obj1.sigma)) @ (mux - obj1.center).T
-        ) <= obj1.alpha
-        cons2 = cp.norm(
-            sp.linalg.sqrtm(np.linalg.inv(obj2.sigma)) @ (muy - obj2.center).T
-        ) <= obj2.alpha
-        
+        cons1 = (
+            cp.norm(sp.linalg.sqrtm(np.linalg.inv(obj1.sigma)) @ (mux - obj1.center).T)
+            <= obj1.alpha
+        )
+        cons2 = (
+            cp.norm(sp.linalg.sqrtm(np.linalg.inv(obj2.sigma)) @ (muy - obj2.center).T)
+            <= obj2.alpha
+        )
+
         constraints = [cons1, cons2]
 
         for n in range(cone_matrix.shape[0]):
             objective = cp.Minimize(cone_matrix[n] @ (muy - mux))
-            
+
             prob = cp.Problem(objective, constraints)
             try:
                 prob.solve(solver="ECOS")
-            except:
+            except RuntimeError:
                 prob.solve(solver="MOSEK")
 
             if prob.value < -slackness:
@@ -182,7 +194,7 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
         return True
 
     @classmethod
-    def check_dominates(cls, order: Order, obj1, obj2, slackness: np.ndarray=np.array(0.)):
+    def check_dominates(cls, order: Order, obj1, obj2, slackness: np.ndarray = np.array(0.0)):
         raise NotImplementedError
 
     @classmethod
@@ -193,12 +205,14 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
         muy = cp.Variable(output_dim)
 
         # # norm( Qsqrt * ( A * x - b ) ) <= 1
-        cons1 = cp.norm(
-            sp.linalg.sqrtm(np.linalg.inv(obj1.sigma)) @ (mux - obj1.center).T
-        ) <= obj1.alpha
-        cons2 = cp.norm(
-            sp.linalg.sqrtm(np.linalg.inv(obj2.sigma)) @ (muy - obj2.center).T
-        ) <= obj2.alpha
+        cons1 = (
+            cp.norm(sp.linalg.sqrtm(np.linalg.inv(obj1.sigma)) @ (mux - obj1.center).T)
+            <= obj1.alpha
+        )
+        cons2 = (
+            cp.norm(sp.linalg.sqrtm(np.linalg.inv(obj2.sigma)) @ (muy - obj2.center).T)
+            <= obj2.alpha
+        )
         cons3 = cone_matrix @ (muy - mux) >= slackness
 
         constraints = [cons1, cons2, cons3]
@@ -206,16 +220,17 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
         objective = cp.Minimize(0)
 
         prob = cp.Problem(objective, constraints)
-        
+
         try:
             prob.solve(solver="ECOS")
-        except:
+        except RuntimeError:
             prob.solve(solver="MOSEK")
 
         if "infeasible" in prob.status:
             return False
         else:
             return True
+
 
 def confidence_region_is_dominated(order, region1, region2, slackness) -> bool:
     if isinstance(region1, RectangularConfidenceRegion):
@@ -225,6 +240,7 @@ def confidence_region_is_dominated(order, region1, region2, slackness) -> bool:
     else:
         raise NotImplementedError
 
+
 def confidence_region_check_dominates(order, region1, region2) -> bool:
     if isinstance(region1, RectangularConfidenceRegion):
         return RectangularConfidenceRegion.check_dominates(order, region1, region2)
@@ -232,6 +248,7 @@ def confidence_region_check_dominates(order, region1, region2) -> bool:
         return EllipsoidalConfidenceRegion.check_dominates(order, region1, region2)
     else:
         raise NotImplementedError
+
 
 def confidence_region_is_covered(order, region1, region2, slackness) -> bool:
     # TODO: is_covered may be a bad name. Maybe is_not_dominated?

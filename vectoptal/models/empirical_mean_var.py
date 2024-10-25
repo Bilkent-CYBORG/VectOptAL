@@ -7,8 +7,13 @@ from vectoptal.models import Model
 
 class EmpiricalMeanVarModel(Model):
     def __init__(
-        self, input_dim, output_dim, noise_var, design_count,
-        track_means: bool = True, track_variances: bool = True
+        self,
+        input_dim,
+        output_dim,
+        noise_var,
+        design_count,
+        track_means: bool = True,
+        track_variances: bool = True,
     ):
         super().__init__()
 
@@ -48,25 +53,32 @@ class EmpiricalMeanVarModel(Model):
 
     def update(self):
         """
-        This method calculates and updates the means and variances of the design samples based on the current data.
-        If `track_means` is enabled, it updates the `means` attribute with the mean of each design sample.
-        If `track_variances` is enabled, it updates the `variances` attribute with the variance of each design sample.
+        This method calculates and updates the means and variances of the design samples based on
+        the current data. If `track_means` is enabled, it updates the `means` attribute with the
+        mean of each design sample. If `track_variances` is enabled, it updates the `variances`
+        attribute with the variance of each design sample.
         """
         if self.track_means:
-            self.means = np.array([
-                np.mean(design, axis=0)
-                if len(design) > 0 else np.zeros(self.output_dim)
-                for design in self.design_samples
-            ])
+            self.means = np.array(
+                [
+                    np.mean(design, axis=0) if len(design) > 0 else np.zeros(self.output_dim)
+                    for design in self.design_samples
+                ]
+            )
         else:
             self.means = None
 
         if self.track_variances:
-            self.variances = np.array([
-                np.diag(np.var(design, axis=0))
-                if len(design) > 1 else np.eye(self.output_dim) * self.noise_var
-                for design in self.design_samples
-            ])
+            self.variances = np.array(
+                [
+                    (
+                        np.diag(np.var(design, axis=0))
+                        if len(design) > 1
+                        else np.eye(self.output_dim) * self.noise_var
+                    )
+                    for design in self.design_samples
+                ]
+            )
         else:
             self.variances = None
 
@@ -75,17 +87,20 @@ class EmpiricalMeanVarModel(Model):
 
     def predict(self, test_X: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """
-        This method takes test inputs and returns the predicted means and variances based on the tracked data.
-        If `track_means` is enabled, it returns the corresponding means for the test inputs.
-        If `track_variances` is enabled, it returns the corresponding variances for the test inputs.
+        This method takes test inputs and returns the predicted means and variances based on the
+        tracked data. If `track_means` is enabled, it returns the corresponding means for the test
+        inputs. If `track_variances` is enabled, it returns the corresponding variances for the
+        test inputs.
 
-        :param test_X: The test inputs for which predictions are to be made. The last column of `test_X` should contain indices.
+        :param test_X: The test inputs for which predictions are to be made. The last column of
+        `test_X` should contain indices.
         :type test_X: np.ndarray
         :return: A tuple containing two numpy arrays: the predicted means and variances.
         :rtype: tuple[np.ndarray, np.ndarray]
         """
-        assert test_X.shape[1] == self.input_dim + 1, \
-            "Test data needs to have an additional column for indices."
+        assert (
+            test_X.shape[1] == self.input_dim + 1
+        ), "Test data needs to have an additional column for indices."
 
         indices = test_X[..., -1].astype(int)
         if self.track_means:

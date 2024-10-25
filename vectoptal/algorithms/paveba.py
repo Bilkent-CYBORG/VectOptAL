@@ -1,19 +1,16 @@
-import copy
 import logging
 
 import numpy as np
 
 from vectoptal.order import Order
-from vectoptal.datasets import get_dataset
+from vectoptal.datasets import get_dataset_instance
 from vectoptal.design_space import FixedPointsDesignSpace
 from vectoptal.algorithms.algorithm import PALAlgorithm
 from vectoptal.maximization_problem import ProblemFromDataset
-from vectoptal.acquisition import SumVarianceAcquisition, optimize_acqf_discrete
 from vectoptal.models import EmpiricalMeanVarModel
 from vectoptal.confidence_region import (
     confidence_region_is_dominated,
-    confidence_region_check_dominates,
-    confidence_region_is_covered
+    confidence_region_is_covered,
 )
 
 
@@ -57,8 +54,11 @@ class PaVeBa(PALAlgorithm):
     """
 
     def __init__(
-        self, epsilon, delta,
-        dataset_name, order: Order,
+        self,
+        epsilon,
+        delta,
+        dataset_name,
+        order: Order,
         noise_var,
         conf_contraction=32,
     ) -> None:
@@ -68,14 +68,14 @@ class PaVeBa(PALAlgorithm):
         self.noise_var = noise_var
         self.conf_contraction = conf_contraction
 
-        dataset = get_dataset(dataset_name)
+        dataset = get_dataset_instance(dataset_name)
 
         self.m = dataset.out_dim
 
         # Trick to keep indices alongside points. This is for predictions from the model.
         in_data = np.hstack((dataset.in_data, np.arange(len(dataset.in_data))[:, None]))
         self.design_space = FixedPointsDesignSpace(
-            in_data, dataset.out_dim, confidence_type='hyperellipsoid'
+            in_data, dataset.out_dim, confidence_type="hyperellipsoid"
         )
         self.problem = ProblemFromDataset(dataset, noise_var)
 
@@ -120,7 +120,7 @@ class PaVeBa(PALAlgorithm):
                 if confidence_region_is_dominated(self.order, pt_conf, pt_p_conf, 0):
                     to_be_discarded.append(pt)
                     break
-        
+
         for pt in to_be_discarded:
             self.S.remove(pt)
 
@@ -208,8 +208,7 @@ class PaVeBa(PALAlgorithm):
         self.useful_updating()
 
         print(
-            f"There are {len(self.S)} designs left in set S and"
-            f" {len(self.P)} designs in set P."
+            f"There are {len(self.S)} designs left in set S and" f" {len(self.P)} designs in set P."
         )
 
         print(f"Round {self.round}:Sample count {self.sample_count}")
@@ -220,7 +219,7 @@ class PaVeBa(PALAlgorithm):
         """
         Compute the radii of the confidence regions to be used in modeling.
         """
-        t1 = (8 * self.noise_var / self.round)
+        t1 = 8 * self.noise_var / self.round
         t2 = np.log(  # ni**2 is equal to t**2 since only active arms are sampled
             (np.pi**2 * (self.m + 1) * self.design_space.cardinality * self.round**2)
             / (6 * self.delta)
@@ -228,4 +227,6 @@ class PaVeBa(PALAlgorithm):
         r = np.sqrt(t1 * t2)
 
         # TODO: Do we need to scale because of norm-subgaussianity?
-        return (r / self.conf_contraction) * np.ones(self.m, )
+        return (r / self.conf_contraction) * np.ones(
+            self.m,
+        )

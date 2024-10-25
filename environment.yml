@@ -28,3 +28,5 @@ dependencies:
 - mosek
 - pytest
 - pytest-cov
+- flake8
+- black

@@ -10,7 +10,7 @@ from matplotlib.patches import Polygon
 # from vectoptal.utils import get_2d_w
 
 
-def plot_2d_cone(ordering_cone, path: Optional[Union[str, PathLike]]=None):
+def plot_2d_cone(ordering_cone, path: Optional[Union[str, PathLike]] = None):
     """
     Plot the 2D cone with the given cone degree.
     """
@@ -36,7 +36,7 @@ def plot_2d_cone(ordering_cone, path: Optional[Union[str, PathLike]]=None):
     # For the x basis
     x_right = np.array([0, xlim[-1]])
     y_right = 0 + m1 * (x_right - 0)
-    
+
     # For the y basis
     if cone_degree > 90:
         x_left = np.array([xlim[0], 0])
@@ -70,15 +70,16 @@ def plot_2d_cone(ordering_cone, path: Optional[Union[str, PathLike]]=None):
 
     if path is not None:
         fig.savefig(path)
-    
+
     return fig
 
-def plot_3d_cone(ordering_cone, path: Optional[Union[str, PathLike]]=None):
+
+def plot_3d_cone(ordering_cone, path: Optional[Union[str, PathLike]] = None):
     """
     Given a W matrix of shape N-by-3 representing the cone, plot the 3D region of the cone.
     Rows of the matrix represent the normal vectors of the constraints.
-    Create a list that includes the corners of the region, than plot the region using Poly3DCollection.
-    Use boundaries for the plot limits.
+    Create a list that includes the corners of the region, than plot the region using
+    Poly3DCollection. Use boundaries for the plot limits.
     """
 
     xlim = [-5, 5]
@@ -96,7 +97,7 @@ def plot_3d_cone(ordering_cone, path: Optional[Union[str, PathLike]]=None):
     ax.spines['left'].set_position('zero')
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    
+
     # Add X, Y, and Z axis lines at the middle of the region
     ax.plot([xlim[0], xlim[1]], [0, 0], [0, 0], color='black')
     ax.plot([0, 0], [ylim[0], ylim[1]], [0, 0], color='black')
@@ -118,8 +119,9 @@ def plot_3d_cone(ordering_cone, path: Optional[Union[str, PathLike]]=None):
 
     return fig
 
+
 def plot_pareto_front(
-    order, elements: np.ndarray, path: Optional[Union[str, PathLike]]=None
+    order, elements: np.ndarray, path: Optional[Union[str, PathLike]] = None
 ):
     dim = elements.shape[1]
     assert elements.ndim == 2, "Elements array should be N-by-dim."
@@ -150,7 +152,7 @@ def plot_pareto_front(
         )
     else:
         ax = fig.add_subplot(111, projection='3d')
-        
+
         ax.set(xticks=[], xticklabels=[], yticks=[], yticklabels=[], zticks=[], zticklabels=[])
         ax.spines['bottom'].set_position('center')
         ax.spines['left'].set_position('center')
@@ -175,7 +177,7 @@ def plot_pareto_front(
 
     ax.legend(loc="lower left")
     fig.tight_layout()
-    
+
     if path is not None:
         fig.savefig(path)
 

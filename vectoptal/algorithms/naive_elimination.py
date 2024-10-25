@@ -1,26 +1,22 @@
-import logging
 from typing import Optional
 
 import numpy as np
 
-from vectoptal.order import Order, ConeTheta2DOrder
-from vectoptal.datasets import get_dataset
+from vectoptal.order import Order
+from vectoptal.datasets import get_dataset_instance
 from vectoptal.algorithms.algorithm import PALAlgorithm
 from vectoptal.maximization_problem import ProblemFromDataset
 
 
 class NaiveElimination(PALAlgorithm):
     def __init__(
-        self, epsilon, delta,
-        dataset_name, order: Order,
-        noise_var,
-        L: Optional[int]=None
+        self, epsilon, delta, dataset_name, order: Order, noise_var, L: Optional[int] = None
     ) -> None:
         super().__init__(epsilon, delta)
 
         self.order = order
 
-        self.dataset = get_dataset(dataset_name)
+        self.dataset = get_dataset_instance(dataset_name)
         self.m = self.dataset.out_dim
 
         self.K = len(self.dataset.in_data)
@@ -31,8 +27,8 @@ class NaiveElimination(PALAlgorithm):
             c = 1 + np.sqrt(2)  # Any c>0 should suffice according to Lemma B.12.
             self.L = np.ceil(
                 4
-                * ((c*noise_var*ordering_complexity/self.epsilon)**2)
-                * np.log(4*self.m /(2*self.delta/(self.K*(self.K-1))))
+                * ((c * noise_var * ordering_complexity / self.epsilon) ** 2)
+                * np.log(4 * self.m / (2 * self.delta / (self.K * (self.K - 1))))
             ).astype(int)
         else:
             self.L = L
@@ -51,10 +47,7 @@ class NaiveElimination(PALAlgorithm):
         self.round += 1
 
         new_samples = self.problem.evaluate(self.dataset.in_data)
-        self.samples = np.concatenate(
-            [self.samples, np.expand_dims(new_samples, axis=-2)],
-            axis=-2
-        )
+        self.samples = np.concatenate([self.samples, np.expand_dims(new_samples, axis=-2)], axis=-2)
 
         self.sample_count += self.K
 

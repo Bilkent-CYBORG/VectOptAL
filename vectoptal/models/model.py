@@ -5,9 +5,10 @@ class Model(ABC):
     """
     Defines the abstract model class.
     """
+
     def __init__(self) -> None:
         super().__init__()
-    
+
     @abstractmethod
     def add_sample(self):
         pass
@@ -24,9 +25,11 @@ class Model(ABC):
     def predict(self, test_X):
         pass
 
+
 class ModelList(Model):
     def __init__(self) -> None:
         super().__init__()
+
 
 class GPModel(Model):
     def __init__(self) -> None:

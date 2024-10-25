@@ -1,6 +1,5 @@
 from os import PathLike
 from typing import Union, Optional
-from abc import ABC, abstractmethod
 
 import numpy as np
 
@@ -8,7 +7,7 @@ from vectoptal.utils import get_2d_w, get_alpha_vec
 from vectoptal.utils.plotting import plot_2d_cone, plot_3d_cone
 
 
-class OrderingCone():
+class OrderingCone:
     def __init__(self, W: np.ndarray) -> None:
         """
         Ordering cone in the format C := {x | Wx >= 0}
@@ -25,7 +24,7 @@ class OrderingCone():
             x = x.reshape(1, -1)
         return (x @ self.W.T >= 0).all(axis=-1)
 
-    def plot(self, path: Optional[Union[str, PathLike]]=None):
+    def plot(self, path: Optional[Union[str, PathLike]] = None):
         assert self.dim in [2, 3], "Only 2D and 3D plots are supported."
         if self.dim == 2:
             fig = plot_2d_cone(self, path)
@@ -33,6 +32,7 @@ class OrderingCone():
             fig = plot_3d_cone(self, path)
 
         return fig
+
 
 class ConeTheta2D(OrderingCone):
     def __init__(self, cone_degree: float) -> None:
@@ -44,10 +44,10 @@ class ConeTheta2D(OrderingCone):
     @property
     def beta(self) -> float:
         cone_rad = (self.cone_degree / 180) * np.pi
-        if cone_rad < np.pi/2:
-            return 1/np.sin(cone_rad)
+        if cone_rad < np.pi / 2:
+            return 1 / np.sin(cone_rad)
         else:
-            return 1.
+            return 1.0
 
 
 if __name__ == "__main__":

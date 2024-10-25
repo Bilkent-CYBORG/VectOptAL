@@ -1,9 +1,8 @@
 from os import PathLike
 from typing import Union, Optional
-from abc import ABC, abstractmethod
+from abc import ABC
 
 import numpy as np
-from matplotlib import pyplot as plt
 
 from vectoptal.utils.plotting import plot_pareto_front
 from vectoptal.ordering_cone import OrderingCone, ConeTheta2D
@@ -15,7 +14,7 @@ class Order(ABC):
 
     def dominates(self, a: np.ndarray, b: np.ndarray) -> bool:
         """Does a dominate b?"""
-        return self.ordering_cone.is_inside(a-b)
+        return self.ordering_cone.is_inside(a - b)
 
     def get_pareto_set(self, elements: np.ndarray):
         assert elements.ndim == 2, "Elements array should be N-by-dim."
@@ -52,16 +51,17 @@ class Order(ABC):
                     break
             else:
                 pareto_indices.append(el_i)
-        
+
         return pareto_indices
 
-    def plot_pareto_set(self, elements: np.ndarray, path: Optional[Union[str, PathLike]]=None):
+    def plot_pareto_set(self, elements: np.ndarray, path: Optional[Union[str, PathLike]] = None):
         assert elements.ndim == 2, "Elements array should be N-by-dim."
         assert elements.shape[1] in [2, 3], "Only 2D and 3D plots are supported."
 
         fig = plot_pareto_front(self, elements, path)
 
         return fig
+
 
 class ComponentwiseOrder(Order):
     def __init__(self, dim: int) -> None:
@@ -70,50 +70,57 @@ class ComponentwiseOrder(Order):
 
         super().__init__(ordering_cone)
 
+
 class ConeTheta2DOrder(Order):
     def __init__(self, cone_degree) -> None:
         self.cone_degree = cone_degree
         ordering_cone = ConeTheta2D(cone_degree)
-    
+
         super().__init__(ordering_cone)
+
 
 class ConeOrder3D(Order):
     def __init__(self, cone_type: str) -> None:
         """
         :param cone_type: one of ['acute', 'right', 'obtuse']
         """
-        if cone_type == 'acute':
-            W = np.array([
-                [1.0, -2, 4],
-                [4, 1.0, -2],
-                [-2, 4, 1.0],
-            ])
+        if cone_type == "acute":
+            W = np.array(
+                [
+                    [1.0, -2, 4],
+                    [4, 1.0, -2],
+                    [-2, 4, 1.0],
+                ]
+            )
             norm = np.linalg.norm(W[0])
             W /= norm
-        elif cone_type == 'right':
+        elif cone_type == "right":
             W = np.eye(3)
-        elif cone_type == 'obtuse':
-            W = np.array([
-                [1, 0.4, 1.6],
-                [1.6, 1, 0.4],
-                [0.4, 1.6, 1],
-            ])
+        elif cone_type == "obtuse":
+            W = np.array(
+                [
+                    [1, 0.4, 1.6],
+                    [1.6, 1, 0.4],
+                    [0.4, 1.6, 1],
+                ]
+            )
             norm = np.linalg.norm(W[0])
             W /= norm
         ordering_cone = OrderingCone(W)
-    
+
         super().__init__(ordering_cone)
+
 
 class ConeOrder3DIceCream(Order):
     def __init__(self, cone_degree, num_halfspace) -> None:
         W = self.compute_ice_cream_cone(num_halfspace, cone_degree)
         ordering_cone = OrderingCone(W)
-    
+
         super().__init__(ordering_cone)
 
     def compute_ice_cream_cone(self, K, theta):
         delta_angle = 2 * np.pi / K
-        theta_rad = np.pi/2 - np.radians(theta)
+        theta_rad = np.pi / 2 - np.radians(theta)
 
         radius = np.tan(theta_rad)
         W = []
@@ -123,16 +130,18 @@ class ConeOrder3DIceCream(Order):
             rotated_nx = radius * np.cos(angle)
             W.append([rotated_nx, rotated_ny, 1])
         W = np.array(W)
-        
-        rot_axis = np.array([-1/np.sqrt(2), 1/np.sqrt(2), 0])
-        rot_rad = np.pi/4
-        C = np.array([
-            [0, -rot_axis[2], rot_axis[1]],
-            [rot_axis[2], 0, -rot_axis[0]],
-            [-rot_axis[1], rot_axis[0], 0],
-        ])
 
-        r = np.eye(3) + C*np.sin(rot_rad) + (C @ C)*(1 - np.cos(rot_rad))
+        rot_axis = np.array([-1 / np.sqrt(2), 1 / np.sqrt(2), 0])
+        rot_rad = np.pi / 4
+        C = np.array(
+            [
+                [0, -rot_axis[2], rot_axis[1]],
+                [rot_axis[2], 0, -rot_axis[0]],
+                [-rot_axis[1], rot_axis[0], 0],
+            ]
+        )
+
+        r = np.eye(3) + C * np.sin(rot_rad) + (C @ C) * (1 - np.cos(rot_rad))
         W = (r @ W.T).T
 
         # Normalize half plane normal vectors

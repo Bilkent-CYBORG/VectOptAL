@@ -1,4 +1,3 @@
-import os
 from typing import Optional
 from itertools import product
 from abc import ABC, abstractmethod
@@ -6,7 +5,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 from vectoptal.confidence_region import (
-    RectangularConfidenceRegion, EllipsoidalConfidenceRegion,
+    RectangularConfidenceRegion,
+    EllipsoidalConfidenceRegion,
 )
 from vectoptal.models import Model, GPModel
 from vectoptal.utils import get_closest_indices_from_points
@@ -20,6 +20,7 @@ class DesignSpace(ABC):
     def update(self, model: Model):
         pass
 
+
 class DiscreteDesignSpace(DesignSpace):
     points: np.ndarray
     confidence_regions: list
@@ -27,7 +28,7 @@ class DiscreteDesignSpace(DesignSpace):
     def __init__(self):
         super().__init__()
 
-    def locate_points(self, x: np.ndarray, atol: float=1e-6) -> list[int]:
+    def locate_points(self, x: np.ndarray, atol: float = 1e-6) -> list[int]:
         """
         Find positions of points given as x in the design space.
         Instead of exact equality, allclose is used.
@@ -38,15 +39,14 @@ class DiscreteDesignSpace(DesignSpace):
 
         return indices
 
+
 class FixedPointsDesignSpace(DiscreteDesignSpace):
-    def __init__(
-        self, points: np.ndarray, objective_dim, confidence_type='hyperrectangle'
-    ) -> None:
+    def __init__(self, points: np.ndarray, objective_dim, confidence_type="hyperrectangle") -> None:
         super().__init__()
 
-        if confidence_type == 'hyperrectangle':
+        if confidence_type == "hyperrectangle":
             confidence_cls = RectangularConfidenceRegion
-        elif confidence_type == 'hyperellipsoid':
+        elif confidence_type == "hyperellipsoid":
             confidence_cls = EllipsoidalConfidenceRegion
         else:
             raise NotImplementedError
@@ -55,10 +55,10 @@ class FixedPointsDesignSpace(DiscreteDesignSpace):
         self.confidence_regions = []
         for _ in range(len(points)):
             self.confidence_regions.append(confidence_cls(objective_dim))
-        
+
         self.cardinality = len(self.points)
 
-    def update(self, model: Model, scale: np.ndarray, indices_to_update: Optional[list]=None):
+    def update(self, model: Model, scale: np.ndarray, indices_to_update: Optional[list] = None):
         if indices_to_update is None:
             indices_to_update = list(range(self.cardinality))
 
@@ -73,13 +73,14 @@ class FixedPointsDesignSpace(DiscreteDesignSpace):
         for pt_i, mu, cov, s in zip(indices_to_update, mus, covs, scale):
             self.confidence_regions[pt_i].update(mu, cov, s)
 
+
 class AdaptivelyDiscretizedDesignSpace(DiscreteDesignSpace):
     def __init__(
-        self, domain_dim, objective_dim, delta, max_depth, confidence_type='hyperrectangle'
+        self, domain_dim, objective_dim, delta, max_depth, confidence_type="hyperrectangle"
     ) -> None:
         super().__init__()
 
-        if confidence_type == 'hyperrectangle':
+        if confidence_type == "hyperrectangle":
             confidence_cls = RectangularConfidenceRegion
         else:
             raise NotImplementedError(
@@ -101,7 +102,7 @@ class AdaptivelyDiscretizedDesignSpace(DiscreteDesignSpace):
 
         self.cardinality = len(self.points)
 
-    def update(self, model: GPModel, scale: np.ndarray, indices_to_update: Optional[list]=None):
+    def update(self, model: GPModel, scale: np.ndarray, indices_to_update: Optional[list] = None):
         if indices_to_update is None:
             indices_to_update = list(range(len(self.points)))
 
@@ -122,25 +123,29 @@ class AdaptivelyDiscretizedDesignSpace(DiscreteDesignSpace):
     def generate_child_designs(self, design_index: int) -> list:
         options = []
         for dim_i in range(self.domain_dim):
-            options.append([
+            options.append(
                 [
-                    self.cells[design_index][dim_i][0],
-                    (self.cells[design_index][dim_i][0] + self.cells[design_index][dim_i][1])/2
-                ],
-                [
-                    (self.cells[design_index][dim_i][0] + self.cells[design_index][dim_i][1])/2,
-                    self.cells[design_index][dim_i][1]
+                    [
+                        self.cells[design_index][dim_i][0],
+                        (self.cells[design_index][dim_i][0] + self.cells[design_index][dim_i][1])
+                        / 2,
+                    ],
+                    [
+                        (self.cells[design_index][dim_i][0] + self.cells[design_index][dim_i][1])
+                        / 2,
+                        self.cells[design_index][dim_i][1],
+                    ],
                 ]
-            ])
+            )
         new_bounds = list(map(list, product(*options)))
 
         list_children = []
         for bound in new_bounds:
             list_children.append(len(self.points))
-            
+
             x = np.array(bound, dtype=float).mean(axis=1)
             self.points = np.append(self.points, [x], axis=0)
-            self.point_depths.append(self.point_depths[design_index]+1)
+            self.point_depths.append(self.point_depths[design_index] + 1)
             self.cells.append(bound)
             self.confidence_regions.append(
                 # TODO: Create a copy constructor for ConfidenceRegion
@@ -150,7 +155,7 @@ class AdaptivelyDiscretizedDesignSpace(DiscreteDesignSpace):
                     self.confidence_regions[design_index].upper,
                 )
             )
-        
+
         self.cardinality = len(self.points)
 
         return list_children
@@ -159,7 +164,7 @@ class AdaptivelyDiscretizedDesignSpace(DiscreteDesignSpace):
         vh = self.calculate_design_vh(model, design_index)
         if self.point_depths[design_index] >= self.max_depth:
             return False
-        
+
         mu, cov = model.predict(self.points[[design_index]])
         std = np.sqrt(np.diag(cov.squeeze()))
 
@@ -172,7 +177,7 @@ class AdaptivelyDiscretizedDesignSpace(DiscreteDesignSpace):
         rho = 0.5
         alpha = 1
         N = 4
-        
+
         lengthscales, variances = model.get_lengthscale_and_var()
         Vh = np.zeros([self.objective_dim, 1])
         depth = self.point_depths[design_index] + depth_offset
@@ -186,13 +191,16 @@ class AdaptivelyDiscretizedDesignSpace(DiscreteDesignSpace):
                 raise ValueError("Kernel type undefined.")
 
             C1 = np.power((diam_x + 1) * diam_x / 2, self.domain_dim) * np.power(Cki, 1 / alpha)
-            C2 = 2 * np.log(2 * np.power(C1 , 2) * np.power(np.pi, 2) / 6)
-            C3 = 1. + 2.7 * np.sqrt(2 * self.domain_dim * alpha * np.log(2))
+            C2 = 2 * np.log(2 * np.power(C1, 2) * np.power(np.pi, 2) / 6)
+            C3 = 1.0 + 2.7 * np.sqrt(2 * self.domain_dim * alpha * np.log(2))
 
             term1 = Cki * np.power(v1 * np.power(rho, depth), alpha)
             term2 = np.log(
-                2 * np.power(depth + 1, 2) * np.power(np.pi, 2)
-                * self.objective_dim / (6 * self.delta)
+                2
+                * np.power(depth + 1, 2)
+                * np.power(np.pi, 2)
+                * self.objective_dim
+                / (6 * self.delta)
             )
             term3 = depth * np.log(N)
             term4 = np.maximum(0, -4 * self.domain_dim / alpha * np.log(term1))

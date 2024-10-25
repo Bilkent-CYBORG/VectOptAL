@@ -21,11 +21,11 @@ class Dataset:
         self.out_dim = self.out_data.shape[1]
 
 
-def get_dataset(dataset_name: str) -> Dataset:
+def get_dataset_instance(dataset_name: str) -> Dataset:
     if dataset_name in globals():
         return globals()[dataset_name]()
     else:
-        raise ValueError("Unknown dataset name")
+        raise ValueError(f"Unknown dataset name: {dataset_name}")
 
 
 class SNW(Dataset):
@@ -34,15 +34,16 @@ class SNW(Dataset):
     _cardinality = 206
 
     def __init__(self):
-        datafile = os.path.join('data', 'snw', 'sort_256.csv')
-        data = np.genfromtxt(datafile, delimiter=';')
-        self.out_data = np.copy(data[:, self._in_dim:])
-        self.in_data = np.copy(data[:, :self._in_dim])
-        
+        datafile = os.path.join("data", "snw", "sort_256.csv")
+        data = np.genfromtxt(datafile, delimiter=";")
+        self.out_data = np.copy(data[:, self._in_dim :])
+        self.in_data = np.copy(data[:, : self._in_dim])
+
         # Negate first objective to maximize
         self.out_data[:, 0] = -self.out_data[:, 0]
 
         super().__init__()
+
 
 class DiskBrake(Dataset):
     _in_dim = 4
@@ -50,12 +51,13 @@ class DiskBrake(Dataset):
     _cardinality = 128
 
     def __init__(self):
-        datafile = os.path.join('data', 'brake', 'brake.npy')
+        datafile = os.path.join("data", "brake", "brake.npy")
         data = np.load(datafile, allow_pickle=True)
-        self.out_data = np.copy(data[:, self._in_dim:])
-        self.in_data = np.copy(data[:, :self._in_dim])
+        self.out_data = np.copy(data[:, self._in_dim :])
+        self.in_data = np.copy(data[:, : self._in_dim])
 
         super().__init__()
+
 
 class VehicleSafety(Dataset):
     _in_dim = 5
@@ -63,9 +65,9 @@ class VehicleSafety(Dataset):
     _cardinality = 500
 
     def __init__(self):
-        datafile = os.path.join('data', 'vehicle_safety', 'VehicleSafety.npy')
+        datafile = os.path.join("data", "vehicle_safety", "VehicleSafety.npy")
         data = np.load(datafile, allow_pickle=True)
-        self.out_data = np.copy(data[:, self._in_dim:])
-        self.in_data = np.copy(data[:, :self._in_dim])
+        self.out_data = np.copy(data[:, self._in_dim :])
+        self.in_data = np.copy(data[:, : self._in_dim])
 
         super().__init__()
