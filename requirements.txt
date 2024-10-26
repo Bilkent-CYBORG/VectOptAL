@@ -13,7 +13,6 @@ numpy
 pandas
 seaborn
 jupyter
-mosek
 pytest
 pytest-cov
 flake8

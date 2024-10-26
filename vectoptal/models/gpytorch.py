@@ -185,9 +185,15 @@ class GPyTorchMultioutputExactModel(GPyTorchModel, ABC):
         return Kn
 
     def get_lengthscale_and_var(self):
+        assert self.model is not None, "Model not initialized."
+
         cov_module = self.model.covar_module
-        lengthscales = cov_module.data_covar_module.lengthscale.squeeze().numpy(force=True)
-        variances = cov_module.task_covar_module.var.squeeze().numpy(force=True)
+        if isinstance(self.model, MultitaskExactGPModel):
+            lengthscales = cov_module.data_covar_module.lengthscale.squeeze().numpy(force=True)
+            variances = cov_module.task_covar_module.var.squeeze().numpy(force=True)
+        elif isinstance(self.model, BatchIndependentExactGPModel):
+            lengthscales = cov_module.base_kernel.lengthscale.squeeze().numpy(force=True)
+            variances = cov_module.outputscale.squeeze().numpy(force=True)
 
         return lengthscales, variances
 

@@ -78,7 +78,7 @@ def get_alpha(rind: int, W: np.ndarray) -> np.ndarray:
     # We use cp.SOC(t, x) to create the SOC constraint ||x||_2 <= t.
     soc_constraints = [cp.SOC(c[i].T @ x + d[i], A[i] @ x + b[i]) for i in range(m)]
     prob = cp.Problem(cp.Minimize(f.T @ x), soc_constraints)
-    prob.solve(solver="ECOS")
+    prob.solve()
 
     return -prob.value
 
@@ -295,7 +295,7 @@ def is_covered_SOCP(vi, vj, eps, W):
     # We use cp.SOC(t, x) to create the SOC constraint ||x||_2 <= t.
     soc_constraints = [cp.SOC(c[i].T @ x + d[i], A[i] @ x + b[i]) for i in range(m)]
     prob = cp.Problem(cp.Minimize(f.T @ x), soc_constraints)
-    prob.solve(solver="ECOS")
+    prob.solve()
 
     """
     # Print result.
@@ -326,20 +326,65 @@ def is_covered(vi, vj, eps, W):
 
 def hyperrectangle_check_intersection(
     lower1: np.ndarray, upper1: np.ndarray, lower2: np.ndarray, upper2: np.ndarray
-):
+) -> bool:
+    """
+    This function takes the lower and upper bounds of two hyperrectangles and
+    determines if they intersect. A hyperrectangle is defined by its lower and
+    upper points in an n-dimensional space.
+
+    :param lower1: Lower bounds of the first hyperrectangle.
+    :type lower1: np.ndarray
+    :param upper1: Upper bounds of the first hyperrectangle.
+    :type upper1: np.ndarray
+    :param lower2: Lower bounds of the second hyperrectangle.
+    :type lower2: np.ndarray
+    :param upper2: Upper bounds of the second hyperrectangle.
+    :type upper2: np.ndarray
+    :return: True if the hyperrectangles intersect, False otherwise.
+    :rtype: bool
+    """
     if np.any(lower1 >= upper2) or np.any(upper1 <= lower2):
         return False
 
     return True
 
 
-def hyperrectangle_get_vertices(lower: np.ndarray, upper: np.ndarray):
+def hyperrectangle_get_vertices(lower: np.ndarray, upper: np.ndarray) -> np.ndarray:
+    """
+    This method takes an n-dimensional lower bound array and an n-dimensional upper bound array,
+    and constructs the vertices of the corresponding hyperrectangle by combining these bounds.
+
+    :param lower: An array of shape (n,) representing the lower bounds of the hyperrectangle.
+    :type lower: np.ndarray
+    :param upper: An array of shape (n,) representing the upper bounds of the hyperrectangle.
+    :type upper: np.ndarray
+    :return: An array of shape (2^n, n) containing the vertices of the hyperrectangle.
+    :rtype: np.ndarray
+    """
     a = [[l1, l2] for l1, l2 in zip(lower, upper)]
     vertex_list = [element for element in itertools.product(*a)]
     return np.array(vertex_list)
 
 
-def hyperrectangle_get_region_matrix(lower: np.ndarray, upper: np.ndarray):
+def hyperrectangle_get_region_matrix(
+    lower: np.ndarray, upper: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    This method takes an n-dimensional lower bound array and an n-dimensional upper bound array,
+    and constructs a matrix form for the hyperrectangle. For all points `x` inside the region of
+    the hyperrectangle, the condition `region_matrix @ x >= region_boundary` holds true.
+
+    :param lower: An array of shape (n,) representing the lower bounds of the hyperrectangle.
+    :type lower: np.ndarray
+    :param upper: An array of shape (n,) representing the upper bounds of the hyperrectangle.
+    :type upper: np.ndarray
+    :return: A tuple containing two elements:
+        - region_matrix: An array of shape (2*n, n) representing the matrix form of the
+        hyperrectangle.
+        - region_boundary: An array of shape (2*n,) representing the boundary conditions of the
+        hyperrectangle.
+    :rtype: tuple[np.ndarray, np.ndarray]
+    """
     dim = len(lower)
     region_matrix = np.vstack((np.eye(dim), -np.eye(dim)))
     region_boundary = np.hstack((np.array(lower), -np.array(upper)))

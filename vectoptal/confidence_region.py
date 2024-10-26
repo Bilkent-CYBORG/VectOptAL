@@ -118,10 +118,7 @@ class RectangularConfidenceRegion(ConfidenceRegion):
 
         prob = cp.Problem(cp.Minimize(0), constraints=constraints)
 
-        try:
-            prob.solve(solver="OSQP", max_iter=10000)
-        except RuntimeError:
-            prob.solve(solver="ECOS")
+        prob.solve()
 
         if prob.status is None:
             return True
@@ -183,10 +180,7 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
             objective = cp.Minimize(cone_matrix[n] @ (muy - mux))
 
             prob = cp.Problem(objective, constraints)
-            try:
-                prob.solve(solver="ECOS")
-            except RuntimeError:
-                prob.solve(solver="MOSEK")
+            prob.solve()
 
             if prob.value < -slackness:
                 return False
@@ -221,10 +215,7 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
 
         prob = cp.Problem(objective, constraints)
 
-        try:
-            prob.solve(solver="ECOS")
-        except RuntimeError:
-            prob.solve(solver="MOSEK")
+        prob.solve()
 
         if "infeasible" in prob.status:
             return False

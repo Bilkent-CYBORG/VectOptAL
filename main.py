@@ -26,26 +26,28 @@ from vectoptal.models import GPyTorchModelListExactModel
 def test_discrete():
     set_seed(SEED)
 
-    order = ConeTheta2DOrder(cone_degree=90)
+    # order = ConeTheta2DOrder(cone_degree=90)
+    order = ComponentwiseOrder(2)
     dataset_name = "DiskBrake"
     dataset = get_dataset_instance(dataset_name)
 
-    epsilon = 0.01
-    delta = 0.05
-    noise_var = epsilon
+    epsilon = 0.1
+    delta = 0.1
+    noise_var = 0.00001
 
-    iter_count = 10
+    iter_count = 1
     eps_f1_values = []
     for iter_i in range(iter_count):
         set_seed(SEED + iter_i + 1)
 
-        algorithm = VOGP(
+        algorithm = PaVeBaGP(
             epsilon=epsilon,
             delta=delta,
             dataset_name=dataset_name,
             order=order,
             noise_var=noise_var,
-            conf_contraction=32,
+            conf_contraction=16,
+            type="IH",
         )
 
         while True:
@@ -314,9 +316,9 @@ def test_moo():
 
 
 if __name__ == "__main__":
-    # test_discrete()
+    test_discrete()
     # test_continuous()
     # test_partial_model()
     # test_partial()
     # test_partial_fixed_budget()
-    test_moo()
+    # test_moo()
