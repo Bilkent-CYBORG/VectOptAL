@@ -62,9 +62,6 @@ class TestPaVeBaGP(TestCase):
             list(pareto_indices),
             self.epsilon,
         )
-        print("pred. pareto:", pareto_indices)
-        print("true. pareto:", self.order.get_pareto_set(dataset.out_data))
-        print("eps_f1: ", eps_f1)
         self.assertTrue(eps_f1 > 0.9)
 
     def test_run_one_step(self):

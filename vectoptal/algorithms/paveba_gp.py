@@ -6,8 +6,8 @@ import numpy as np
 
 from vectoptal.order import Order
 from vectoptal.datasets import get_dataset_instance
-from vectoptal.design_space import FixedPointsDesignSpace
 from vectoptal.algorithms.algorithm import PALAlgorithm
+from vectoptal.design_space import FixedPointsDesignSpace
 from vectoptal.maximization_problem import ProblemFromDataset
 from vectoptal.acquisition import SumVarianceAcquisition, optimize_acqf_discrete
 from vectoptal.confidence_region import confidence_region_is_dominated, confidence_region_is_covered

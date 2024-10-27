@@ -15,13 +15,13 @@ from vectoptal.utils import (
 
 
 class ConfidenceRegion(ABC):
-    """Abstract class for confidence regions"""
+    """Abstract base class for confidence regions."""
 
     def __init__(self) -> None:
         super().__init__()
 
     @abstractmethod
-    def update(self):
+    def update(self) -> None:
         pass
 
 
@@ -133,8 +133,6 @@ class RectangularConfidenceRegion(ConfidenceRegion):
         cls, order: Order, obj1: ConfidenceRegion, obj2: ConfidenceRegion, slackness: np.ndarray
     ) -> bool:
         """
-        Checks if the second hyperrectangle dominates the first one at each possible pair of points.
-
         :param order: Ordering object.
         :type order: Order
         :param obj1: First hyperrectangle.
@@ -169,9 +167,6 @@ class RectangularConfidenceRegion(ConfidenceRegion):
         slackness: np.ndarray = np.array(0.0),
     ) -> bool:
         """
-        Checks if all corners of the first hyperrectangle has a corresponding point in the second
-        hyperrectangle dominated by it. Used for pessimistic comparison.
-
         :param order: Ordering object.
         :type order: Order
         :param obj1: First hyperrectangle.
@@ -201,9 +196,6 @@ class RectangularConfidenceRegion(ConfidenceRegion):
         cls, order: Order, obj1: ConfidenceRegion, obj2: ConfidenceRegion, slackness: np.ndarray
     ) -> bool:
         """
-        Checks if there is at least one point in the second hyperrectangle that dominates at least
-        one point from the first hyperrectangle.
-
         :param order: Ordering object.
         :type order: Order
         :param obj1: First hyperrectangle.
@@ -309,8 +301,6 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
         cls, order: Order, obj1: ConfidenceRegion, obj2: ConfidenceRegion, slackness: np.ndarray
     ) -> bool:
         """
-        Checks if the second ellipsoid dominates the first one at each possible pair of points.
-
         :param order: Ordering object.
         :type order: Order
         :param obj1: First ellipsoid.
@@ -395,9 +385,6 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
         cls, order: Order, obj1: ConfidenceRegion, obj2: ConfidenceRegion, slackness: np.ndarray
     ):
         """
-        Checks if there is at least one point in the second ellipsoid that dominates at least
-        one point from the first ellipsoid.
-
         :param order: Ordering object.
         :type order: Order
         :param obj1: First ellipsoid.
@@ -451,6 +438,21 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
 def confidence_region_is_dominated(
     order: Order, region1: ConfidenceRegion, region2: ConfidenceRegion, slackness: np.ndarray
 ) -> bool:
+    """
+    Helper function to call the is_dominated method of the appropriate confidence region object.
+    Checks if the second confidence region dominates the first one at each possible pair of points.
+
+    :param order: Ordering object.
+    :type order: Order
+    :param obj1: First confidence region.
+    :type obj1: ConfidenceRegion
+    :param obj2: Second confidence region.
+    :type obj2: ConfidenceRegion
+    :param slackness: Slackness parameter. Gives a bonus to the second confidence region.
+    :type slackness: np.ndarray
+    :return: True if the first confidence region is dominated by the second one, False otherwise.
+    :rtype: bool
+    """
     if isinstance(region1, RectangularConfidenceRegion):
         return RectangularConfidenceRegion.is_dominated(order, region1, region2, slackness)
     elif isinstance(region1, EllipsoidalConfidenceRegion):
@@ -462,6 +464,23 @@ def confidence_region_is_dominated(
 def confidence_region_check_dominates(
     order: Order, region1: ConfidenceRegion, region2: ConfidenceRegion
 ) -> bool:
+    """
+    Helper function to call the check_dominates method of the appropriate confidence region object.
+    Checks if all corners of the first confidence region has a corresponding point in the second
+    confidence region dominated by it. Used for pessimistic comparison.
+
+    :param order: Ordering object.
+    :type order: Order
+    :param obj1: First confidence region.
+    :type obj1: ConfidenceRegion
+    :param obj2: Second confidence region.
+    :type obj2: ConfidenceRegion
+    :param slackness: Slackness parameter. Not used, but kept for compatibility.
+    :type slackness: np.ndarray
+    :return: True if all corners of the first confidence region are dominated by corresponding
+        points in the second confidence region, False otherwise.
+    :rtype: bool
+    """
     if isinstance(region1, RectangularConfidenceRegion):
         return RectangularConfidenceRegion.check_dominates(order, region1, region2)
     elif isinstance(region1, EllipsoidalConfidenceRegion):
@@ -473,6 +492,23 @@ def confidence_region_check_dominates(
 def confidence_region_is_covered(
     order: Order, region1: ConfidenceRegion, region2: ConfidenceRegion, slackness: np.ndarray
 ) -> bool:
+    """
+    Helper function to call the is_covered method of the appropriate confidence region object.
+    Checks if there is at least one point in the second confidence region that dominates at least
+    one point from the first confidence region.
+
+    :param order: Ordering object.
+    :type order: Order
+    :param obj1: First confidence region.
+    :type obj1: ConfidenceRegion
+    :param obj2: Second confidence region.
+    :type obj2: ConfidenceRegion
+    :param slackness: Slackness parameter. Gives a bonus to the second confidence region.
+    :type slackness: np.ndarray
+    :return: True if the first confidence region can be covered by the second confidence region,
+        False otherwise.
+    :rtype: bool
+    """
     # TODO: is_covered may be a bad name. Maybe is_not_dominated?
     if isinstance(region1, RectangularConfidenceRegion):
         return RectangularConfidenceRegion.is_covered(order, region1, region2, slackness)

@@ -67,6 +67,9 @@ class TestPaVeBaPartialGP(TestCase):
             self.epsilon,
         )
         self.assertTrue(eps_f1 > 0.9)
+        self.assertLess(self.algo.total_cost, self.cost_budget + max(self.costs))
+        self.assertLessEqual(self.algo.total_cost, self.algo.round * max(self.costs))
+        self.assertGreaterEqual(self.algo.total_cost, self.algo.round * min(self.costs))
 
     def test_run_one_step(self):
         """Test the run_one_step method."""
