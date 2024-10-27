@@ -18,13 +18,19 @@ class PaVeBa(PALAlgorithm):
     """
     Implement the Pareto Vector Bandits (PaVeBa) algorithm.
 
-    :param float epsilon: Determines the accuracy of the PAC-learning framework.
-    :param float delta: Determines the success probability of the PAC-learning framework.
-    :param str dataset_name: Name of the dataset to be used.
+    :param epsilon: Determines the accuracy of the PAC-learning framework.
+    :type epsilon: float
+    :param delta: Determines the success probability of the PAC-learning framework.
+    :type delta: float
+    :param dataset_name: Name of the dataset to be used.
+    :type dataset_name: str
     :param order: Order to be used.
-    :param float noise_var: Variance of the Gaussian sampling noise.
-    :param float conf_contraction: Contraction coefficient to shrink
+    :type order: Order
+    :param noise_var: Variance of the Gaussian sampling noise.
+    :type noise_var: float
+    :param conf_contraction: Contraction coefficient to shrink
         the confidence regions empirically.
+    :type conf_contraction: float
 
     The algorithm sequentially samples design rewards with a multivariate
     white Gaussian noise whose diagonal entries are specified by the user.
