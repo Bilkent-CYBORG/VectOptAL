@@ -3,15 +3,15 @@ import logging
 import numpy as np
 
 from vectoptal.order import Order
-from vectoptal.datasets import get_dataset_instance
-from vectoptal.design_space import FixedPointsDesignSpace
-from vectoptal.algorithms.algorithm import PALAlgorithm
-from vectoptal.maximization_problem import ProblemFromDataset
-from vectoptal.models import EmpiricalMeanVarModel
 from vectoptal.confidence_region import (
     confidence_region_is_dominated,
     confidence_region_is_covered,
 )
+from vectoptal.models import EmpiricalMeanVarModel
+from vectoptal.datasets import get_dataset_instance
+from vectoptal.algorithms.algorithm import PALAlgorithm
+from vectoptal.design_space import FixedPointsDesignSpace
+from vectoptal.maximization_problem import ProblemFromDataset
 
 
 class PaVeBa(PALAlgorithm):
@@ -167,6 +167,4 @@ class PaVeBa(PALAlgorithm):
         r = np.sqrt(t1 * t2)
 
         # TODO: Do we need to scale because of norm-subgaussianity?
-        return (r / self.conf_contraction) * np.ones(
-            self.m,
-        )
+        return r / self.conf_contraction

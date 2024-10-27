@@ -2,6 +2,7 @@ from unittest import TestCase
 
 import numpy as np
 
+from vectoptal.utils.seed import SEED
 from vectoptal.algorithms import PaVeBaGP
 from vectoptal.order import ComponentwiseOrder
 from vectoptal.datasets import get_dataset_instance
@@ -13,11 +14,14 @@ class TestPaVeBaGP(TestCase):
 
     def setUp(self):
         # A basic setup for the model.
+        np.random.seed(SEED)
+
         self.epsilon = 0.1
         self.delta = 0.1
-        self.dataset_name = "DiskBrake"
+        self.dataset_name = "Test"
         self.order = ComponentwiseOrder(2)
         self.noise_var = 0.00001
+        self.dataset_cardinality = get_dataset_instance(self.dataset_name)._cardinality
         self.conf_contraction = 1
         self.algo = PaVeBaGP(
             epsilon=self.epsilon,
@@ -58,6 +62,9 @@ class TestPaVeBaGP(TestCase):
             list(pareto_indices),
             self.epsilon,
         )
+        print("pred. pareto:", pareto_indices)
+        print("true. pareto:", self.order.get_pareto_set(dataset.out_data))
+        print("eps_f1: ", eps_f1)
         self.assertTrue(eps_f1 > 0.9)
 
     def test_run_one_step(self):
@@ -77,7 +84,9 @@ class TestPaVeBaGP(TestCase):
     def test_compute_alpha(self):
         """Test the compute_alpha method."""
         self.algo.run_one_step()
-        alpha = 8 * 2 * np.log(6) + 4 * np.log((np.pi**2 * 128) / (6 * self.delta))
+        alpha = 8 * 2 * np.log(6) + 4 * np.log(
+            (np.pi**2 * self.dataset_cardinality) / (6 * self.delta)
+        )
         r1 = alpha
         r2 = self.algo.compute_alpha()
         self.assertTrue((np.array([r1, r1]) / self.conf_contraction == r2).all())

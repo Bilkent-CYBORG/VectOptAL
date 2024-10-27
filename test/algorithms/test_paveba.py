@@ -2,6 +2,7 @@ from unittest import TestCase
 
 import numpy as np
 
+from vectoptal.utils.seed import SEED
 from vectoptal.algorithms import PaVeBa
 from vectoptal.order import ComponentwiseOrder
 from vectoptal.datasets import get_dataset_instance
@@ -13,11 +14,14 @@ class TestPaVeBa(TestCase):
 
     def setUp(self):
         # A basic setup for the model.
+        np.random.seed(SEED)
+
         self.epsilon = 0.1
         self.delta = 0.1
-        self.dataset_name = "DiskBrake"
+        self.dataset_name = "Test"
         self.order = ComponentwiseOrder(2)
         self.noise_var = 0.00001
+        self.dataset_cardinality = get_dataset_instance(self.dataset_name)._cardinality
         self.conf_contraction = 1
         self.algo = PaVeBa(
             epsilon=self.epsilon,
@@ -77,7 +81,7 @@ class TestPaVeBa(TestCase):
         """Test the compute_radius method."""
         self.algo.run_one_step()
         t1 = 8 * self.noise_var
-        t2 = np.log((np.pi**2 * (3) * 128) / (6 * 0.1))
+        t2 = np.log((np.pi**2 * (3) * self.dataset_cardinality) / (6 * 0.1))
         r1 = np.sqrt(t1 * t2)
         r2 = self.algo.compute_radius()
         self.assertTrue((np.array([r1, r1]) == r2).all())

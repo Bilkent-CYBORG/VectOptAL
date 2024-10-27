@@ -97,7 +97,7 @@ class PaVeBaGP(PALAlgorithm):
     def pareto_updating(self):
         A = self.S.union(self.U)
 
-        is_index_pareto = []
+        new_pareto_pts = []
         for pt in self.S:
             pt_conf = self.design_space.confidence_regions[pt]
             for pt_prime in A:
@@ -109,17 +109,14 @@ class PaVeBaGP(PALAlgorithm):
                 if confidence_region_is_covered(
                     self.order, pt_conf, pt_p_conf, self.cone_alpha_eps
                 ):
-                    is_index_pareto.append(False)
                     break
             else:
-                is_index_pareto.append(True)
+                new_pareto_pts.append(pt)
 
-        tmp_S = copy.deepcopy(self.S)
-        for is_pareto, pt in zip(is_index_pareto, tmp_S):
-            if is_pareto:
-                self.S.remove(pt)
-                self.P.add(pt)
-        logging.debug(f"Pareto: {str(self.P)}")
+        for pt in new_pareto_pts:
+            self.S.remove(pt)
+            self.P.add(pt)
+        print(f"Pareto: {str(self.P)}")
 
     def useful_updating(self):
         self.U = set()
@@ -129,11 +126,11 @@ class PaVeBaGP(PALAlgorithm):
                 pt_p_conf = self.design_space.confidence_regions[pt_prime]
 
                 if confidence_region_is_covered(
-                    self.order, pt_conf, pt_p_conf, self.cone_alpha_eps
+                    self.order, pt_p_conf, pt_conf, self.cone_alpha_eps
                 ):
                     self.U.add(pt)
                     break
-        logging.debug(f"Useful: {str(self.U)}")
+        print(f"Useful: {str(self.U)}")
 
     def evaluating(self):
         A = self.S.union(self.U)
@@ -185,6 +182,6 @@ class PaVeBaGP(PALAlgorithm):
             (np.pi**2 * self.round**2 * self.design_space.cardinality) / (6 * self.delta)
         )
 
-        return (alpha / self.conf_contraction) * np.ones(
-            self.m,
-        )
+        print("alpha:", alpha)
+
+        return alpha / self.conf_contraction

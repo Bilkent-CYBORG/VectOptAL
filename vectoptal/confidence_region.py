@@ -27,15 +27,17 @@ class ConfidenceRegion(ABC):
 
 class RectangularConfidenceRegion(ConfidenceRegion):
     """
-    Implements the hyperrectangular confidence region object.
-    Note that the edges should be parall`el to the axes.
+    Implements the axis-aligned hyperrectangular confidence region object.
 
-    :param int dim: Dimension of the space of the hyperrectangle.
-    :param lower: Bottom-left corner of the hyperrectangle.
-    :param upper: Upper-right corner of the hyperrectangle.
-    :param intersect_iteratively: If True, the hyperrectangle will be
-        intersected with the new one iteratively.
-
+    :param dim: The dimension of the hyperrectangle.
+    :type dim: int
+    :param lower: An array representing the lower bounds (lower-most corner) of the hyperrectangle.
+    :type lower: Optional[np.ndarray]
+    :param upper: An array representing the upper bounds (upper-most corner) of the hyperrectangle.
+    :type upper: Optional[np.ndarray]
+    :param intersect_iteratively: If True, the confidence region is updated by intersecting each
+        incoming hyperrectangle with the current one.
+    :type intersect_iteratively: bool
     """
 
     def __init__(
@@ -43,30 +45,47 @@ class RectangularConfidenceRegion(ConfidenceRegion):
         dim: int,
         lower: Optional[np.ndarray] = None,
         upper: Optional[np.ndarray] = None,
-        intersect_iteratively: Optional[bool] = True,
+        intersect_iteratively: bool = False,
     ) -> None:
         super().__init__()
 
         self.intersect_iteratively = intersect_iteratively
 
         if lower is not None and upper is not None:
+            assert (
+                len(lower) == dim and len(upper) == dim
+            ), "Bounds must have the same dimensions as the space."
+            assert np.all(lower <= upper), "Lower bound must be less than or equal to upper bound."
+
             self.lower = lower
             self.upper = upper
         else:
             self.lower = np.array([-1e12] * dim)  # TODO: Magic large number.
             self.upper = np.array([1e12] * dim)
 
-    def diagonal(self):
-        """Returns the euclidean norm of the diagonal of the hyperrectangle"""
+    def diagonal(self) -> float:
+        """
+        Returns the euclidean norm of the diagonal of the hyperrectangle.
+
+        :return: Norm of the diagonal.
+        :rtype: float
+        """
         return np.linalg.norm(self.upper - self.lower)
 
-    def update(self, mean: np.ndarray, covariance: np.ndarray, scale: np.ndarray = np.array(1.0)):
+    def update(
+        self, mean: np.ndarray, covariance: np.ndarray, scale: np.ndarray = np.array(1.0)
+    ) -> None:
         """
-        Update the hyperrectangle using a new mean and covariance matrix.
+        Updates the hyperrectangle using a new mean and covariance matrix. Intersects the new
+        hyperrectangle with the current one if intersect_iteratively is True, otherwise uses the
+        new one.
 
         :param mean: Mean for the new hyperrectangle.
+        :type mean: np.ndarray
         :param covariance: Covariance matrix for the new hyperrectangle.
+        :type covariance: np.ndarray
         :param scale: Scaling factor for the covariance matrix.
+        :type scale: np.ndarray
         """
         assert covariance.shape[-1] == covariance.shape[-2], "Covariance matrix must be square."
         std = np.sqrt(np.diag(covariance.squeeze()))
@@ -81,16 +100,24 @@ class RectangularConfidenceRegion(ConfidenceRegion):
             self.upper = U
 
     @property
-    def center(self):
-        """Returns the center of the hyperrectangle"""
+    def center(self) -> np.ndarray:
+        """
+        Returns the center of the hyperrectangle.
+
+        :return: Center of the hyperrectangle.
+        :rtype: np.ndarray
+        """
         return (self.lower + self.upper) / 2
 
-    def intersect(self, lower: np.ndarray, upper: np.ndarray):
+    def intersect(self, lower: np.ndarray, upper: np.ndarray) -> None:
         """
-        Intersect the hyperrectangle with a new hyperrectangle.
+        Intersect the hyperrectangle with a new hyperrectangle. If there is no intersection, then
+        the new hyperrectangle is used.
 
         :param lower: Bottom-left corner of the new hyperrectangle.
+        :type lower: np.ndarray
         :param upper: Upper-right corner of the new hyperrectangle.
+        :type upper: np.ndarray
         """
         # if the two rectangles overlap
         if hyperrectangle_check_intersection(self.lower, self.upper, lower, upper):
@@ -102,15 +129,28 @@ class RectangularConfidenceRegion(ConfidenceRegion):
             self.upper = upper
 
     @classmethod
-    def is_dominated(cls, order: Order, obj1, obj2, slackness: np.ndarray):
+    def is_dominated(
+        cls, order: Order, obj1: ConfidenceRegion, obj2: ConfidenceRegion, slackness: np.ndarray
+    ) -> bool:
         """
         Checks if the second hyperrectangle dominates the first one at each possible pair of points.
 
         :param order: Ordering object.
+        :type order: Order
         :param obj1: First hyperrectangle.
+        :type obj1: ConfidenceRegion
         :param obj2: Second hyperrectangle.
-        :param slackness: Slackness parameter. Gives a bonus the second hyperrectangle.
+        :type obj2: ConfidenceRegion
+        :param slackness: Slackness parameter. Gives a bonus to the second hyperrectangle.
+        :type slackness: np.ndarray
+        :return: True if the first hyperrectangle is dominated by the second one, False otherwise.
+        :rtype: bool
         """
+
+        assert np.array(slackness).size == 1 or slackness.size == len(
+            obj1.lower
+        ), "Slackness must be a scalar or a vector of the same size as the number of dimensions."
+
         verts1 = hyperrectangle_get_vertices(obj1.lower, obj1.upper)
         verts2 = hyperrectangle_get_vertices(obj2.lower, obj2.upper)
 
@@ -121,15 +161,28 @@ class RectangularConfidenceRegion(ConfidenceRegion):
         return True
 
     @classmethod
-    def check_dominates(cls, order: Order, obj1, obj2, slackness: np.ndarray = np.array(0.0)):
+    def check_dominates(
+        cls,
+        order: Order,
+        obj1: ConfidenceRegion,
+        obj2: ConfidenceRegion,
+        slackness: np.ndarray = np.array(0.0),
+    ) -> bool:
         """
         Checks if all corners of the first hyperrectangle has a corresponding point in the second
-         hyperrectangle dominated by it.
+        hyperrectangle dominated by it. Used for pessimistic comparison.
 
         :param order: Ordering object.
+        :type order: Order
         :param obj1: First hyperrectangle.
+        :type obj1: ConfidenceRegion
         :param obj2: Second hyperrectangle.
-        :param slackness: Slackness parameter. Gives a bonus the second hyperrectangle.
+        :type obj2: ConfidenceRegion
+        :param slackness: Slackness parameter. Not used, but kept for compatibility.
+        :type slackness: np.ndarray
+        :return: True if all corners of the first hyperrectangle are dominated by corresponding
+            points in the second hyperrectangle, False otherwise.
+        :rtype: bool
         """
         cone_matrix = order.ordering_cone.W
 
@@ -144,21 +197,34 @@ class RectangularConfidenceRegion(ConfidenceRegion):
         return True
 
     @classmethod
-    def is_covered(cls, order, obj1, obj2, slackness):
+    def is_covered(
+        cls, order: Order, obj1: ConfidenceRegion, obj2: ConfidenceRegion, slackness: np.ndarray
+    ) -> bool:
         """
-        Checks if there is at least one point in the second hyperrectangle
-        that dominates at least one point from the first hyperrectangle.
+        Checks if there is at least one point in the second hyperrectangle that dominates at least
+        one point from the first hyperrectangle.
 
         :param order: Ordering object.
+        :type order: Order
         :param obj1: First hyperrectangle.
+        :type obj1: ConfidenceRegion
         :param obj2: Second hyperrectangle.
-        :param slackness: Slackness parameter. Gives a bonus the second hyperrectangle.
+        :type obj2: ConfidenceRegion
+        :param slackness: Slackness parameter. Gives a bonus to the second hyperrectangle.
+        :type slackness: np.ndarray
+        :return: True if the first hyperrectangle can be covered by the second hyperrectangle,
+            False otherwise.
+        :rtype: bool
         """
         cone_matrix = order.ordering_cone.W
-        n = cone_matrix.shape[1]
+        m = cone_matrix.shape[1]
 
-        z_point = cp.Variable(n)
-        z_point2 = cp.Variable(n)
+        assert (
+            np.array(slackness).size == 1 or slackness.size == m
+        ), "Slackness must be a scalar or a vector of the same size as the number of dimensions."
+
+        z_point = cp.Variable(m)
+        z_point2 = cp.Variable(m)
 
         # Represent rectangular confidence regions as matrices
         obj1_matrix, obj1_boundary = hyperrectangle_get_region_matrix(obj1.lower, obj1.upper)
@@ -172,7 +238,10 @@ class RectangularConfidenceRegion(ConfidenceRegion):
 
         prob = cp.Problem(cp.Minimize(0), constraints=constraints)
 
-        prob.solve()
+        try:
+            prob.solve()
+        except cp.error.SolverError:
+            prob.solve(solver=cp.SCS)
 
         if prob.status is None:
             return True
@@ -185,10 +254,13 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
     """
     Implements the ellipsoidal confidence region object.
 
-    :param int dim: Dimension of the space of the ellipsoid.
-    :param center: Center of the ellipsoid.
-    :param sigma: Covariance matrix of the ellipsoid.
-    :param alpha: Scaling factor for the covariance matrix.
+    :param int dim: The dimension of the ellipsoid.
+    :param center: The center of the ellipsoid.
+    :type center: Optional[np.ndarray]
+    :param sigma: The covariance matrix of the ellipsoid.
+    :type sigma: Optional[np.ndarray]
+    :param alpha: The scaling factor of the ellipsoid.
+    :type alpha: Optional[float]
     """
 
     def __init__(
@@ -209,35 +281,64 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
             self.sigma = np.eye(dim)
             self.alpha = 1.0
 
-        # WARNING: ALPHA IS FLOAT ABOVE, BUT NDARRAY BELOW
+    def update(
+        self, mean: np.ndarray, covariance: np.ndarray, scale: np.ndarray = np.array(1.0)
+    ) -> None:
+        """
+        Updates the ellipsoid using a new mean and covariance matrix.
 
-    def update(self, mean: np.ndarray, covariance: np.ndarray, scale: np.ndarray = np.array(1.0)):
+        :param mean: Center for the new ellipsoid.
+        :type mean: np.ndarray
+        :param covariance: Covariance matrix for the new ellipsoid.
+        :type covariance: np.ndarray
+        :param scale: Scaling factor for the new ellipsoid.
+        :type scale: np.ndarray
+        """
+
         assert covariance.shape[-1] == covariance.shape[-2], "Covariance matrix must be square."
+        assert (
+            np.array(scale).size == 1
+        ), "Scale must be a scalar for this type of confidence region."
 
         self.center = mean
         self.sigma = covariance
         self.alpha = scale
 
     @classmethod
-    def is_dominated(cls, order: Order, obj1, obj2, slackness: np.ndarray):
+    def is_dominated(
+        cls, order: Order, obj1: ConfidenceRegion, obj2: ConfidenceRegion, slackness: np.ndarray
+    ) -> bool:
         """
         Checks if the second ellipsoid dominates the first one at each possible pair of points.
 
         :param order: Ordering object.
+        :type order: Order
         :param obj1: First ellipsoid.
+        :type obj1: ConfidenceRegion
         :param obj2: Second ellipsoid.
-        :param slackness: Slackness parameter. Gives a bonus the second ellipsoid.
+        :type obj2: ConfidenceRegion
+        :param slackness: Slackness parameter. Gives a bonus to the second ellipsoid.
+        :type slackness: np.ndarray
+        :return: True if the first ellipsoid is dominated by the second one, False otherwise.
+        :rtype: bool
         """
+
         output_dim = len(obj1.center)
         cone_matrix = order.ordering_cone.W
+
+        if np.array(slackness).size == 1:
+            slackness = np.array([slackness] * cone_matrix.shape[0])
+        assert (
+            slackness.size == cone_matrix.shape[0]
+        ), "Slackness must be a scalar or a vector of the same size as the number of constraints."
 
         mux = cp.Variable(output_dim)
         muy = cp.Variable(output_dim)
 
-        # # quad_form( A * x - b, Q ) <= 1
+        # Equivalently, quad_form( A * x - b, Q ) <= 1
         # cons1 = cp.quad_form((mux - mx).T, np.linalg.inv(sigma_x)) <= alpha
         # cons2 = cp.quad_form((muy - my).T, np.linalg.inv(sigma_y)) <= alpha
-        # # norm( Qsqrt * ( A * x - b ) ) <= 1
+        # norm( Qsqrt * ( A * x - b ) ) <= 1
         cons1 = (
             cp.norm(sp.linalg.sqrtm(np.linalg.inv(obj1.sigma)) @ (mux - obj1.center).T)
             <= obj1.alpha
@@ -253,34 +354,73 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
             objective = cp.Minimize(cone_matrix[n] @ (muy - mux))
 
             prob = cp.Problem(objective, constraints)
-            prob.solve()
+            try:
+                prob.solve()
+            except cp.error.SolverError:
+                prob.solve(solver=cp.SCS)
 
-            if prob.value < -slackness:
+            if prob.value < -slackness[n]:
                 return False
 
         return True
 
     @classmethod
-    def check_dominates(cls, order: Order, obj1, obj2, slackness: np.ndarray = np.array(0.0)):
+    def check_dominates(
+        cls,
+        order: Order,
+        obj1: ConfidenceRegion,
+        obj2: ConfidenceRegion,
+        slackness: np.ndarray = np.array(0.0),
+    ) -> bool:
+        """
+        Would check if first ellipsoids worst case w.r.t. the order dominates the second ellipsoids
+        worst case w.r.t. the order. Currently not implemented.
+
+        :param order: Ordering object.
+        :type order: Order
+        :param obj1: First ellipsoid.
+        :type obj1: ConfidenceRegion
+        :param obj2: Second ellipsoid.
+        :type obj2: ConfidenceRegion
+        :param slackness: Slackness parameter. Not used, but kept for compatibility.
+        :type slackness: np.ndarray
+        :return: True if first ellipsoid dominates the second ellipsoid at their worst points,
+            False otherwise.
+        :rtype: bool
+        """
         raise NotImplementedError
 
     @classmethod
-    def is_covered(cls, order, obj1, obj2, slackness):
+    def is_covered(
+        cls, order: Order, obj1: ConfidenceRegion, obj2: ConfidenceRegion, slackness: np.ndarray
+    ):
         """
-        Checks if there is at least one point in the second ellipsoid
-        that dominates at least one point from the first ellipsoid.
+        Checks if there is at least one point in the second ellipsoid that dominates at least
+        one point from the first ellipsoid.
 
         :param order: Ordering object.
+        :type order: Order
         :param obj1: First ellipsoid.
+        :type obj1: ConfidenceRegion
         :param obj2: Second ellipsoid.
-        :param slackness: Slackness parameter. Gives a bonus the second ellipsoid.
+        :type obj2: ConfidenceRegion
+        :param slackness: Slackness parameter. Gives a bonus to the second ellipsoid.
+        :type slackness: np.ndarray
+        :return: True if the first ellipsoid can be covered by the second ellipsoid,
+            False otherwise.
+        :rtype: bool
         """
         cone_matrix = order.ordering_cone.W
         output_dim = cone_matrix.shape[1]
+
+        assert (
+            np.array(slackness).size == 1 or slackness.size == cone_matrix.shape[0]
+        ), "Slackness must be a scalar or a vector of the same size as the number of constraints."
+
         mux = cp.Variable(output_dim)
         muy = cp.Variable(output_dim)
 
-        # # norm( Qsqrt * ( A * x - b ) ) <= 1
+        # norm( Qsqrt * ( A * x - b ) ) <= 1
         cons1 = (
             cp.norm(sp.linalg.sqrtm(np.linalg.inv(obj1.sigma)) @ (mux - obj1.center).T)
             <= obj1.alpha
@@ -289,7 +429,7 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
             cp.norm(sp.linalg.sqrtm(np.linalg.inv(obj2.sigma)) @ (muy - obj2.center).T)
             <= obj2.alpha
         )
-        cons3 = cone_matrix @ (muy - mux) >= slackness
+        cons3 = cone_matrix @ (muy - mux) >= slackness  # Vector of constraints.
 
         constraints = [cons1, cons2, cons3]
 
@@ -297,7 +437,10 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
 
         prob = cp.Problem(objective, constraints)
 
-        prob.solve()
+        try:
+            prob.solve()
+        except cp.error.SolverError:
+            prob.solve(solver=cp.SCS)
 
         if "infeasible" in prob.status:
             return False
@@ -305,7 +448,9 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
             return True
 
 
-def confidence_region_is_dominated(order, region1, region2, slackness) -> bool:
+def confidence_region_is_dominated(
+    order: Order, region1: ConfidenceRegion, region2: ConfidenceRegion, slackness: np.ndarray
+) -> bool:
     if isinstance(region1, RectangularConfidenceRegion):
         return RectangularConfidenceRegion.is_dominated(order, region1, region2, slackness)
     elif isinstance(region1, EllipsoidalConfidenceRegion):
@@ -314,7 +459,9 @@ def confidence_region_is_dominated(order, region1, region2, slackness) -> bool:
         raise NotImplementedError
 
 
-def confidence_region_check_dominates(order, region1, region2) -> bool:
+def confidence_region_check_dominates(
+    order: Order, region1: ConfidenceRegion, region2: ConfidenceRegion
+) -> bool:
     if isinstance(region1, RectangularConfidenceRegion):
         return RectangularConfidenceRegion.check_dominates(order, region1, region2)
     elif isinstance(region1, EllipsoidalConfidenceRegion):
@@ -323,7 +470,9 @@ def confidence_region_check_dominates(order, region1, region2) -> bool:
         raise NotImplementedError
 
 
-def confidence_region_is_covered(order, region1, region2, slackness) -> bool:
+def confidence_region_is_covered(
+    order: Order, region1: ConfidenceRegion, region2: ConfidenceRegion, slackness: np.ndarray
+) -> bool:
     # TODO: is_covered may be a bad name. Maybe is_not_dominated?
     if isinstance(region1, RectangularConfidenceRegion):
         return RectangularConfidenceRegion.is_covered(order, region1, region2, slackness)
