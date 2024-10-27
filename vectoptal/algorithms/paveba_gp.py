@@ -17,6 +17,48 @@ from vectoptal.models import (
 
 
 class PaVeBaGP(PALAlgorithm):
+    """
+    Implement the GP-based Pareto Vector Bandits (PaVeBa) algorithm.
+
+    :param float epsilon: Determines the accuracy of the PAC-learning framework.
+    :param float delta: Determines the success probability of the PAC-learning framework.
+    :param str dataset_name: Name of the dataset to be used.
+    :param order: Order to be used.
+    :param float noise_var: Variance of the Gaussian sampling noise.
+    :param float conf_contraction: Contraction coefficient to shrink the
+        confidence regions empirically.
+    :param str type: Specifies if the algorithm uses dependent hyperellipsoidal or
+        independent hyperrectangular confidence regions.
+    :param int batch_size: Number of samples taken in each round.
+
+    The algorithm sequentially samples design rewards with a multivariate
+    white Gaussian noise whose diagonal entries are specified by the user.
+
+    Returns None.
+
+    Example:
+        >>> from vectoptal.order import ComponentwiseOrder(4)
+        >>> from vectoptal.algorithms import PaVeBaGP
+        >>>
+        >>> epsilon, delta, noise_var = 0.01, 0.01, 0.01
+        >>> dataset_name = "DiskBrake"
+        >>> order_acute = ComponentwiseOrder(2)
+        >>>
+        >>> PaVeBaGP = PaVeBaGP(epsilon, delta, dataset_name, order_acute, noise_var)
+        >>>
+        >>> while True:
+        >>>     is_done = PaVeBaGP.run_one_step()
+        >>>
+        >>>     if is_done:
+        >>>          break
+        >>>
+        >>> pareto_indices = PaVeBaGP.P
+
+    Reference: "Learning the Pareto Set Under Incomplete Preferences:
+            Pure Exploration in Vector Bandits,"
+            Karagözlü, Yıldırım, Ararat, Tekin, AISTATS, '24
+            https://proceedings.mlr.press/v238/karagozlu24a.html
+    """
     def __init__(
         self,
         epsilon,
@@ -69,11 +111,17 @@ class PaVeBaGP(PALAlgorithm):
         self.sample_count = 0
 
     def modeling(self):
+        """
+        Construct the confidence regions of all active designs given all past observations.
+        """
         self.alpha_t = self.compute_alpha()
         A = self.S.union(self.U)
         self.design_space.update(self.model, self.alpha_t, list(A))
 
     def discarding(self):
+        """
+        Discard the designs that are highly likely to be suboptimal using the confidence regions.
+        """
         A = self.S.union(self.U)
 
         to_be_discarded = []
@@ -93,6 +141,10 @@ class PaVeBaGP(PALAlgorithm):
             self.S.remove(pt)
 
     def pareto_updating(self):
+        """
+        Identify the designs that are highly likely to be `epsilon`-optimal
+        using the confidence regions.
+        """
         A = self.S.union(self.U)
 
         new_pareto_pts = []
@@ -117,6 +169,9 @@ class PaVeBaGP(PALAlgorithm):
         print(f"Pareto: {str(self.P)}")
 
     def useful_updating(self):
+        """
+        Identify the useful designs.
+        """
         self.U = set()
         for pt in self.P:
             pt_conf = self.design_space.confidence_regions[pt]
@@ -131,6 +186,9 @@ class PaVeBaGP(PALAlgorithm):
         print(f"Useful: {str(self.U)}")
 
     def evaluating(self):
+        """
+        Observe the active designs via sampling.
+        """
         A = self.S.union(self.U)
         acq = SumVarianceAcquisition(self.model)
         active_pts = self.design_space.points[list(A)]
@@ -143,6 +201,11 @@ class PaVeBaGP(PALAlgorithm):
         self.model.update()
 
     def run_one_step(self) -> bool:
+        """
+        Run one step of the algorithm.
+
+        Returns True if the algorithm is over.
+        """
         if len(self.S) == 0:
             return True
 
