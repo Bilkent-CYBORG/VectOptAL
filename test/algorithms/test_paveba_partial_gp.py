@@ -2,8 +2,9 @@ from unittest import TestCase
 
 import numpy as np
 
-from vectoptal.algorithms import PaVeBaPartialGP
+from vectoptal.utils.seed import SEED
 from vectoptal.order import ComponentwiseOrder
+from vectoptal.algorithms import PaVeBaPartialGP
 from vectoptal.datasets import get_dataset_instance
 from vectoptal.utils.evaluate import calculate_epsilonF1_score
 
@@ -13,14 +14,17 @@ class TestPaVeBaPartialGP(TestCase):
 
     def setUp(self):
         # A basic setup for the model.
+        np.random.seed(SEED)
+
         self.epsilon = 0.1
         self.delta = 0.1
-        self.dataset_name = "DiskBrake"
+        self.dataset_name = "Test"
         self.order = ComponentwiseOrder(2)
+        self.dataset_cardinality = get_dataset_instance(self.dataset_name)._cardinality
         self.noise_var = 0.00001
         self.conf_contraction = 1
-        self.costs = [1, 3]
-        self.cost_budget = 31
+        self.costs = [1.0, 1.5]
+        self.cost_budget = 64
         self.algo = PaVeBaPartialGP(
             epsilon=self.epsilon,
             delta=self.delta,
@@ -63,6 +67,9 @@ class TestPaVeBaPartialGP(TestCase):
             self.epsilon,
         )
         self.assertTrue(eps_f1 > 0.9)
+        self.assertLess(self.algo.total_cost, self.cost_budget + max(self.costs))
+        self.assertLessEqual(self.algo.total_cost, self.algo.round * max(self.costs))
+        self.assertGreaterEqual(self.algo.total_cost, self.algo.round * min(self.costs))
 
     def test_run_one_step(self):
         """Test the run_one_step method."""
@@ -80,7 +87,7 @@ class TestPaVeBaPartialGP(TestCase):
     def test_compute_alpha(self):
         """Test the compute_alpha method."""
         self.algo.run_one_step()
-        alpha = 2 * np.log((np.pi**2 * 128) / (3 * self.delta))
+        alpha = 2 * np.log((np.pi**2 * self.dataset_cardinality) / (3 * self.delta))
         r1 = alpha
         r2 = self.algo.compute_alpha()
         self.assertTrue((np.array([r1, r1]) / self.conf_contraction == r2).all())

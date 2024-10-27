@@ -10,6 +10,11 @@ class Dataset:
     _cardinality: int
 
     def __init__(self):
+        assert (
+            self._cardinality == self.in_data.shape[0]
+            and self.in_data.shape[0] == self.out_data.shape[0]
+        ), "Cardinality mismatch"
+
         # Standardize
         input_scaler = MinMaxScaler()
         self.in_data = input_scaler.fit_transform(self.in_data)
@@ -26,6 +31,24 @@ def get_dataset_instance(dataset_name: str) -> Dataset:
         return globals()[dataset_name]()
     else:
         raise ValueError(f"Unknown dataset name: {dataset_name}")
+
+
+class Test(Dataset):
+    """
+    A miniature DiskBrake dataset variant for using in testing.
+    """
+
+    _in_dim = 4
+    _out_dim = 2
+    _cardinality = 32
+
+    def __init__(self):
+        datafile = os.path.join("data", "test", "test.npy")
+        data = np.load(datafile, allow_pickle=True)
+        self.out_data = np.copy(data[:, self._in_dim :])
+        self.in_data = np.copy(data[:, : self._in_dim])
+
+        super().__init__()
 
 
 class SNW(Dataset):

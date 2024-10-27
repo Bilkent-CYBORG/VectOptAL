@@ -13,6 +13,9 @@ from vectoptal.utils import (
     generate_sobol_samples,
     get_smallmij,
     get_delta,
+    hyperrectangle_check_intersection,
+    hyperrectangle_get_vertices,
+    hyperrectangle_get_region_matrix,
 )
 
 
@@ -183,3 +186,80 @@ class TestGetDelta(TestCase):
                         delta_expected[i] = max(delta_expected[i], mij)
                         self.assertLessEqual(mij, delta_true[i])
                 np.testing.assert_allclose(delta_true, delta_expected)
+
+
+class TestHyperrectangleCheckIntersection(TestCase):
+    """Test hyperrectangle intersection check."""
+
+    def test_hyperrectangle_check_intersection_2d(self):
+        """Test the hyperrectangle_check_intersection function with 2D rectangles."""
+        lower1, upper1 = np.array([0, 0]), np.array([1, 1])
+        lower2, upper2 = np.array([0.5, 0.5]), np.array([1.5, 1.5])
+
+        self.assertTrue(hyperrectangle_check_intersection(lower1, upper1, lower2, upper2))
+        self.assertTrue(hyperrectangle_check_intersection(lower2, upper2, lower1, upper1))
+
+        lower3, upper3 = np.array([2, 2]), np.array([3, 3])
+        self.assertFalse(hyperrectangle_check_intersection(lower1, upper1, lower3, upper3))
+        self.assertFalse(hyperrectangle_check_intersection(lower3, upper3, lower1, upper1))
+
+    def test_hyperrectangle_check_intersection_3d(self):
+        """Test the hyperrectangle_check_intersection function with 3D rectangles."""
+        lower1, upper1 = [np.array([-1, -1, -1]), np.array([0, 0, 0])]
+        lower2, upper2 = [np.array([0.5, 0.5, 0.5]), np.array([1.5, 1.5, 1.5])]
+        self.assertFalse(hyperrectangle_check_intersection(lower1, upper1, lower2, upper2))
+        self.assertFalse(hyperrectangle_check_intersection(lower2, upper2, lower1, upper1))
+
+        lower3, upper3 = [np.array([-0.5, -0.5, -0.5]), np.array([-0.25, -0.25, -0.25])]
+        self.assertTrue(hyperrectangle_check_intersection(lower1, upper1, lower3, upper3))
+        self.assertTrue(hyperrectangle_check_intersection(lower3, upper3, lower1, upper1))
+
+
+class TestHyperrectangleGetVertices(TestCase):
+    """Test hyperrectangle vertices computation."""
+
+    def test_hyperrectangle_get_vertices_2d(self):
+        """Test the hyperrectangle_get_vertices function with 2D rectangles."""
+        lower, upper = np.array([0, 0]), np.array([1, 1])
+        vertices = hyperrectangle_get_vertices(lower, upper)
+
+        self.assertEqual(vertices.shape, (2**2, 2))
+        self.assertTrue(np.all(vertices >= lower))
+        self.assertTrue(np.all(vertices <= upper))
+
+    def test_hyperrectangle_get_vertices_3d(self):
+        """Test the hyperrectangle_get_vertices function with 3D rectangles."""
+        lower, upper = np.array([0, 0, 0]), np.array([1, 1, 1])
+        vertices = hyperrectangle_get_vertices(lower, upper)
+
+        self.assertEqual(vertices.shape, (2**3, 3))
+        self.assertTrue(np.all(vertices >= lower))
+        self.assertTrue(np.all(vertices <= upper))
+
+
+class TestHyperrectangleGetRegionMatrix(TestCase):
+    """Test hyperrectangle region matrix computation."""
+
+    def test_hyperrectangle_get_region_matrix_2d(self):
+        """Test the hyperrectangle_get_region_matrix function with 2D points."""
+        lower, upper = np.array([0, 0]), np.array([1, 1])
+        region_matrix, region_boundary = hyperrectangle_get_region_matrix(lower, upper)
+
+        points = np.array([[0, 0], [0, 1], [1, 0], [1, 1], [0.5, 0.5], [2, 2], [-1, -1]])
+        results = [True, True, True, True, True, False, False]
+
+        self.assertTrue(
+            np.all(np.all(points @ region_matrix.T >= region_boundary, axis=1) == results)
+        )
+
+    def test_hyperrectangle_get_region_matrix_3d(self):
+        """Test the hyperrectangle_get_region_matrix function with 3D points."""
+        lower, upper = np.array([-1, -1, -1]), np.array([-0.5, -0.5, -0.5])
+        region_matrix, region_boundary = hyperrectangle_get_region_matrix(lower, upper)
+
+        points = np.array([[-0.75, -0.75, -0.75], [0, 0, 0]])
+        results = [True, False]
+
+        self.assertTrue(
+            np.all(np.all(points @ region_matrix.T >= region_boundary, axis=1) == results)
+        )

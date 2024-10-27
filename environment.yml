@@ -25,7 +25,6 @@ dependencies:
 - seaborn
 - jupyter
 - gurobi
-- mosek
 - pytest
 - pytest-cov
 - flake8
