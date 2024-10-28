@@ -32,35 +32,39 @@ class PaVeBaPartialGP(PALAlgorithm):
     :type conf_contraction: float
     :param costs: Cost associated with sampling each objective.
     :type costs: Optional[list]
-    :param confidence_type: Specifies if the algorithm uses hyperellipsoidal or
+    :param confidence_type: Specifies if the algorithm uses ellipsoidal or
         hyperrectangular confidence regions.
     :type confidence_type: Literal["hyperrectangle", "hyperellipsoid"]
-    :param batch_size: Number of samples taken in each round.
+    :param batch_size: Number of samples to be taken in each round.
     :type batch_size: int
 
     The algorithm sequentially samples design rewards with a multivariate
     white Gaussian noise whose diagonal entries are specified by the user.
-
-    Returns None.
+    It uses Gaussian Process regression to model the rewards and confidence
+    regions.
 
     Example:
         >>> from vectoptal.order import ComponentwiseOrder
         >>> from vectoptal.algorithms import PaVeBaPartialGP
         >>>
-        >>> epsilon, delta, noise_var = 0.01, 0.01, 0.01
+        >>> epsilon, delta, noise_var = 0.1, 0.05, 0.01
+        >>> cost_budget = 64
         >>> dataset_name = "DiskBrake"
         >>> order_acute = ComponentwiseOrder(2)
         >>>
-        >>> PaVeBaPartialGP = PaVeBaPartialGP(epsilon, delta, dataset_name, order_acute, noise_var)
+        >>> algorithm = PaVeBaPartialGP(
+        >>>     epsilon, delta, dataset_name, order_acute, noise_var, cost_budget=cost_budget
+        >>> )
         >>>
         >>> while True:
-        >>>     is_done = PaVeBaPartialGP.run_one_step()
+        >>>     is_done = algorithm.run_one_step()
         >>>
         >>>     if is_done:
         >>>          break
         >>>
-        >>> pareto_indices = PaVeBaPartialGP.P
+        >>> pareto_indices = algorithm.P
     """
+
     def __init__(
         self,
         epsilon,
@@ -166,7 +170,8 @@ class PaVeBaPartialGP(PALAlgorithm):
 
     def useful_updating(self):
         """
-        Identify the useful designs.
+        Identify the designs that are decided to be Pareto, that would help with decisions of
+        other designs.
         """
         self.U = set()
         for pt in self.P:
@@ -183,7 +188,8 @@ class PaVeBaPartialGP(PALAlgorithm):
 
     def evaluating(self):
         """
-        Observe the active designs via sampling.
+        Observe the self.batch_size number of designs from active designs, selecting by
+        largest variance across designs and objectives.
         """
         A = self.S.union(self.U)
         acq = MaxVarianceDecoupledAcquisition(self.model, costs=self.costs)
@@ -206,9 +212,10 @@ class PaVeBaPartialGP(PALAlgorithm):
 
     def run_one_step(self) -> bool:
         """
-        Run one step of the algorithm.
+        Run one step of the algorithm and return algorithm status.
 
-        Returns True if the algorithm is over.
+        :return: True if the algorithm is over, False otherwise.
+        :rtype: bool
         """
         if len(self.S) == 0 or self.total_cost >= self.cost_budget:
             return True
@@ -241,7 +248,10 @@ class PaVeBaPartialGP(PALAlgorithm):
 
     def compute_alpha(self):
         """
-        Compute the radii of the confidence regions to be used in modeling.
+        Compute the radius of the confidence regions of the current round to be used in modeling.
+
+        :return: The radius of the confidence regions.
+        :rtype: float
         """
         alpha = 2 * np.log(
             (np.pi**2 * self.round**2 * self.design_space.cardinality) / (3 * self.delta)

@@ -33,40 +33,41 @@ class PaVeBaGP(PALAlgorithm):
     :param conf_contraction: Contraction coefficient to shrink the
         confidence regions empirically.
     :type conf_contraction: float
-    :param type: Specifies if the algorithm uses dependent hyperellipsoidal or
+    :param type: Specifies if the algorithm uses dependent ellipsoidal or
         independent hyperrectangular confidence regions.
     :type type: Literal["IH", "DE"]
-    :param batch_size: Number of samples taken in each round.
+    :param batch_size: Number of samples to be taken in each round.
     :type batch_size: int
 
     The algorithm sequentially samples design rewards with a multivariate
     white Gaussian noise whose diagonal entries are specified by the user.
-
-    Returns None.
+    It uses Gaussian Process regression to model the rewards and confidence
+    regions.
 
     Example:
-        >>> from vectoptal.order import ComponentwiseOrder(4)
+        >>> from vectoptal.order import ComponentwiseOrder
         >>> from vectoptal.algorithms import PaVeBaGP
         >>>
-        >>> epsilon, delta, noise_var = 0.01, 0.01, 0.01
+        >>> epsilon, delta, noise_var = 0.1, 0.05, 0.01
         >>> dataset_name = "DiskBrake"
-        >>> order_acute = ComponentwiseOrder(2)
+        >>> order_right = ComponentwiseOrder(2)
         >>>
-        >>> PaVeBaGP = PaVeBaGP(epsilon, delta, dataset_name, order_acute, noise_var)
+        >>> algorithm = PaVeBaGP(epsilon, delta, dataset_name, order_right, noise_var)
         >>>
         >>> while True:
-        >>>     is_done = PaVeBaGP.run_one_step()
+        >>>     is_done = algorithm.run_one_step()
         >>>
         >>>     if is_done:
         >>>          break
         >>>
-        >>> pareto_indices = PaVeBaGP.P
+        >>> pareto_indices = algorithm.P
 
     Reference: "Learning the Pareto Set Under Incomplete Preferences:
-            Pure Exploration in Vector Bandits,"
+            Pure Exploration in Vector Bandits",
             Karagözlü, Yıldırım, Ararat, Tekin, AISTATS, '24
             https://proceedings.mlr.press/v238/karagozlu24a.html
     """
+
     def __init__(
         self,
         epsilon,
@@ -178,7 +179,8 @@ class PaVeBaGP(PALAlgorithm):
 
     def useful_updating(self):
         """
-        Identify the useful designs.
+        Identify the designs that are decided to be Pareto, that would help with decisions of
+        other designs.
         """
         self.U = set()
         for pt in self.P:
@@ -195,7 +197,8 @@ class PaVeBaGP(PALAlgorithm):
 
     def evaluating(self):
         """
-        Observe the active designs via sampling.
+        Observe the self.batch_size number of designs from active designs, selecting by
+        largest sum of variances.
         """
         A = self.S.union(self.U)
         acq = SumVarianceAcquisition(self.model)
@@ -210,9 +213,10 @@ class PaVeBaGP(PALAlgorithm):
 
     def run_one_step(self) -> bool:
         """
-        Run one step of the algorithm.
+        Run one step of the algorithm and return algorithm status.
 
-        Returns True if the algorithm is over.
+        :return: True if the algorithm is over, False otherwise.
+        :rtype: bool
         """
         if len(self.S) == 0:
             return True
@@ -243,9 +247,12 @@ class PaVeBaGP(PALAlgorithm):
 
         return len(self.S) == 0
 
-    def compute_alpha(self):
+    def compute_alpha(self) -> float:
         """
-        Compute the radii of the confidence regions to be used in modeling.
+        Compute the radius of the confidence regions of the current round to be used in modeling.
+
+        :return: The radius of the confidence regions.
+        :rtype: float
         """
         alpha = 8 * self.m * np.log(6) + 4 * np.log(
             (np.pi**2 * self.round**2 * self.design_space.cardinality) / (6 * self.delta)

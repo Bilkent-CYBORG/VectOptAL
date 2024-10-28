@@ -35,31 +35,30 @@ class PaVeBa(PALAlgorithm):
     The algorithm sequentially samples design rewards with a multivariate
     white Gaussian noise whose diagonal entries are specified by the user.
 
-    Returns None.
-
     Example:
         >>> from vectoptal.order import ComponentwiseOrder
         >>> from vectoptal.algorithms import PaVeBa
         >>>
-        >>> epsilon, delta, noise_var = 0.01, 0.01, 0.01
+        >>> epsilon, delta, noise_var = 0.1, 0.05, 0.01
         >>> dataset_name = "DiskBrake"
-        >>> order_acute = ComponentwiseOrder(2)
+        >>> order_right = ComponentwiseOrder(2)
         >>>
-        >>> PaVeBa = PaVeBa(epsilon, delta, dataset_name, order_acute, noise_var)
+        >>> algorithm = PaVeBa(epsilon, delta, dataset_name, order_right, noise_var)
         >>>
         >>> while True:
-        >>>     is_done = PaVeBa.run_one_step()
+        >>>     is_done = algorithm.run_one_step()
         >>>
         >>>     if is_done:
         >>>          break
         >>>
-        >>> pareto_indices = PaVeBa.P
+        >>> pareto_indices = algorithm.P
 
     Reference: "Learning the Pareto Set Under Incomplete Preferences:
-            Pure Exploration in Vector Bandits,"
+            Pure Exploration in Vector Bandits",
             Karagözlü, Yıldırım, Ararat, Tekin, AISTATS, '24
             https://proceedings.mlr.press/v238/karagozlu24a.html
     """
+
     def __init__(
         self,
         epsilon,
@@ -161,7 +160,8 @@ class PaVeBa(PALAlgorithm):
 
     def useful_updating(self):
         """
-        Identify the useful designs.
+        Identify the designs that are decided to be Pareto, that would help with decisions of
+        other designs.
         """
         self.U = set()
         for pt in self.P:
@@ -191,9 +191,10 @@ class PaVeBa(PALAlgorithm):
 
     def run_one_step(self) -> bool:
         """
-        Run one step of the algorithm.
+        Run one step of the algorithm and return algorithm status.
 
-        Returns True if the algorithm is over.
+        :return: True if the algorithm is over, False otherwise.
+        :rtype: bool
         """
         if len(self.S) == 0:
             return True
@@ -224,9 +225,12 @@ class PaVeBa(PALAlgorithm):
 
         return len(self.S) == 0
 
-    def compute_radius(self):
+    def compute_radius(self) -> float:
         """
-        Compute the radii of the confidence regions to be used in modeling.
+        Compute the radius of the confidence regions of the current round to be used in modeling.
+
+        :return: The radius of the confidence regions.
+        :rtype: float
         """
         t1 = 8 * self.noise_var / self.round
         t2 = np.log(  # ni**2 is equal to t**2 since only active arms are sampled
