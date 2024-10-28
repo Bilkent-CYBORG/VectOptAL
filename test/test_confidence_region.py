@@ -55,7 +55,6 @@ class TestRectangularConfidenceRegion(TestCase):
 
     def test_diagonal(self):
         """Test the diagonal method."""
-        print(self.confidence_region.diagonal())
         self.assertTrue(np.sqrt(2) == self.confidence_region.diagonal())
 
     def test_update(self):

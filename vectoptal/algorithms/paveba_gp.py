@@ -1,3 +1,4 @@
+import logging
 from typing import Literal
 
 import numpy as np
@@ -175,7 +176,7 @@ class PaVeBaGP(PALAlgorithm):
         for pt in new_pareto_pts:
             self.S.remove(pt)
             self.P.add(pt)
-        print(f"Pareto: {str(self.P)}")
+        logging.debug(f"Pareto: {str(self.P)}")
 
     def useful_updating(self):
         """
@@ -193,7 +194,7 @@ class PaVeBaGP(PALAlgorithm):
                 ):
                     self.U.add(pt)
                     break
-        print(f"Useful: {str(self.U)}")
+        logging.debug(f"Useful: {str(self.U)}")
 
     def evaluating(self):
         """
@@ -259,7 +260,5 @@ class PaVeBaGP(PALAlgorithm):
         alpha = 8 * self.m * np.log(6) + 4 * np.log(
             (np.pi**2 * self.round**2 * self.design_space.cardinality) / (6 * self.delta)
         )
-
-        print("alpha:", alpha)
 
         return alpha / self.conf_contraction
