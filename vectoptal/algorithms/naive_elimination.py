@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 import numpy as np
@@ -52,8 +53,9 @@ class NaiveElimination(PALAlgorithm):
         self.sample_count += self.K
 
         if self.round % 100 == 0:
-            print(f"Round {self.round}")
-            print(f"Round {self.round}:Sample count {self.sample_count}")
+            round_str = f"Round {self.round}"
+
+            logging.info(f"{round_str}:Sample count {self.sample_count}")
 
         return self.round == self.L
 

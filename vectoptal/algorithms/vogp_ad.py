@@ -1,4 +1,5 @@
 import copy
+import logging
 
 import numpy as np
 from scipy.optimize import minimize
@@ -145,30 +146,31 @@ class VOGP_AD(PALAlgorithm):
         if len(self.S) == 0:
             return True
 
-        print(f"Round {self.round}")
+        round_str = f"Round {self.round}"
 
         self.beta = self.compute_beta()
 
-        print(f"Round {self.round}:Modeling")
+        logging.info(f"{round_str}:Modeling")
         self.modeling()
 
-        print(f"Round {self.round}:Discarding")
+        logging.info(f"{round_str}:Discarding")
         self.discarding()
 
-        print(f"Round {self.round}:Epsilon-Covering")
+        logging.info(f"{round_str}:Epsilon-Covering")
         self.epsiloncovering()
 
-        print(f"Round {self.round}:Evaluating")
+        logging.info(f"{round_str}:Evaluating")
         if self.S:  # If S_t is not empty
             self.evaluate_refine()
 
-        print(
-            f"There are {len(self.S)} designs left in set S and" f" {len(self.P)} designs in set P."
+        logging.info(
+            f"{round_str}:There are {len(self.S)} designs left in set S and"
+            f" {len(self.P)} designs in set P."
         )
 
         self.round += 1
 
-        print(f"Round {self.round}:Sample count {self.sample_count}")
+        logging.info(f"{round_str}:Sample count {self.sample_count}")
 
         return len(self.S) == 0
 
@@ -208,21 +210,6 @@ class VOGP_AD(PALAlgorithm):
         d(1) of cone : float
             The Euclidean norm of the optimized `z`.
 
-        Prints
-        ------
-
-        d(1) of cone : float
-            The Euclidean norm of the optimized `z`.
-
-        Are constraints obeyed : bool
-            A boolean flag indicating whether all cone constraints are satisfied.
-            This corresponds to the unit sphere to be inside of the cone.
-
-        If the constraints are not obeyed, it also prints:
-
-        Distance to cone hyperplanes : numpy.ndarray
-            The distances from the optimized `z` to the hyperplanes defined by W.
-
         Notes
         -----
         The optimization problem is solved using the Sequential Least SQuares Programming (SLSQP)
@@ -261,12 +248,7 @@ class VOGP_AD(PALAlgorithm):
         norm = np.linalg.norm(res.x)
         construe = np.all(constraint_func(res.x) + 1e-14)
 
-        # print(f"Optimized d(1) was found to be {norm}")
-        # print(f"Optimized u_star was found to be {res.x/norm}")
-        # print(f"Are constraints obeyed: {construe}")
-
         if not construe:
-            # print(f"Distance to cone hyperplanes: {constraint_func(res.x)}")
             pass
 
         return res.x / norm, norm

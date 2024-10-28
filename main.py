@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 
 from vectoptal.utils.seed import SEED
@@ -40,14 +42,14 @@ def test_discrete():
     for iter_i in range(iter_count):
         set_seed(SEED + iter_i + 1)
 
-        algorithm = PaVeBaGP(
+        algorithm = PaVeBa(
             epsilon=epsilon,
             delta=delta,
             dataset_name=dataset_name,
             order=order,
             noise_var=noise_var,
             conf_contraction=16,
-            type="IH",
+            # type="IH",
         )
 
         while True:
@@ -316,6 +318,8 @@ def test_moo():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+
     test_discrete()
     # test_continuous()
     # test_partial_model()

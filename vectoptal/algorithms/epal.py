@@ -1,4 +1,5 @@
 import copy
+import logging
 
 import numpy as np
 
@@ -117,28 +118,29 @@ class EpsilonPAL(PALAlgorithm):
         if len(self.S) == 0:
             return True
 
-        print(f"Round {self.round}")
+        round_str = f"Round {self.round}"
 
-        print(f"Round {self.round}:Modeling")
+        logging.info(f"{round_str}:Modeling")
         self.modeling()
 
-        print(f"Round {self.round}:Discarding")
+        logging.info(f"{round_str}:Discarding")
         self.discarding()
 
-        print(f"Round {self.round}:Epsilon-Covering")
+        logging.info(f"{round_str}:Epsilon-Covering")
         self.epsiloncovering()
 
-        print(f"Round {self.round}:Evaluating")
+        logging.info(f"{round_str}:Evaluating")
         if self.S:  # If S_t is not empty
             self.evaluating()
 
-        print(
-            f"There are {len(self.S)} designs left in set S and" f" {len(self.P)} designs in set P."
+        logging.info(
+            f"{round_str}:There are {len(self.S)} designs left in set S and"
+            f" {len(self.P)} designs in set P."
         )
 
         self.round += 1
 
-        print(f"Round {self.round}:Sample count {self.sample_count}")
+        logging.info(f"{round_str}:Sample count {self.sample_count}")
 
         return len(self.S) == 0
 

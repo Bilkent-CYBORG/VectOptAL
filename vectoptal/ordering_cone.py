@@ -48,8 +48,3 @@ class ConeTheta2D(OrderingCone):
             return 1 / np.sin(cone_rad)
         else:
             return 1.0
-
-
-if __name__ == "__main__":
-    cone = ConeTheta2D(90)
-    print(cone.beta)

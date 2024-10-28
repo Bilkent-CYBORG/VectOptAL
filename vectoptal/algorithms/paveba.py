@@ -133,28 +133,30 @@ class PaVeBa(PALAlgorithm):
             return True
 
         self.round += 1
-        print(f"Round {self.round}")
 
-        print(f"Round {self.round}:Evaluating")
+        round_str = f"Round {self.round}"
+
+        logging.info(f"{round_str}:Evaluating")
         self.evaluating()
 
-        print(f"Round {self.round}:Modeling")
+        logging.info(f"{round_str}:Modeling")
         self.modeling()
 
-        print(f"Round {self.round}:Discarding")
+        logging.info(f"{round_str}:Discarding")
         self.discarding()
 
-        print(f"Round {self.round}:Pareto update")
+        logging.info(f"{round_str}:Pareto update")
         self.pareto_updating()
 
-        print(f"Round {self.round}:Useful update")
+        logging.info(f"{round_str}:Useful update")
         self.useful_updating()
 
-        print(
-            f"There are {len(self.S)} designs left in set S and" f" {len(self.P)} designs in set P."
+        logging.info(
+            f"{round_str}:There are {len(self.S)} designs left in set S and"
+            f" {len(self.P)} designs in set P."
         )
 
-        print(f"Round {self.round}:Sample count {self.sample_count}")
+        logging.info(f"{round_str}:Sample count {self.sample_count}")
 
         return len(self.S) == 0
 

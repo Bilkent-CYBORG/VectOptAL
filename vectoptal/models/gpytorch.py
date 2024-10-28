@@ -1,3 +1,4 @@
+import logging
 from abc import ABC
 from typing import Optional, List, Union
 
@@ -167,9 +168,9 @@ class GPyTorchMultioutputExactModel(GPyTorchModel, ABC):
 
         mll = gpytorch.mlls.ExactMarginalLogLikelihood(self.likelihood, self.model)
 
-        print("Training started.")
+        logging.info("Training started.")
         fit_gpytorch_model(mll)
-        print("Training done.")
+        logging.info("Training done.")
 
         self.model.eval()
         self.likelihood.eval()
@@ -383,9 +384,9 @@ class GPyTorchModelListExactModel(GPyTorchModel, ModelList):
 
         mll = SumMarginalLogLikelihood(self.likelihood, self.model)
 
-        print("Training started.")
+        logging.info("Training started.")
         fit_gpytorch_mll_torch(mll)
-        print("Training done.")
+        logging.info("Training done.")
 
         self.model.eval()
         self.likelihood.eval()

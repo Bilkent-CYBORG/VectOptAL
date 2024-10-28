@@ -59,10 +59,6 @@ class DecoupledGP(Algorithm):
             acq, self.batch_size, choices=self.points
         )
 
-        print("Points:", candidate_list)
-        print("Acq. values:", acq_values)
-        print("Obj. indices:", eval_indices)
-
         observations = self.problem.evaluate(candidate_list, eval_indices)
 
         self.sample_count += len(candidate_list)
@@ -76,18 +72,19 @@ class DecoupledGP(Algorithm):
             return True
 
         self.round += 1
-        print(f"Round {self.round}")
 
-        print(f"Round {self.round}:Evaluating")
+        round_str = f"Round {self.round}"
+
+        logging.info(f"{round_str}:Evaluating")
         self.evaluating()
 
-        print(f"Round {self.round}:Pareto update")
+        logging.info(f"{round_str}:Pareto update")
         self.pareto_updating()
 
-        print(f"There are {len(self.P)} designs in set P.")
+        logging.info(f"{round_str}:There are {len(self.P)} designs in set P.")
 
-        print(
-            f"Round {self.round}:" f"Sample count {self.sample_count}, Cost {self.total_cost:.2f}"
+        logging.info(
+            f"{round_str}:" f"Sample count {self.sample_count}, Cost {self.total_cost:.2f}"
         )
 
         return self.total_cost >= self.cost_budget

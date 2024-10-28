@@ -28,5 +28,7 @@ dependencies:
 - pytest
 - pytest-cov
 - flake8
+- flake8-print
+- pydocstyle
 - black
 - bandit
