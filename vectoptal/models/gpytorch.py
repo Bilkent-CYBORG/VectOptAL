@@ -5,7 +5,7 @@ from typing import Optional, List, Union
 import torch
 import gpytorch
 from gpytorch.mlls import SumMarginalLogLikelihood
-from botorch.fit import fit_gpytorch_model, fit_gpytorch_mll_torch
+from botorch.fit import fit_gpytorch_mll
 
 import numpy as np
 
@@ -169,7 +169,7 @@ class GPyTorchMultioutputExactModel(GPyTorchModel, ABC):
         mll = gpytorch.mlls.ExactMarginalLogLikelihood(self.likelihood, self.model)
 
         logging.info("Training started.")
-        fit_gpytorch_model(mll)
+        fit_gpytorch_mll(mll)
         logging.info("Training done.")
 
         self.model.eval()
@@ -269,7 +269,7 @@ def get_gpytorch_model_w_known_hyperparams(
     if initial_sample_cnt > 0:
         initial_indices = np.random.choice(len(X), initial_sample_cnt)
         initial_points = X[initial_indices]
-        initial_values = problem.evaluate(initial_points)
+        initial_values = Y[initial_indices]
 
         model.add_sample(initial_points, initial_values)
         model.update()
@@ -385,7 +385,7 @@ class GPyTorchModelListExactModel(GPyTorchModel, ModelList):
         mll = SumMarginalLogLikelihood(self.likelihood, self.model)
 
         logging.info("Training started.")
-        fit_gpytorch_mll_torch(mll)
+        fit_gpytorch_mll(mll)
         logging.info("Training done.")
 
         self.model.eval()
@@ -492,7 +492,7 @@ def get_gpytorch_modellist_w_known_hyperparams(
     for dim_i in range(out_dim):
         model.add_sample(X, Y[:, dim_i], dim_i)
     model.update()
-    # model.train()
+    model.train()
     model.clear_data()
 
     # TODO: Initial sampling should be done outside of here. Can be a utility function.

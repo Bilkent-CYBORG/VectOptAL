@@ -1,13 +1,11 @@
-import copy
-import logging
 from typing import Literal
 
 import numpy as np
 
 from vectoptal.order import Order
 from vectoptal.datasets import get_dataset_instance
-from vectoptal.design_space import FixedPointsDesignSpace
 from vectoptal.algorithms.algorithm import PALAlgorithm
+from vectoptal.design_space import FixedPointsDesignSpace
 from vectoptal.maximization_problem import ProblemFromDataset
 from vectoptal.acquisition import SumVarianceAcquisition, optimize_acqf_discrete
 from vectoptal.confidence_region import confidence_region_is_dominated, confidence_region_is_covered
@@ -19,6 +17,57 @@ from vectoptal.models import (
 
 
 class PaVeBaGP(PALAlgorithm):
+    """
+    Implement the GP-based Pareto Vector Bandits (PaVeBa) algorithm.
+
+    :param epsilon: Determines the accuracy of the PAC-learning framework.
+    :type epsilon: float
+    :param delta: Determines the success probability of the PAC-learning framework.
+    :type delta: float
+    :param dataset_name: Name of the dataset to be used.
+    :type dataset_name: str
+    :param order: Order to be used.
+    :type order: Order
+    :param noise_var: Variance of the Gaussian sampling noise.
+    :type noise_var: float
+    :param conf_contraction: Contraction coefficient to shrink the
+        confidence regions empirically.
+    :type conf_contraction: float
+    :param type: Specifies if the algorithm uses dependent ellipsoidal or
+        independent hyperrectangular confidence regions.
+    :type type: Literal["IH", "DE"]
+    :param batch_size: Number of samples to be taken in each round.
+    :type batch_size: int
+
+    The algorithm sequentially samples design rewards with a multivariate
+    white Gaussian noise whose diagonal entries are specified by the user.
+    It uses Gaussian Process regression to model the rewards and confidence
+    regions.
+
+    Example:
+        >>> from vectoptal.order import ComponentwiseOrder
+        >>> from vectoptal.algorithms import PaVeBaGP
+        >>>
+        >>> epsilon, delta, noise_var = 0.1, 0.05, 0.01
+        >>> dataset_name = "DiskBrake"
+        >>> order_right = ComponentwiseOrder(2)
+        >>>
+        >>> algorithm = PaVeBaGP(epsilon, delta, dataset_name, order_right, noise_var)
+        >>>
+        >>> while True:
+        >>>     is_done = algorithm.run_one_step()
+        >>>
+        >>>     if is_done:
+        >>>          break
+        >>>
+        >>> pareto_indices = algorithm.P
+
+    Reference: "Learning the Pareto Set Under Incomplete Preferences:
+            Pure Exploration in Vector Bandits",
+            Karagözlü, Yıldırım, Ararat, Tekin, AISTATS, '24
+            https://proceedings.mlr.press/v238/karagozlu24a.html
+    """
+
     def __init__(
         self,
         epsilon,
@@ -71,11 +120,17 @@ class PaVeBaGP(PALAlgorithm):
         self.sample_count = 0
 
     def modeling(self):
+        """
+        Construct the confidence regions of all active designs given all past observations.
+        """
         self.alpha_t = self.compute_alpha()
         A = self.S.union(self.U)
         self.design_space.update(self.model, self.alpha_t, list(A))
 
     def discarding(self):
+        """
+        Discard the designs that are highly likely to be suboptimal using the confidence regions.
+        """
         A = self.S.union(self.U)
 
         to_be_discarded = []
@@ -95,9 +150,13 @@ class PaVeBaGP(PALAlgorithm):
             self.S.remove(pt)
 
     def pareto_updating(self):
+        """
+        Identify the designs that are highly likely to be `epsilon`-optimal
+        using the confidence regions.
+        """
         A = self.S.union(self.U)
 
-        is_index_pareto = []
+        new_pareto_pts = []
         for pt in self.S:
             pt_conf = self.design_space.confidence_regions[pt]
             for pt_prime in A:
@@ -109,19 +168,20 @@ class PaVeBaGP(PALAlgorithm):
                 if confidence_region_is_covered(
                     self.order, pt_conf, pt_p_conf, self.cone_alpha_eps
                 ):
-                    is_index_pareto.append(False)
                     break
             else:
-                is_index_pareto.append(True)
+                new_pareto_pts.append(pt)
 
-        tmp_S = copy.deepcopy(self.S)
-        for is_pareto, pt in zip(is_index_pareto, tmp_S):
-            if is_pareto:
-                self.S.remove(pt)
-                self.P.add(pt)
-        logging.debug(f"Pareto: {str(self.P)}")
+        for pt in new_pareto_pts:
+            self.S.remove(pt)
+            self.P.add(pt)
+        print(f"Pareto: {str(self.P)}")
 
     def useful_updating(self):
+        """
+        Identify the designs that are decided to be Pareto, that would help with decisions of
+        other designs.
+        """
         self.U = set()
         for pt in self.P:
             pt_conf = self.design_space.confidence_regions[pt]
@@ -129,13 +189,17 @@ class PaVeBaGP(PALAlgorithm):
                 pt_p_conf = self.design_space.confidence_regions[pt_prime]
 
                 if confidence_region_is_covered(
-                    self.order, pt_conf, pt_p_conf, self.cone_alpha_eps
+                    self.order, pt_p_conf, pt_conf, self.cone_alpha_eps
                 ):
                     self.U.add(pt)
                     break
-        logging.debug(f"Useful: {str(self.U)}")
+        print(f"Useful: {str(self.U)}")
 
     def evaluating(self):
+        """
+        Observe the self.batch_size number of designs from active designs, selecting by
+        largest sum of variances.
+        """
         A = self.S.union(self.U)
         acq = SumVarianceAcquisition(self.model)
         active_pts = self.design_space.points[list(A)]
@@ -148,6 +212,12 @@ class PaVeBaGP(PALAlgorithm):
         self.model.update()
 
     def run_one_step(self) -> bool:
+        """
+        Run one step of the algorithm and return algorithm status.
+
+        :return: True if the algorithm is over, False otherwise.
+        :rtype: bool
+        """
         if len(self.S) == 0:
             return True
 
@@ -179,11 +249,17 @@ class PaVeBaGP(PALAlgorithm):
 
         return len(self.S) == 0
 
-    def compute_alpha(self):
+    def compute_alpha(self) -> float:
+        """
+        Compute the radius of the confidence regions of the current round to be used in modeling.
+
+        :return: The radius of the confidence regions.
+        :rtype: float
+        """
         alpha = 8 * self.m * np.log(6) + 4 * np.log(
             (np.pi**2 * self.round**2 * self.design_space.cardinality) / (6 * self.delta)
         )
 
-        return (alpha / self.conf_contraction) * np.ones(
-            self.m,
-        )
+        print("alpha:", alpha)
+
+        return alpha / self.conf_contraction
