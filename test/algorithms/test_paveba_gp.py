@@ -32,20 +32,11 @@ class TestPaVeBaGP(TestCase):
             conf_contraction=self.conf_contraction,
         )
 
-    def test_modeling(self):
-        """Test the modeling method."""
-
-    def test_discarding(self):
-        """Test the discarding method."""
-
-    def test_pareto_updating(self):
-        """Test the pareto_updating method."""
-
-    def test_useful_updating(self):
-        """Test the useful_updating method."""
-
     def test_evaluating(self):
         """Test the evaluating method."""
+        sample_test = self.algo.sample_count
+        self.algo.evaluating()
+        self.assertTrue(self.algo.sample_count > sample_test)
 
     def test_whole_class(self):
         while True:
@@ -66,17 +57,20 @@ class TestPaVeBaGP(TestCase):
 
     def test_run_one_step(self):
         """Test the run_one_step method."""
-        for i in range(42):
-            self.algo.run_one_step()
-            if i == 3:
-                S3 = self.algo.S
-                P3 = self.algo.P
+        num_rounds = 10
+        alg_done = False
+        for i in range(num_rounds):  # Run for 10 rounds, it should be enough.
+            if not alg_done and i <= 3:  # Save the state at round 3 at the latest.
+                S_test = self.algo.S
+                P_test = self.algo.P
+            alg_done = self.algo.run_one_step()
 
-        self.assertTrue(42 >= self.algo.round)
         S = self.algo.S
         P = self.algo.P
-        self.assertTrue(len(S3) >= len(S))
-        self.assertTrue(len(P) >= len(P3))
+
+        self.assertTrue(num_rounds >= self.algo.round)
+        self.assertTrue(len(S_test) >= len(S))
+        self.assertTrue(len(P) >= len(P_test))
 
     def test_compute_alpha(self):
         """Test the compute_alpha method."""

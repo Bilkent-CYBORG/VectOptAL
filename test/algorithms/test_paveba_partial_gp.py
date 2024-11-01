@@ -36,18 +36,6 @@ class TestPaVeBaPartialGP(TestCase):
             cost_budget=self.cost_budget,
         )
 
-    def test_modeling(self):
-        """Test the modeling method."""
-
-    def test_discarding(self):
-        """Test the discarding method."""
-
-    def test_pareto_updating(self):
-        """Test the pareto_updating method."""
-
-    def test_useful_updating(self):
-        """Test the useful_updating method."""
-
     def test_evaluating(self):
         """Test the evaluating method."""
         sample_test = self.algo.sample_count

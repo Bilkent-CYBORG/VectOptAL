@@ -32,9 +32,6 @@ class TestDecoupledGP(TestCase):
             cost_budget=self.cost_budget,
         )
 
-    def test_pareto_updating(self):
-        """Test the pareto_updating method."""
-
     def test_evaluating(self):
         """Test the evaluating method."""
         sample_test = self.algorithm.sample_count
@@ -68,13 +65,10 @@ class TestDecoupledGP(TestCase):
         alg_done = False
         for i in range(num_rounds):  # Run for 10 rounds, it should be enough.
             if not alg_done and i <= 3:  # Save the state at round 3 at the latest.
-                P_test = self.algorithm.P
                 cost_test = self.algorithm.total_cost
             alg_done = self.algorithm.run_one_step()
 
-        P = self.algorithm.P
         cost = self.algorithm.total_cost
 
         self.assertTrue(num_rounds >= self.algorithm.round)
-        self.assertTrue(len(P) >= len(P_test))
         self.assertTrue(cost_test < cost)

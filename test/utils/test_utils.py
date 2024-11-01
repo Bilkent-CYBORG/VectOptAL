@@ -190,22 +190,24 @@ class TestGetDelta(TestCase):
                 np.testing.assert_allclose(delta_true, delta_expected)
 
 
-class TestIsCovered(TestCase):
-    """Test coverage of points w.r.t. the ordering."""
+class TestEpsilonCover(TestCase):
+    """Test epsilon coverage of Pareto points w.r.t. the ordering."""
 
     def setUp(self):
         self.epsilon = 0.1
 
-    def test_is_covered(self):
-        """Test the is_covered function."""
+    def test_is_covered_specific_data(self):
+        """
+        Test the is_covered function with a specific case that fails with CLARABEL.
+        Details: https://github.com/cvxpy/cvxpy/issues/2610
+        """
 
         dataset = get_dataset_instance("Test")
-        vi = dataset.out_data[18].reshape(-1, 1)
-        vj = dataset.out_data[30].reshape(-1, 1)
+        vi = dataset.out_data[30]
+        vj = dataset.out_data[18]
         W = np.eye(2)
 
-        is_covered(vi, vj, self.epsilon, W)
-        self.assertIsNone(None)
+        self.assertFalse(is_covered(vi, vj, self.epsilon, W))
 
 
 class TestHyperrectangleCheckIntersection(TestCase):

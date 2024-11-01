@@ -236,7 +236,7 @@ def get_uncovered_set(p_opt_miss, p_opt_hat, mu, eps, W):
 
     for i in p_opt_miss:
         for j in p_opt_hat:
-            if is_covered(mu[i, :].reshape(-1, 1), mu[j, :].reshape(-1, 1), eps, W):
+            if is_covered(mu[i, :], mu[j, :], eps, W):
                 break
         else:
             uncovered_set.append(i)
@@ -249,66 +249,12 @@ def get_uncovered_size(p_opt_miss, p_opt_hat, eps, W) -> int:
 
     for i, ip in enumerate(p_opt_miss):
         for jp in p_opt_hat:
-            if is_covered(ip.reshape(-1, 1), jp.reshape(-1, 1), eps, W):
+            if is_covered(ip, jp, eps, W):
                 break
         else:
             count += 1
 
     return count
-
-
-def is_covered_SOCP(vi, vj, eps, W):
-    """
-    Check if vi is eps covered by vj for cone matrix W.
-    :param vi, vj: (D,1) ndarrays
-    :param W: An (n_constraint,D) ndarray
-    :param eps: float
-    :return: Boolean.
-    """
-    m = 2 * W.shape[0] + 1  # number of constraints
-    D = W.shape[1]
-    f = np.zeros(D)
-    A = []
-    b = []
-    c = []
-    d = []
-
-    for i in range(W.shape[0]):
-        A.append(np.zeros((1, D)))
-        b.append(np.zeros(1))
-        c.append(W[i, :])
-        d.append(np.zeros(1))
-
-    A.append(np.eye(D))
-    b.append((vi - vj).ravel())
-    c.append(np.zeros(D))
-    d.append(eps * np.ones(1))
-
-    for i in range(W.shape[0]):
-        A.append(np.zeros((1, D)))
-        b.append(np.zeros(1))
-        c.append(W[i, :])
-        d.append(np.dot(W[i, :], (vi - vj)))
-
-    # Define and solve the CVXPY problem.
-    x = cp.Variable(D)
-    # We use cp.SOC(t, x) to create the SOC constraint ||x||_2 <= t.
-    soc_constraints = [cp.SOC(c[i].T @ x + d[i], A[i] @ x + b[i]) for i in range(m)]
-    prob = cp.Problem(cp.Minimize(f.T @ x), soc_constraints)
-
-    prob.solve(solver=cp.SCS)
-
-    """
-    # Print result.
-    print("The optimal value is", prob.value)
-    print("A solution x is")
-    print(x.value)
-    print(x.value is not None)
-    for i in range(m):
-        print("SOC constraint %i dual variable solution" % i)
-        print(soc_constraints[i].dual_value)
-    """
-    return x.value is not None
 
 
 def is_covered(vi, vj, eps, W):
@@ -319,10 +265,18 @@ def is_covered(vi, vj, eps, W):
     :param eps: float
     :return: Boolean.
     """
-    # TODO: Check if the commented out early stop condition is correct.
-    # if np.dot((vi-vj).T, vi-vj) <= eps**2:
-    #     return True
-    return is_covered_SOCP(vi, vj, eps, W)
+    x = cp.Variable(W.shape[1])
+
+    constraints = [
+        W @ x >= 0,
+        cp.norm(x + (vi - vj)) <= eps,
+        W @ (x + (vi - vj)) >= 0,
+    ]
+
+    prob = cp.Problem(cp.Minimize(0), constraints)
+    prob.solve()
+
+    return x.value is not None
 
 
 def hyperrectangle_check_intersection(
