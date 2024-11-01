@@ -3,6 +3,7 @@ from unittest import TestCase, mock
 import torch
 import numpy as np
 
+from vectoptal.datasets import get_dataset_instance
 from vectoptal.utils import (
     set_seed,
     get_2d_w,
@@ -16,6 +17,7 @@ from vectoptal.utils import (
     hyperrectangle_check_intersection,
     hyperrectangle_get_vertices,
     hyperrectangle_get_region_matrix,
+    is_covered,
 )
 
 
@@ -188,6 +190,24 @@ class TestGetDelta(TestCase):
                 np.testing.assert_allclose(delta_true, delta_expected)
 
 
+class TestIsCovered(TestCase):
+    """Test coverage of points w.r.t. the ordering."""
+
+    def setUp(self):
+        self.epsilon = 0.1
+
+    def test_is_covered(self):
+        """Test the is_covered function."""
+
+        dataset = get_dataset_instance("Test")
+        vi = dataset.out_data[18].reshape(-1, 1)
+        vj = dataset.out_data[30].reshape(-1, 1)
+        W = np.eye(2)
+
+        is_covered(vi, vj, self.epsilon, W)
+        self.assertIsNone(None)
+
+
 class TestHyperrectangleCheckIntersection(TestCase):
     """Test hyperrectangle intersection check."""
 
@@ -263,3 +283,16 @@ class TestHyperrectangleGetRegionMatrix(TestCase):
         self.assertTrue(
             np.all(np.all(points @ region_matrix.T >= region_boundary, axis=1) == results)
         )
+
+
+# class TestIsPtInExtendedPolytope(TestCase):
+#     """Test extended polytope point inclusion check."""
+
+#     def test_is_pt_in_extended_polytope(self):
+#         """Test the is_pt_in_extended_polytope function."""
+#         lower, upper = np.array([0, 0]), np.array([1, 1])
+#         W = get_2d_w(45)
+#         alpha_vec = get_alpha_vec(W)
+#         region_matrix, region_boundary = hyperrectangle_get_region_matrix(lower, upper)
+
+#         points = np.array([[

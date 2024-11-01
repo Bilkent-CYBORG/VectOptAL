@@ -10,6 +10,50 @@ from vectoptal.maximization_problem import ProblemFromDataset
 
 
 class NaiveElimination(PALAlgorithm):
+    """
+    Implement the Naive Elimination algorithm.
+
+    :param epsilon: Determines the accuracy of the PAC-learning framework.
+    :type epsilon: float
+    :param delta: Determines the success probability of the PAC-learning framework.
+    :type delta: float
+    :param dataset_name: Name of the dataset to be used.
+    :type dataset_name: str
+    :param order: Order to be used.
+    :type order: Order
+    :param noise_var: Variance of the Gaussian sampling noise.
+    :type noise_var: float
+    :param L: Number of samples to be taken for each arm. If `None`, theoretical sampling count
+        is used.
+    :type L: Optional[int]
+
+    The algorithm sequentially samples design rewards with a multivariate
+    white Gaussian noise whose diagonal entries are specified by the user.
+
+    Example:
+        >>> from vectoptal.order import ComponentwiseOrder
+        >>> from vectoptal.algorithms import NaiveElimination
+        >>>
+        >>> epsilon, delta, noise_var = 0.1, 0.05, 0.01
+        >>> dataset_name = "DiskBrake"
+        >>> order_right = ComponentwiseOrder(2)
+        >>>
+        >>> algorithm = NaiveElimination(epsilon, delta, dataset_name, order_right, noise_var)
+        >>>
+        >>> while True:
+        >>>     is_done = algorithm.run_one_step()
+        >>>
+        >>>     if is_done:
+        >>>          break
+        >>>
+        >>> pareto_indices = algorithm.P
+
+    Reference:
+            "Vector Optimization with Stochastic Bandit Feedback",
+            Ararat, Tekin, AISTATS, '23
+            https://proceedings.mlr.press/v206/ararat23a.html
+    """
+
     def __init__(
         self, epsilon, delta, dataset_name, order: Order, noise_var, L: Optional[int] = None
     ) -> None:
@@ -42,6 +86,12 @@ class NaiveElimination(PALAlgorithm):
         self.sample_count = 0
 
     def run_one_step(self) -> bool:
+        """
+        Run one step of the algorithm and return algorithm status.
+
+        :return: True if the algorithm is over, False otherwise.
+        :rtype: bool
+        """
         if self.round == self.L:
             return True
 
@@ -60,5 +110,11 @@ class NaiveElimination(PALAlgorithm):
         return self.round == self.L
 
     @property
-    def P(self):
+    def P(self) -> np.ndarray:
+        """
+        Calculate the Pareto set ordering by sample means.
+
+        :return: Indices for the Pareto set.
+        :rtype: np.ndarray
+        """
         return self.order.get_pareto_set(self.samples.mean(axis=-2))

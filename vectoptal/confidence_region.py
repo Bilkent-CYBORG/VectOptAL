@@ -87,7 +87,9 @@ class RectangularConfidenceRegion(ConfidenceRegion):
         :param scale: Scaling factor for the covariance matrix.
         :type scale: np.ndarray
         """
-        assert covariance.shape[-1] == covariance.shape[-2], "Covariance matrix must be square."
+        if covariance.shape[-1] != covariance.shape[-2]:
+            raise AssertionError("Covariance matrix must be square.")
+        # assert covariance.shape[-1] == covariance.shape[-2], "Covariance matrix must be square."
         std = np.sqrt(np.diag(covariance.squeeze()))
 
         L = mean - std * scale

@@ -15,13 +15,57 @@ from vectoptal.models import GPyTorchModelListExactModel, get_gpytorch_modellist
 
 
 class DecoupledGP(Algorithm):
+    """
+    Implement a partially observable GP-based minimal algorithm that runs an acquisition method
+    for until a budget is reached.
+
+    :param dataset_name: Name of the dataset to be used.
+    :type dataset_name: str
+    :param order: Order to be used.
+    :type order: Order
+    :param noise_var: Variance of the Gaussian sampling noise.
+    :type noise_var: float
+    :param cost_budget: Cost budget for the algorithm.
+    :type cost_budget: float
+    :param costs: Cost associated with sampling each objective.
+    :type costs: Optional[list]
+    :param batch_size: Number of samples to be taken in each round.
+    :type batch_size: int
+
+    The algorithm sequentially samples design rewards with a multivariate
+    white Gaussian noise whose diagonal entries are specified by the user.
+    It uses Gaussian Process regression to model the rewards and confidence
+    regions.
+
+    Example:
+        >>> from vectoptal.order import ComponentwiseOrder
+        >>> from vectoptal.algorithms import DecoupledGP
+        >>>
+        >>> noise_var = 0.01
+        >>> cost_budget = 64
+        >>> dataset_name = "DiskBrake"
+        >>> order_right = ComponentwiseOrder(2)
+        >>>
+        >>> algorithm = DecoupledGP(
+        >>>     dataset_name, order_right, noise_var, cost_budget
+        >>> )
+        >>>
+        >>> while True:
+        >>>     is_done = algorithm.run_one_step()
+        >>>
+        >>>     if is_done:
+        >>>          break
+        >>>
+        >>> pareto_indices = algorithm.P
+    """
+
     def __init__(
         self,
         dataset_name,
         order: Order,
         noise_var,
+        cost_budget: float,
         costs: Optional[list],
-        cost_budget: Optional[float],
         batch_size=1,
     ) -> None:
         super().__init__()
@@ -49,11 +93,18 @@ class DecoupledGP(Algorithm):
         self.total_cost = 0.0
 
     def pareto_updating(self):
-        m, v = self.model.predict(self.points)
-        self.P = self.order.get_pareto_set(m)
+        """
+        Identify the designs that are optimal using the mean estimates.
+        """
+        mu, covars = self.model.predict(self.points)
+        self.P = self.order.get_pareto_set(mu)
         logging.debug(f"Pareto: {str(self.P)}")
 
     def evaluating(self):
+        """
+        Observe the self.batch_size number of designs from active designs, selecting by
+        the `ThompsonEntropyDecoupledAcquisition` acquisition method.
+        """
         acq = ThompsonEntropyDecoupledAcquisition(self.model, order=self.order, costs=self.costs)
         candidate_list, acq_values, eval_indices = optimize_decoupled_acqf_discrete(
             acq, self.batch_size, choices=self.points
@@ -68,7 +119,13 @@ class DecoupledGP(Algorithm):
         self.model.update()
 
     def run_one_step(self) -> bool:
-        if len(self.P) == 0:
+        """
+        Run one step of the algorithm and return algorithm status.
+
+        :return: True if the algorithm is over, False otherwise.
+        :rtype: bool
+        """
+        if self.total_cost >= self.cost_budget:
             return True
 
         self.round += 1

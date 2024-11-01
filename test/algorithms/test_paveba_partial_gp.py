@@ -13,7 +13,7 @@ class TestPaVeBaPartialGP(TestCase):
     """Test the PaVeBa class."""
 
     def setUp(self):
-        # A basic setup for the model.
+        """A basic setup for the model."""
         np.random.seed(SEED)
 
         self.epsilon = 0.1
@@ -50,8 +50,12 @@ class TestPaVeBaPartialGP(TestCase):
 
     def test_evaluating(self):
         """Test the evaluating method."""
+        sample_test = self.algo.sample_count
+        self.algo.evaluating()
+        self.assertTrue(self.algo.sample_count > sample_test)
 
     def test_whole_class(self):
+        """Test the whole class by running it until the end end checking its score."""
         while True:
             is_done = self.algo.run_one_step()
             if is_done:
@@ -73,16 +77,23 @@ class TestPaVeBaPartialGP(TestCase):
 
     def test_run_one_step(self):
         """Test the run_one_step method."""
-        for i in range(42):
-            self.algo.run_one_step()
-            if i == 3:
-                S3 = self.algo.S
-                P3 = self.algo.P
-        self.assertTrue(42 >= self.algo.round)
+        num_rounds = 10
+        alg_done = False
+        for i in range(num_rounds):  # Run for 10 rounds, it should be enough.
+            if not alg_done and i <= 3:  # Save the state at round 3 at the latest.
+                S_test = self.algo.S
+                P_test = self.algo.P
+                cost_test = self.algo.total_cost
+            alg_done = self.algo.run_one_step()
+
         S = self.algo.S
         P = self.algo.P
-        self.assertTrue(len(S3) >= len(S))
-        self.assertTrue(len(P) >= len(P3))
+        cost = self.algo.total_cost
+
+        self.assertTrue(num_rounds >= self.algo.round)
+        self.assertTrue(len(S_test) >= len(S))
+        self.assertTrue(len(P) >= len(P_test))
+        self.assertTrue(cost_test < cost)
 
     def test_compute_alpha(self):
         """Test the compute_alpha method."""

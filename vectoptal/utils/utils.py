@@ -13,6 +13,7 @@ from sklearn.metrics.pairwise import euclidean_distances
 def set_seed(seed: int) -> None:
     """
     This function sets the seed for both NumPy and PyTorch random number generators.
+
     :param seed: The seed value to set for the random number generators.
     :type seed: int
     """
@@ -78,7 +79,7 @@ def get_alpha(rind: int, W: np.ndarray) -> np.ndarray:
     # We use cp.SOC(t, x) to create the SOC constraint ||x||_2 <= t.
     soc_constraints = [cp.SOC(c[i].T @ x + d[i], A[i] @ x + b[i]) for i in range(m)]
     prob = cp.Problem(cp.Minimize(f.T @ x), soc_constraints)
-    prob.solve()
+    prob.solve(solver=cp.SCS)
 
     return -prob.value
 
@@ -117,7 +118,7 @@ def get_closest_indices_from_points(
     :param squared: If True, the squared Euclidean distances are used and returned.
     :type squared: bool, optional
     :return: An array of the closest indices, or a tuple containing the closest indices and the
-    distances.
+        distances.
     :rtype: Union[np.ndarray, tuple[np.ndarray, np.ndarray]]
     """
     if len(pts_to_find) == 0 or len(pts_to_check) == 0:
@@ -142,8 +143,6 @@ def get_noisy_evaluations_chol(means: np.ndarray, cholesky_cov: np.ndarray) -> n
     :type cholesky_cov: np.ndarray
     :return: An array of noisy samples.
     :rtype: np.ndarray
-    :raises AssertionError: If `cholesky_cov` is not a 2D array or if the dimensions of `means`
-    and `cholesky_cov` do not match.
     """
     assert cholesky_cov.ndim == 2, means.shape[1] == cholesky_cov.shape[1]
     n, d = means.shape[0], len(cholesky_cov)
@@ -224,7 +223,8 @@ def get_delta(mu: np.ndarray, W: np.ndarray, alpha_vec: np.ndarray) -> np.ndarra
 
 def get_uncovered_set(p_opt_miss, p_opt_hat, mu, eps, W):
     """
-    Check if vi is eps covered by vj for cone matrix W
+    Check if vi is eps covered by vj for cone matrix W.
+
     :param p_opt_hat: ndarray of indices of designs in returned Pareto set
     :param p_opt_miss: ndarray of indices of Pareto optimal points not in p_opt_hat
     :mu: An (n_points,D) mean reward matrix
@@ -295,7 +295,8 @@ def is_covered_SOCP(vi, vj, eps, W):
     # We use cp.SOC(t, x) to create the SOC constraint ||x||_2 <= t.
     soc_constraints = [cp.SOC(c[i].T @ x + d[i], A[i] @ x + b[i]) for i in range(m)]
     prob = cp.Problem(cp.Minimize(f.T @ x), soc_constraints)
-    prob.solve()
+
+    prob.solve(solver=cp.SCS)
 
     """
     # Print result.

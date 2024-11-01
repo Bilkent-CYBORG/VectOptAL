@@ -50,10 +50,10 @@ class PaVeBaPartialGP(PALAlgorithm):
         >>> epsilon, delta, noise_var = 0.1, 0.05, 0.01
         >>> cost_budget = 64
         >>> dataset_name = "DiskBrake"
-        >>> order_acute = ComponentwiseOrder(2)
+        >>> order_right = ComponentwiseOrder(2)
         >>>
         >>> algorithm = PaVeBaPartialGP(
-        >>>     epsilon, delta, dataset_name, order_acute, noise_var, cost_budget=cost_budget
+        >>>     epsilon, delta, dataset_name, order_right, noise_var, cost_budget=cost_budget
         >>> )
         >>>
         >>> while True:
