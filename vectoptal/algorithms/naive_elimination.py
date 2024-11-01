@@ -49,13 +49,19 @@ class NaiveElimination(PALAlgorithm):
         >>> pareto_indices = algorithm.P
 
     Reference:
-            "Vector Optimization with Stochastic Bandit Feedback",
-            Ararat, Tekin, AISTATS, '23
-            https://proceedings.mlr.press/v206/ararat23a.html
+        "Vector Optimization with Stochastic Bandit Feedback",
+        Ararat, Tekin, AISTATS, '23
+        https://proceedings.mlr.press/v206/ararat23a.html
     """
 
     def __init__(
-        self, epsilon, delta, dataset_name, order: Order, noise_var, L: Optional[int] = None
+        self,
+        epsilon: float,
+        delta: float,
+        dataset_name: str,
+        order: Order,
+        noise_var: float,
+        L: Optional[int] = None,
     ) -> None:
         super().__init__(epsilon, delta)
 

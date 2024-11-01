@@ -67,16 +67,16 @@ class PaVeBaPartialGP(PALAlgorithm):
 
     def __init__(
         self,
-        epsilon,
-        delta,
-        dataset_name,
+        epsilon: float,
+        delta: float,
+        dataset_name: str,
         order: Order,
-        noise_var,
-        conf_contraction=32,
+        noise_var: float,
+        conf_contraction: int = 32,
         costs: Optional[list] = None,
         cost_budget: Optional[float] = None,
         confidence_type: Literal["hyperrectangle", "hyperellipsoid"] = "hyperrectangle",
-        batch_size=1,
+        batch_size: int = 1,
     ) -> None:
         super().__init__(epsilon, delta)
 

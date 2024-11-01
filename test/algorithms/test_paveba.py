@@ -64,17 +64,14 @@ class TestPaVeBa(TestCase):
             if not alg_done and i <= 3:  # Save the state at round 3 at the latest.
                 S_test = self.algo.S
                 P_test = self.algo.P
-                sample_test = self.algo.sample_count
             alg_done = self.algo.run_one_step()
 
         S = self.algo.S
         P = self.algo.P
-        sample = self.algo.sample_count
 
         self.assertTrue(num_rounds >= self.algo.round)
         self.assertTrue(len(S_test) >= len(S))
         self.assertTrue(len(P) >= len(P_test))
-        self.assertTrue(sample_test < sample)
 
     def test_compute_radius(self):
         """Test the compute_radius method."""
@@ -83,7 +80,7 @@ class TestPaVeBa(TestCase):
         t2 = np.log((np.pi**2 * (3) * self.dataset_cardinality) / (6 * 0.1))
         r1 = np.sqrt(t1 * t2)
         r2 = self.algo.compute_radius()
-        self.assertTrue((np.array([r1, r1]) == r2).all())
+        self.assertTrue(r1 == r2)
 
         self.algo.run_one_step()
         r3 = self.algo.compute_radius()

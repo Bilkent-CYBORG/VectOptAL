@@ -12,10 +12,15 @@ class Algorithm(ABC):
 
 class PALAlgorithm(Algorithm, ABC):
     """
-    (\\epsilon, \\delta)-PAC modelling.
+    Base class for algorithms that does (\\epsilon, \\delta)-PAC modelling.
+
+    :param epsilon: Determines the accuracy of the PAC-learning framework.
+    :type epsilon: float
+    :param delta: Determines the success probability of the PAC-learning framework.
+    :type delta: float
     """
 
-    def __init__(self, epsilon, delta) -> None:
+    def __init__(self, epsilon: float, delta: float) -> None:
         super().__init__()
 
         self.epsilon = epsilon

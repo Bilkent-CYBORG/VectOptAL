@@ -61,12 +61,12 @@ class DecoupledGP(Algorithm):
 
     def __init__(
         self,
-        dataset_name,
+        dataset_name: str,
         order: Order,
-        noise_var,
+        noise_var: float,
         cost_budget: float,
         costs: Optional[list],
-        batch_size=1,
+        batch_size: int = 1,
     ) -> None:
         super().__init__()
 

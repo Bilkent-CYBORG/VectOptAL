@@ -64,22 +64,22 @@ class PaVeBaGP(PALAlgorithm):
         >>> pareto_indices = algorithm.P
 
     Reference:
-            "Learning the Pareto Set Under Incomplete Preferences:
-                Pure Exploration in Vector Bandits",
-            Karagözlü, Yıldırım, Ararat, Tekin, AISTATS, '24
-            https://proceedings.mlr.press/v238/karagozlu24a.html
+        "Learning the Pareto Set Under Incomplete Preferences:
+            Pure Exploration in Vector Bandits",
+        Karagözlü, Yıldırım, Ararat, Tekin, AISTATS, '24
+        https://proceedings.mlr.press/v238/karagozlu24a.html
     """
 
     def __init__(
         self,
-        epsilon,
-        delta,
-        dataset_name,
+        epsilon: float,
+        delta: float,
+        dataset_name: str,
         order: Order,
-        noise_var,
-        conf_contraction=32,
+        noise_var: float,
+        conf_contraction: int = 32,
         type: Literal["IH", "DE"] = "IH",
-        batch_size=1,
+        batch_size: int = 1,
     ) -> None:
         super().__init__(epsilon, delta)
 

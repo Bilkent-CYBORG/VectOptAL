@@ -11,14 +11,60 @@ from vectoptal.models import EmpiricalMeanVarModel
 
 
 class Auer(PALAlgorithm):
+    """
+    Implement the Algorithm 1 from Auer et al. (2016).
+
+    :param epsilon: Determines the accuracy of the PAC-learning framework.
+    :type epsilon: float
+    :param delta: Determines the success probability of the PAC-learning framework.
+    :type delta: float
+    :param dataset_name: Name of the dataset to be used.
+    :type dataset_name: str
+    :param noise_var: Variance of the Gaussian sampling noise.
+    :type noise_var: float
+    :param conf_contraction: Contraction coefficient to shrink
+        the confidence regions empirically.
+    :type conf_contraction: float
+
+    The algorithm sequentially samples design rewards with a multivariate
+    white Gaussian noise whose diagonal entries are specified by the user.
+
+    Example:
+        >>> from vectoptal.algorithms import Auer
+        >>>
+        >>> epsilon, delta, noise_var = 0.1, 0.05, 0.01
+        >>> dataset_name = "DiskBrake"
+        >>>
+        >>> algorithm = Auer(epsilon, delta, dataset_name, order_right, noise_var)
+        >>>
+        >>> while True:
+        >>>     is_done = algorithm.run_one_step()
+        >>>
+        >>>     if is_done:
+        >>>          break
+        >>>
+        >>> pareto_indices = algorithm.P
+
+    Reference:
+        "Pareto Front Identification from Stochastic Bandit Feedback",
+        Auer, Chiang, Ortner, Drugan, AISTATS, '16
+        https://proceedings.mlr.press/v51/auer16.html
+    """
+
     def __init__(
-        self, epsilon, delta, dataset_name, noise_var, conf_contraction=32, use_empirical_beta=False
+        self,
+        epsilon: float,
+        delta: float,
+        dataset_name: str,
+        noise_var: float,
+        conf_contraction: int = 32,
+        use_empirical_beta: bool = False,
     ) -> None:
         super().__init__(epsilon, delta)
 
         self.noise_var = noise_var
         self.conf_contraction = conf_contraction
-        self.use_empirical_beta = use_empirical_beta
+        self._use_empirical_beta = use_empirical_beta
 
         dataset = get_dataset_instance(dataset_name)
 
@@ -37,7 +83,7 @@ class Auer(PALAlgorithm):
             self.m,
             noise_var,
             self.design_space.cardinality,
-            track_variances=self.use_empirical_beta,
+            track_variances=self._use_empirical_beta,
         )
 
         self.S = set(range(self.design_space.cardinality))
@@ -45,13 +91,59 @@ class Auer(PALAlgorithm):
         self.round = 0
         self.sample_count = 0
 
-    def small_m(self, i, j):
+    @property
+    def use_empirical_beta(self) -> bool:
+        """
+        Property for the use_empirical_beta attribute.
+
+        :return: The value of the use_empirical_beta attribute.
+        :rtype: bool
+        """
+        return self._use_empirical_beta
+
+    @use_empirical_beta.setter
+    def use_empirical_beta(self, value: bool):
+        """
+        Setter for the use_empirical_beta attribute, which updates model's variance tracking.
+
+        :param value: The new value for the use_empirical_beta attribute.
+        :type value: bool
+        """
+        self._use_empirical_beta = value
+        self.model.track_variances = self._use_empirical_beta
+
+    def small_m(self, i: np.ndarray, j: np.ndarray) -> float:
+        """
+        This method calculates the m(i, j) value, which is the amount by which the vector i
+        have to be increased such that it would not be strongly dominated by vector j.
+
+        :param vi: A D-vector.
+        :type vi: np.ndarray
+        :param vj: A D-vector.
+        :type vj: np.ndarray
+        :return: The computed m(i, j) value.
+        :rtype: float
+        """
         return max(0, np.min(j - i))
 
-    def big_m(self, i, j):
+    def big_m(self, i: np.ndarray, j: np.ndarray) -> float:
+        """
+        This method calculates the M(i, j) value, which is the amount by which the values of
+        vector j have to be increased such that vector i + epsilon would be weakly dominated by it.
+
+        :param i: A D-vector.
+        :type i: np.ndarray
+        :param j: A D-vector.
+        :type j: np.ndarray
+        :return: The computed M(i, j) value.
+        :rtype: float
+        """
         return max(0, np.max((i + self.epsilon) - j))
 
     def modeling(self):
+        """
+        Construct the confidence regions of all active designs given all past observations.
+        """
         # All active designs have the same beta value if empirical beta is not used. In that case;
         # model does not track variances. If the empirical beta is used, variances are tracked and
         # used here to provide individual scales for each design but disabled when updating the
@@ -64,6 +156,9 @@ class Auer(PALAlgorithm):
         self.model.track_variances = self.use_empirical_beta and True
 
     def discarding(self):
+        """
+        Discard the designs that are highly likely to be suboptimal using the confidence regions.
+        """
         to_be_discarded = []
         for pt_i, pt in enumerate(self.S):
             pt_conf = self.design_space.confidence_regions[pt]
@@ -84,6 +179,10 @@ class Auer(PALAlgorithm):
             self.S.remove(pt)
 
     def pareto_updating(self):
+        """
+        Identify the designs that are highly likely to be `epsilon`-optimal
+        using the confidence regions, by first identifying the designs that are useful.
+        """
         P1_pt_is = []
         P1_pts = []
         for pt_i, pt in enumerate(self.S):
@@ -128,6 +227,9 @@ class Auer(PALAlgorithm):
         logging.debug(f"Pareto: {str(self.P)}")
 
     def evaluating(self):
+        """
+        Observe the active designs via sampling.
+        """
         active_pts = self.design_space.points[list(self.S)]
 
         observations = self.problem.evaluate(active_pts[:, :-1])
@@ -137,6 +239,12 @@ class Auer(PALAlgorithm):
         self.model.update()
 
     def run_one_step(self) -> bool:
+        """
+        Run one step of the algorithm and return algorithm status.
+
+        :return: True if the algorithm is over, False otherwise.
+        :rtype: bool
+        """
         if len(self.S) == 0:
             return True
 
@@ -165,14 +273,21 @@ class Auer(PALAlgorithm):
 
         return len(self.S) == 0
 
-    def compute_beta(self):
+    def compute_beta(self) -> np.ndarray:
+        """
+        Compute the beta values for the confidence regions of the current round to be
+        used in modeling.
+
+        :return: The beta velues of the confidence regions.
+        :rtype: np.ndarray
+        """
         # Original beta
         if not self.use_empirical_beta:
             t1 = np.log((4 * self.design_space.cardinality * self.m * self.round**2) / self.delta)
             t2 = np.ones((len(self.S), self.m))
         else:  # Empirical beta
             # Indices are enough for prediction.
-            active_pts = np.array(list(self.S)).reshape(-1, 1)
+            active_pts = self.design_space.points[list(self.S)]
 
             v_hat = self.model.predict(active_pts)[1].diagonal(axis1=-2, axis2=-1)
             v_bar = 1

@@ -89,7 +89,6 @@ class RectangularConfidenceRegion(ConfidenceRegion):
         """
         if covariance.shape[-1] != covariance.shape[-2]:
             raise AssertionError("Covariance matrix must be square.")
-        # assert covariance.shape[-1] == covariance.shape[-2], "Covariance matrix must be square."
         std = np.sqrt(np.diag(covariance.squeeze()))
 
         L = mean - std * scale
@@ -248,7 +247,8 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
     """
     Implements the ellipsoidal confidence region object.
 
-    :param int dim: The dimension of the ellipsoid.
+    :param dim: The dimension of the ellipsoid.
+    :type dim: int
     :param center: The center of the ellipsoid.
     :type center: Optional[np.ndarray]
     :param sigma: The covariance matrix of the ellipsoid.
@@ -259,7 +259,7 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
 
     def __init__(
         self,
-        dim,
+        dim: int,
         center: Optional[np.ndarray] = None,
         sigma: Optional[np.ndarray] = None,
         alpha: Optional[float] = None,

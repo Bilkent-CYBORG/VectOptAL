@@ -10,7 +10,7 @@ from vectoptal.utils.evaluate import calculate_epsilonF1_score
 
 
 class TestPaVeBaPartialGP(TestCase):
-    """Test the PaVeBa class."""
+    """Test the PaVeBaPartialGP class."""
 
     def setUp(self):
         """A basic setup for the model."""
@@ -22,7 +22,7 @@ class TestPaVeBaPartialGP(TestCase):
         self.order = ComponentwiseOrder(2)
         self.dataset_cardinality = get_dataset_instance(self.dataset_name)._cardinality
         self.noise_var = 0.00001
-        self.conf_contraction = 1
+        self.conf_contraction = 4
         self.costs = [1.0, 1.5]
         self.cost_budget = 64
         self.algo = PaVeBaPartialGP(
@@ -89,7 +89,7 @@ class TestPaVeBaPartialGP(TestCase):
         alpha = 2 * np.log((np.pi**2 * self.dataset_cardinality) / (3 * self.delta))
         r1 = alpha
         r2 = self.algo.compute_alpha()
-        self.assertTrue((np.array([r1, r1]) / self.conf_contraction == r2).all())
+        self.assertTrue((r1 / self.conf_contraction) == r2)
 
         self.algo.run_one_step()
         r3 = self.algo.compute_alpha()
