@@ -79,7 +79,7 @@ def get_alpha(rind: int, W: np.ndarray) -> np.ndarray:
     # We use cp.SOC(t, x) to create the SOC constraint ||x||_2 <= t.
     soc_constraints = [cp.SOC(c[i].T @ x + d[i], A[i] @ x + b[i]) for i in range(m)]
     prob = cp.Problem(cp.Minimize(f.T @ x), soc_constraints)
-    prob.solve(solver=cp.SCS)
+    prob.solve()
 
     return -prob.value
 
