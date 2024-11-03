@@ -59,6 +59,9 @@ class TestRectangularConfidenceRegion(TestCase):
 
     def test_update(self):
         """Test the update method."""
+        with self.assertRaises(AssertionError):
+            self.confidence_region.update(np.array([1, 1]), np.ones([2, 3]))
+
         self.confidence_region.update(np.array([1.25, 1.25]), 0.25 * np.eye(2), np.array(2))
         self.assertTrue(
             np.allclose(self.confidence_region.lower, np.array([0.25, 0.25]))
@@ -255,6 +258,13 @@ class TestEllipsoidalConfidenceRegion(TestCase):
                 self.order, self.confidence_region, self.confidence_region6, self.slackness
             )
         )
+
+    def test_check_dominates(self):
+        """Test the check_dominates method."""
+        with self.assertRaises(NotImplementedError):
+            self.confidence_region.check_dominates(
+                self.order, self.confidence_region, self.confidence_region2, self.slackness
+            )
 
     def test_is_covered(self):
         """Test the is_covered method."""

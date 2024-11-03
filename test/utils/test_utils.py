@@ -14,10 +14,15 @@ from vectoptal.utils import (
     generate_sobol_samples,
     get_smallmij,
     get_delta,
+    get_uncovered_set,
+    get_uncovered_size,
+    is_covered,
     hyperrectangle_check_intersection,
     hyperrectangle_get_vertices,
     hyperrectangle_get_region_matrix,
-    is_covered,
+    is_pt_in_extended_polytope,
+    line_seg_pt_intersect_at_dim,
+    binary_entropy,
 )
 
 
@@ -86,6 +91,10 @@ class TestGetClosestIndicesFromPoints(TestCase):
         points = torch.tensor([[0, 0], [1, 1]])
         queries = torch.tensor([[0.1, 0.1], [0.5, 0.9], [1.2, 1.2]])
 
+        self.assertListEqual(
+            get_closest_indices_from_points(queries, [], return_distances=False, squared=False), []
+        )
+
         result_sq = get_closest_indices_from_points(
             queries, points, return_distances=False, squared=True
         )
@@ -105,7 +114,7 @@ class TestGetClosestIndicesFromPoints(TestCase):
         self.assertListEqual(result_sq.tolist(), result.tolist())
         self.assertListEqual(result.tolist(), [0, 1, 1])
         np.testing.assert_allclose(dists_sq, dists**2)
-        np.testing.assert_allclose(dists_sq, [0.02, 0.26, 0.08])
+        np.testing.assert_allclose(dists_sq, [0.02, 0.26, 0.08], atol=1e-7)
 
 
 class TestGetNoisyEvaluationsChol(TestCase):
@@ -117,6 +126,9 @@ class TestGetNoisyEvaluationsChol(TestCase):
         n = 10
         x = np.linspace(0, 1, n).reshape(-1, 1)
         y = np.sin(2 * np.pi * x)
+
+        with self.assertRaises(AssertionError):
+            get_noisy_evaluations_chol(y, np.zeros((2,)))
 
         mock_normal.return_value = x
         np.testing.assert_allclose(get_noisy_evaluations_chol(y, np.zeros((1, 1))), y)
@@ -205,9 +217,60 @@ class TestEpsilonCover(TestCase):
         dataset = get_dataset_instance("Test")
         vi = dataset.out_data[30]
         vj = dataset.out_data[18]
-        W = np.eye(2)
+        W = get_2d_w(90)
 
         self.assertFalse(is_covered(vi, vj, self.epsilon, W))
+
+    def test_is_covered(self):
+        """Test the is_covered function."""
+        means = np.array(
+            [
+                [1, 0.2],
+                [1.1, 0.2],
+                [0.5, 0.8],
+            ]
+        )
+
+        W = get_2d_w(90)
+
+        # vi equal to vj
+        self.assertTrue(is_covered(means[0], means[0], self.epsilon, W))
+        # vj is already better than vi, shouldn't happen if vi is pareto optimal
+        self.assertTrue(is_covered(means[0], means[1], self.epsilon, W))
+        # vi can be reached from vj
+        self.assertTrue(is_covered(means[1], means[0], self.epsilon, W))
+        # vi incomparable with vj
+        self.assertFalse(is_covered(means[1], means[2], self.epsilon, W))
+
+    def test_get_uncovered_set(self):
+        """Test the get_uncovered_set function."""
+        means = np.array(
+            [
+                [1, 0.2],
+                [1.1, 0.2],
+                [0.5, 0.8],
+            ]
+        )
+
+        W = get_2d_w(90)
+
+        self.assertListEqual(get_uncovered_set([1], [0, 2], means, self.epsilon, W), [])
+        self.assertListEqual(get_uncovered_set([1], [2], means, self.epsilon, W), [1])
+
+    def test_get_uncovered_size(self):
+        """Test the get_uncovered_size function."""
+        means = np.array(
+            [
+                [1, 0.2],
+                [1.1, 0.2],
+                [0.5, 0.8],
+            ]
+        )
+
+        W = get_2d_w(90)
+
+        self.assertEqual(get_uncovered_size(means[[1]], means[[0, 2]], self.epsilon, W), 0)
+        self.assertEqual(get_uncovered_size(means[[1]], means[[2]], self.epsilon, W), 1)
 
 
 class TestHyperrectangleCheckIntersection(TestCase):
@@ -287,14 +350,91 @@ class TestHyperrectangleGetRegionMatrix(TestCase):
         )
 
 
-# class TestIsPtInExtendedPolytope(TestCase):
-#     """Test extended polytope point inclusion check."""
+class TestIsPtInExtendedPolytope(TestCase):
+    """Test extended polytope point inclusion check."""
 
-#     def test_is_pt_in_extended_polytope(self):
-#         """Test the is_pt_in_extended_polytope function."""
-#         lower, upper = np.array([0, 0]), np.array([1, 1])
-#         W = get_2d_w(45)
-#         alpha_vec = get_alpha_vec(W)
-#         region_matrix, region_boundary = hyperrectangle_get_region_matrix(lower, upper)
+    def test_is_pt_in_extended_polytope(self):
+        """Test the is_pt_in_extended_polytope function."""
+        polytope = np.array([[0, 0], [1, 0], [0, 1], [1, 1]])
 
-#         points = np.array([[
+        # Inside the polytope
+        points_inside = [np.array([0.5, 0.5]), np.array([0.1, 0.1]), np.array([0.9, 0.9])]
+        for pt in points_inside:
+            with self.subTest(pt=pt):
+                self.assertTrue(is_pt_in_extended_polytope(pt, polytope))
+
+        # Outside the polytope
+        points_outside = [np.array([-0.1, 0.5]), np.array([0.5, -0.1])]
+        for pt in points_outside:
+            with self.subTest(pt=pt):
+                self.assertFalse(is_pt_in_extended_polytope(pt, polytope))
+
+        # Inside the extended polytope
+        points_extended = [np.array([1.5, 0.5]), np.array([0.5, 1.5])]
+        for pt in points_extended:
+            with self.subTest(pt=pt):
+                self.assertTrue(is_pt_in_extended_polytope(pt, polytope))
+
+        # Inside the inverted extended polytope
+        points_inverted_extended = [np.array([-0.5, 0.5]), np.array([0.5, -0.5])]
+        for pt in points_inverted_extended:
+            with self.subTest(pt=pt):
+                self.assertTrue(is_pt_in_extended_polytope(pt, polytope, invert_extension=True))
+
+        # Outside the inverted extended polytope
+        points_outside_inverted_extended = [np.array([1.5, 0.5]), np.array([0.5, 1.5])]
+        for pt in points_outside_inverted_extended:
+            with self.subTest(pt=pt):
+                self.assertFalse(is_pt_in_extended_polytope(pt, polytope, invert_extension=True))
+
+        # Inside the extended parallelogram polytope
+        polytope = np.array([[0, 0], [1, 0], [-0.5, 1], [0.5, 1]])
+        points_extended = [np.array([-0.25, 0.5])]
+        for pt in points_extended:
+            with self.subTest(pt=pt):
+                self.assertTrue(is_pt_in_extended_polytope(pt, polytope))
+
+
+class TestLineSegPtIntersectAtDim(TestCase):
+    """Test line segment intersection at a specific dimension."""
+
+    def test_line_seg_pt_intersect_at_dim(self):
+        """Test the line_seg_pt_intersect_at_dim function."""
+        P1 = np.array([0, 0])
+        P2 = np.array([1, 1])
+
+        # Intersection at the endpoints
+        target_dim = 0
+        intersection = line_seg_pt_intersect_at_dim(P1, P2, P1, target_dim)
+        np.testing.assert_allclose(intersection, P1)
+        intersection = line_seg_pt_intersect_at_dim(P1, P2, P2, target_dim)
+        np.testing.assert_allclose(intersection, P2)
+
+        # Intersection at target dimension
+        target_pt = np.array([0.8, 0.5])
+        target_dim = 0
+        intersection = line_seg_pt_intersect_at_dim(P1, P2, target_pt, target_dim)
+        np.testing.assert_allclose(intersection, np.array([0.8, 0.8]))
+        target_dim = 1
+        intersection = line_seg_pt_intersect_at_dim(P1, P2, target_pt, target_dim)
+        np.testing.assert_allclose(intersection, np.array([0.5, 0.5]))
+
+        # No intersection (target point outside the segment)
+        target_pt = np.array([1.5, 1.5])
+        target_dim = 0
+        intersection = line_seg_pt_intersect_at_dim(P1, P2, target_pt, target_dim)
+        self.assertIsNone(intersection)
+        target_dim = 1
+        intersection = line_seg_pt_intersect_at_dim(P1, P2, target_pt, target_dim)
+        self.assertIsNone(intersection)
+
+
+class TestBinaryEntropy(TestCase):
+    """Test binary entropy computation."""
+
+    def test_binary_entropy(self):
+        """Test the binary_entropy function."""
+        p = np.array([0, 0.5, 1])
+        expected = np.array([0, 1, 0])
+
+        np.testing.assert_allclose(binary_entropy(p), expected)

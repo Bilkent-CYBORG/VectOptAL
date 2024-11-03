@@ -83,6 +83,9 @@ class EmpiricalMeanVarModel(Model):
             self.variances = None
 
     def train(self):
+        """
+        This method is a no-op for this model.
+        """
         pass
 
     def predict(self, test_X: np.ndarray) -> tuple[np.ndarray, np.ndarray]:

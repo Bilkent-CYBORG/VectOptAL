@@ -76,6 +76,11 @@ class TestEmpiricalMeanVarModel(TestCase):
         np.testing.assert_allclose(self.model.means, means_tracked)
         np.testing.assert_allclose(self.model.variances, variances_tracked)
 
+    def test_train(self):
+        """Test the train method."""
+        self.model.train()
+        self.assertTrue(True)
+
     def test_predict(self):
         """Test the predict method."""
         self.model.add_sample([0, 0, 1], np.array([[1, 2], [3, 4], [5, 6]]))

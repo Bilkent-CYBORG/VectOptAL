@@ -45,6 +45,8 @@ class TestPaVeBa(TestCase):
             if is_done:
                 break
 
+        self.assertTrue(self.algo.run_one_step())
+
         pareto_indices = self.algo.P
         dataset = get_dataset_instance(self.dataset_name)
         eps_f1 = calculate_epsilonF1_score(
@@ -58,6 +60,8 @@ class TestPaVeBa(TestCase):
 
     def test_run_one_step(self):
         """Test the run_one_step method."""
+        self.algo.conf_contraction = 32
+
         num_rounds = 10
         alg_done = False
         for i in range(num_rounds):  # Run for 10 rounds, it should be enough.

@@ -236,11 +236,10 @@ class RectangularConfidenceRegion(ConfidenceRegion):
         except cp.error.SolverError:
             prob.solve(solver=cp.SCS)
 
-        if prob.status is None:
+        if prob.status is None or prob.status == "optimal":
             return True
 
-        condition = prob.status == "optimal"
-        return condition
+        return False
 
 
 class EllipsoidalConfidenceRegion(ConfidenceRegion):

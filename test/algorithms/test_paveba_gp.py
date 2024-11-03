@@ -44,6 +44,8 @@ class TestPaVeBaGP(TestCase):
             if is_done:
                 break
 
+        self.assertTrue(self.algo.run_one_step())
+
         pareto_indices = self.algo.P
         dataset = get_dataset_instance(self.dataset_name)
         eps_f1 = calculate_epsilonF1_score(
@@ -55,12 +57,40 @@ class TestPaVeBaGP(TestCase):
         )
         self.assertTrue(eps_f1 > 0.9)
 
-    def test_run_one_step(self):
+    def test_run_one_step_with_hyperrectangle(self):
         """Test the run_one_step method."""
         num_rounds = 10
         alg_done = False
         for i in range(num_rounds):  # Run for 10 rounds, it should be enough.
             if not alg_done and i <= 3:  # Save the state at round 3 at the latest.
+                S_test = self.algo.S
+                P_test = self.algo.P
+            alg_done = self.algo.run_one_step()
+
+        S = self.algo.S
+        P = self.algo.P
+
+        self.assertTrue(num_rounds >= self.algo.round)
+        self.assertTrue(len(S_test) >= len(S))
+        self.assertTrue(len(P) >= len(P_test))
+
+    def test_run_one_step_with_ellipsoid(self):
+        """Test the run_one_step method."""
+
+        self.algo = PaVeBaGP(
+            epsilon=self.epsilon,
+            delta=self.delta,
+            dataset_name=self.dataset_name,
+            order=self.order,
+            noise_var=self.noise_var,
+            conf_contraction=self.conf_contraction,
+            type="DE",
+        )
+
+        num_rounds = 5
+        alg_done = False
+        for i in range(num_rounds):  # Run for 10 rounds, it should be enough.
+            if not alg_done and i <= 2:  # Save the state at round 3 at the latest.
                 S_test = self.algo.S
                 P_test = self.algo.P
             alg_done = self.algo.run_one_step()

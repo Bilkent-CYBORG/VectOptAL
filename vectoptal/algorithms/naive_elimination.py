@@ -108,7 +108,7 @@ class NaiveElimination(PALAlgorithm):
 
         self.sample_count += self.K
 
-        if self.round % 100 == 0:
+        if self.L <= 50 or self.round % 50 == 0:
             round_str = f"Round {self.round}"
 
             logging.info(f"{round_str}:Sample count {self.sample_count}")

@@ -45,6 +45,8 @@ class TestDecoupledGP(TestCase):
             if is_done:
                 break
 
+        self.assertTrue(self.algorithm.run_one_step())
+
         pareto_indices = self.algorithm.P
         dataset = get_dataset_instance(self.dataset_name)
         eps_f1 = calculate_epsilonF1_score(

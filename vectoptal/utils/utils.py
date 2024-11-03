@@ -1,6 +1,5 @@
 import itertools
-
-from typing import Union, Iterable
+from typing import Union, Iterable, Optional
 
 import torch
 import numpy as np
@@ -63,12 +62,14 @@ def get_alpha(rind: int, W: np.ndarray) -> np.ndarray:
     b = []
     c = []
     d = []
+    # x inside the cone
     for i in range(W.shape[0]):
         A.append(np.zeros((1, D)))
         b.append(np.zeros(1))
         c.append(W[i, :])
         d.append(np.zeros(1))
 
+    # norm of x is less than or equal to 1
     A.append(np.eye(D))
     b.append(np.zeros(D))
     c.append(np.zeros(D))
@@ -144,7 +145,8 @@ def get_noisy_evaluations_chol(means: np.ndarray, cholesky_cov: np.ndarray) -> n
     :return: An array of noisy samples.
     :rtype: np.ndarray
     """
-    assert cholesky_cov.ndim == 2, means.shape[1] == cholesky_cov.shape[1]
+    if cholesky_cov.ndim != 2 or means.shape[1] != cholesky_cov.shape[1]:
+        raise AssertionError("Invalid dimensions.")
     n, d = means.shape[0], len(cholesky_cov)
     X = np.random.normal(size=(n, d))
     complicated_X = np.dot(X, cholesky_cov)
@@ -221,21 +223,33 @@ def get_delta(mu: np.ndarray, W: np.ndarray, alpha_vec: np.ndarray) -> np.ndarra
     return delta_values.reshape(-1, 1)
 
 
-def get_uncovered_set(p_opt_miss, p_opt_hat, mu, eps, W):
+def get_uncovered_set(
+    p_inds: Iterable, p_hat_inds: Iterable, mu: np.ndarray, eps: float, W: np.ndarray
+) -> list:
     """
-    Check if vi is eps covered by vj for cone matrix W.
+    Identify the set of elements in `p_inds` that are not covered by any element in `p_hat_inds`.
 
-    :param p_opt_hat: ndarray of indices of designs in returned Pareto set
-    :param p_opt_miss: ndarray of indices of Pareto optimal points not in p_opt_hat
-    :mu: An (n_points,D) mean reward matrix
-    :param eps: float
-    :param W: An (n_constraint,D) ndarray
-    :return: ndarray of indices of points in p_opt_miss that are not epsilon covered
+    This function checks each element in `p_inds` to see if it is covered by any element
+    in `p_hat_inds` based on the provided `mu`, `eps`, and `W` parameters.
+
+    :param p_inds: Array of indices representing the Pareto elements to check for coverage.
+    :type p_inds: Iterable
+    :param p_hat_inds: Array of indices representing the estimated Pareto elements that may cover
+        elements in `p_inds`.
+    :type p_hat_inds: Iterable
+    :param mu: (N, D) array where each row corresponds to a designs D-dim feature vector.
+    :type mu: np.ndarray
+    :param eps: Coverage slackness.
+    :type eps: float
+    :param W: An (n_constraint, D) array representing the cone matrix.
+    :type W: np.ndarray
+    :return: List of indices from `p_inds` that are not covered by any element in `p_hat_inds`.
+    :rtype: list
     """
     uncovered_set = []
 
-    for i in p_opt_miss:
-        for j in p_opt_hat:
+    for i in p_inds:
+        for j in p_hat_inds:
             if is_covered(mu[i, :], mu[j, :], eps, W):
                 break
         else:
@@ -244,11 +258,33 @@ def get_uncovered_set(p_opt_miss, p_opt_hat, mu, eps, W):
     return uncovered_set
 
 
-def get_uncovered_size(p_opt_miss, p_opt_hat, eps, W) -> int:
+def get_uncovered_size(
+    pareto_pts: np.ndarray, pareto_hat_pts: np.ndarray, eps: float, W: np.ndarray
+) -> int:
+    """
+    Identify the set of elements in `pareto_pts` that are not covered by any element in
+    `pareto_hat_pts`.
+
+    This function checks each element in `pareto_pts` to see if it is covered by any element
+    in `pareto_hat_pts` based on the provided `mu`, `eps`, and `W` parameters.
+
+    :param pareto_pts: An (N_pareto, D) array of Pareto elements to check for coverage.
+    :type pareto_pts: np.ndarray
+    :param pareto_hat_pts: An (N_pareto_hat, D) array of estimated Pareto elements to check if
+        they cover any element of `pareto_pts`.
+    :type pareto_hat_pts: np.ndarray
+    :param eps: Coverage slackness.
+    :type eps: float
+    :param W: An (n_constraint, D) array representing the cone matrix.
+    :type W: np.ndarray
+    :return: Number of points from `pareto_pts` that are not covered by any element in
+        `pareto_hat_pts`.
+    :rtype: int
+    """
     count = 0
 
-    for i, ip in enumerate(p_opt_miss):
-        for jp in p_opt_hat:
+    for i, ip in enumerate(pareto_pts):
+        for jp in pareto_hat_pts:
             if is_covered(ip, jp, eps, W):
                 break
         else:
@@ -257,13 +293,23 @@ def get_uncovered_size(p_opt_miss, p_opt_hat, eps, W) -> int:
     return count
 
 
-def is_covered(vi, vj, eps, W):
+def is_covered(vi: np.ndarray, vj: np.ndarray, eps: float, W: np.ndarray) -> bool:
     """
-    Check if vi is eps covered by vj for cone matrix W.
-    :param vi, vj: (D,1) ndarrays
-    :param W: An (n_constraint,D) ndarray
-    :param eps: float
-    :return: Boolean.
+    Check if vector `vi` is epsilon-covered by vector `vj` for a given cone matrix `W`.
+
+    This function determines if the vector `vi` can be weakly dominated by `vj` with an epsilon
+    length vector chosen from the cone.
+
+    :param vi: A (D,) array representing the vector to be checked.
+    :type vi: np.ndarray
+    :param vj: A (D,) array representing the reference vector.
+    :type vj: np.ndarray
+    :param eps: A float representing the slackness.
+    :type eps: float
+    :param W: An (n_constraint, D) array representing the cone matrix.
+    :type W: np.ndarray
+    :return: True if `vi` is epsilon-covered by `vj` under the constraints of `W`, False otherwise.
+    :rtype: bool
     """
     x = cp.Variable(W.shape[1])
 
@@ -347,7 +393,27 @@ def hyperrectangle_get_region_matrix(
     return region_matrix, region_boundary
 
 
-def is_pt_in_extended_polytope(pt, polytope, invert_extension=False):
+def is_pt_in_extended_polytope(
+    pt: np.ndarray, polytope: np.ndarray, invert_extension: bool = False
+):
+    """
+    Check if `pt` is an element of the extended polytope with vertices represented with `polytope`.
+
+    This method checks if a point `pt` is an element of the polytope defined by the vertices in
+    `polytope` and extended along to infinity along the axes. This corresponds to the Minkowski
+    addition of a hyperrectangle with a right-angled cone. The `invert_extension` parameter can be
+    used to invert the extension to negative infinity, _i.e._, Minkowski addition with negative of
+    the right angle.
+
+    :param pt: A (D, ) array for the point to check.
+    :type pt: np.ndarray
+    :param polytope: An (N_vertices, D) array of vertices defining the polytope.
+    :type polytope: np.ndarray
+    :param invert_extension: If True, the extension is inverted.
+    :type invert_extension: bool
+    :return: True if the point is an element of the extended polytope, False otherwise.
+    :rtype: bool
+    """
     dim = polytope.shape[1]
 
     if invert_extension:
@@ -387,7 +453,29 @@ def is_pt_in_extended_polytope(pt, polytope, invert_extension=False):
     return False
 
 
-def line_seg_pt_intersect_at_dim(P1, P2, target_pt, target_dim):
+def line_seg_pt_intersect_at_dim(
+    P1: np.ndarray, P2: np.ndarray, target_pt: np.ndarray, target_dim: int
+) -> Optional[np.ndarray]:
+    """
+    Check if a line segment intersects with a point at a specific dimension.
+
+    This function determines if the line segment defined by points P1 and P2
+    intersects with the point `target_pt` when only the dimension `target_dim`
+    is considered. If there is an intersection, it returns the point on the line
+    segment where the intersection occurs. Otherwise, it returns None.
+
+    :param P1: A (D, ) array for the first endpoint of the line segment.
+    :type P1: np.ndarray
+    :param P2: A (D, ) array for the second endpoint of the line segment.
+    :type P2: np.ndarray
+    :param target_pt: A (D, ) array for the target point to check intersection.
+    :type target_pt: np.ndarray
+    :param target_dim: The dimension to consider for the intersection check.
+    :type target_dim: int
+    :return: The point on the line segment where the intersection occurs, or None if there is no
+        intersection.
+    :rtype: Optional[np.ndarray]
+    """
     t = (target_pt[target_dim] - P1[target_dim]) / (P2[target_dim] - P1[target_dim])
 
     if t < 0 or t > 1:
@@ -398,5 +486,16 @@ def line_seg_pt_intersect_at_dim(P1, P2, target_pt, target_dim):
     return point_on_line
 
 
-def binary_entropy(x):
+def binary_entropy(x: np.ndarray) -> np.ndarray:
+    """
+    Calculate the binary entropy of a given probability.
+
+    This method computes the binary entropy for each element in the input array `x`.
+    Binary entropy is a measure of the uncertainty associated with a Bernoulli random variable.
+
+    :param x: An array of probabilities.
+    :type x: np.ndarray
+    :return: An array of binary entropy values corresponding to the input probabilities.
+    :rtype: np.ndarray
+    """
     return -(scipy.special.xlogy(x, x) + scipy.special.xlog1py(1 - x, -x)) / np.log(2)
