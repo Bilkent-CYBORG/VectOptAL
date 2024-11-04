@@ -38,24 +38,20 @@ class TestVOGP(unittest.TestCase):
         )
         self.beta = self.algorithm.compute_beta()
 
-        print("setUp: Parameters and VOGP instance initialized.")
-
     def tearDown(self):
         """
         This method is run after each test to
         clean up resources or reset states.
         """
         self.algorithm = None
-        print("tearDown: VOGP instance destroyed.")
 
     def test_ustar(self):
-        """Test the calculation of u_star
+        """
+        Test the calculation of u_star
         Ensures that the computed u* is correctly
         calculated to be inside the cone.
         """
-        in_cone = np.all(
-            self.algorithm.order.ordering_cone.W @ self.algorithm.u_star >= 0
-        )
+        in_cone = np.all(self.algorithm.order.ordering_cone.W @ self.algorithm.u_star >= 0)
         msg = "u* is not inside the cone. Check u* calculation."
         self.assertTrue(in_cone, msg=msg)
 
@@ -64,13 +60,14 @@ class TestVOGP(unittest.TestCase):
         Main test function that iteratively calls the discarding_subtest.
         """
         for _ in range(self.iter_count):
-            self.discarding_subtest()
-        print("test_discarding passed.")
+            self.test_discarding_subtest()
 
     def test_discarding_subtest(self):
-        """Tests the discarding phase of VOGP. Compares randomly generated
+        """
+        Tests the discarding phase of VOGP. Compares randomly generated
         confidence regions where one is supposed to be discarded by
-        the other."""
+        the other.
+        """
 
         self.manual_in_data = np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]])
         self.manual_out_data = np.array([[1.0, 2.0], [1.5, 2.5]])
@@ -92,9 +89,7 @@ class TestVOGP(unittest.TestCase):
                 for i in range(2)
             ]
         )
-        shifted_mu = mean_array[0] + self.algorithm.u_star * (
-            2 * self.algorithm.d1 - self.epsilon
-        )
+        shifted_mu = mean_array[0] + self.algorithm.u_star * (2 * self.algorithm.d1 - self.epsilon)
         mean_array[1] = shifted_mu
 
         self.algorithm.design_space = FixedPointsDesignSpace(
@@ -108,17 +103,15 @@ class TestVOGP(unittest.TestCase):
             iterative_inter = self.algorithm.design_space.confidence_regions[
                 pt_i
             ].intersect_iteratively
-            self.algorithm.design_space.confidence_regions[
-                pt_i
-            ].intersect_iteratively = False
+            self.algorithm.design_space.confidence_regions[pt_i].intersect_iteratively = False
             self.algorithm.design_space.confidence_regions[pt_i].update(
                 mean=mean_array[pt_i],
                 covariance=cov_array[pt_i],
                 scale=np.ones(2),
             )
-            self.algorithm.design_space.confidence_regions[
-                pt_i
-            ].intersect_iteratively = iterative_inter
+            self.algorithm.design_space.confidence_regions[pt_i].intersect_iteratively = (
+                iterative_inter
+            )
 
         self.algorithm.S = set(range(self.algorithm.design_space.cardinality))
         self.algorithm.P = set()
@@ -137,8 +130,7 @@ class TestVOGP(unittest.TestCase):
         Main test function that iteratively calls the epsilon_covering_subtest.
         """
         for _ in range(self.iter_count):
-            self.epsilon_covering_subtest()
-        print("test_epsilon_covering passed.")
+            self.test_epsilon_covering_subtest()
 
     def test_epsilon_covering_subtest(self):
         """
@@ -166,9 +158,7 @@ class TestVOGP(unittest.TestCase):
                 for i in range(2)
             ]
         )
-        shifted_mu = mean_array[0] + self.algorithm.u_star * (
-            2 * self.algorithm.d1 + self.epsilon
-        )
+        shifted_mu = mean_array[0] + self.algorithm.u_star * (2 * self.algorithm.d1 + self.epsilon)
         mean_array[1] = shifted_mu
         self.algorithm.design_space = FixedPointsDesignSpace(
             self.manual_in_data,
@@ -181,17 +171,15 @@ class TestVOGP(unittest.TestCase):
             iterative_inter = self.algorithm.design_space.confidence_regions[
                 pt_i
             ].intersect_iteratively
-            self.algorithm.design_space.confidence_regions[
-                pt_i
-            ].intersect_iteratively = False
+            self.algorithm.design_space.confidence_regions[pt_i].intersect_iteratively = False
             self.algorithm.design_space.confidence_regions[pt_i].update(
                 mean=mean_array[pt_i],
                 covariance=cov_array[pt_i],
                 scale=np.ones(2),
             )
-            self.algorithm.design_space.confidence_regions[
-                pt_i
-            ].intersect_iteratively = iterative_inter
+            self.algorithm.design_space.confidence_regions[pt_i].intersect_iteratively = (
+                iterative_inter
+            )
 
         self.algorithm.S = set(range(self.algorithm.design_space.cardinality))
         self.algorithm.P = set()
@@ -202,11 +190,7 @@ class TestVOGP(unittest.TestCase):
             initial_S_size,
             "Covering rule did not work.",
         )
-        self.assertEqual(
-            self.algorithm.P,
-            {1},
-            "Wrong design was added to Pareto."
-        )
+        self.assertEqual(self.algorithm.P, {1}, "Wrong design was added to Pareto.")
 
     def test_evaluating(self):
         """
@@ -221,7 +205,6 @@ class TestVOGP(unittest.TestCase):
             initial_sample_count,
             "Sample count should increase after evaluation.",
         )
-        print("test_evaluating passed.")
 
     def test_vogp_run(self):
         """
@@ -263,9 +246,7 @@ class TestVOGP(unittest.TestCase):
                     break
 
             # Get Pareto indices and calculate epsilon-F1 score
-            pareto_indices = self.order.get_pareto_set(
-                self.algorithm.problem.dataset.out_data
-            )
+            pareto_indices = self.order.get_pareto_set(self.algorithm.problem.dataset.out_data)
             eps_f1 = calculate_epsilonF1_score(
                 self.algorithm.problem.dataset,
                 self.order,
@@ -277,10 +258,7 @@ class TestVOGP(unittest.TestCase):
 
         # Check the average epsilon-F1 score
         avg_eps_f1 = sum(self.eps_f1_values) / len(self.eps_f1_values)
-        print(f"Avg. eps-F1 score: {avg_eps_f1:.2f}")
-        self.assertGreaterEqual(
-            avg_eps_f1, 0.5, "Avg. eps-F1 score should be reasonably high."
-        )
+        self.assertGreaterEqual(avg_eps_f1, 0.5, "Avg. eps-F1 score should be reasonably high.")
 
 
 if __name__ == "__main__":

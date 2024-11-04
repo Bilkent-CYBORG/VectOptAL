@@ -20,9 +20,6 @@ class TestVOGP_AD(unittest.TestCase):
         self.delta = 0.05
         self.noise_var = self.epsilon
         self.problem_name = "BraninCurrin"
-        self.problem: ContinuousProblem = globals()[self.problem_name](
-            noise_var=self.noise_var
-        )
         self.problem: ContinuousProblem = get_continuous_problem(name=self.problem_name, noise_var=self.noise_var)
         self.order = ConeTheta2DOrder(cone_degree=90)
         self.iter_count = 1
