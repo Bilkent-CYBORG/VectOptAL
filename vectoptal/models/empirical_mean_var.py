@@ -6,12 +6,32 @@ from vectoptal.models import Model
 
 
 class EmpiricalMeanVarModel(Model):
+    """
+    Implements a model that tracks empirical means and variances for each design.
+
+    This class tracks the empirical means and variances for each design in the input space,
+    controlled by flags `track_means` and `track_variances`.
+
+    :param input_dim: The dimension of the input space.
+    :type input_dim: int
+    :param output_dim: The dimension of the output space.
+    :type output_dim: int
+    :param noise_var: The variance of the noise in the output space.
+    :type noise_var: float
+    :param design_count: The number of designs to track.
+    :type design_count: int
+    :param track_means: A flag to enable/disable tracking of means, defaults to True.
+    :type track_means: bool
+    :param track_variances: A flag to enable/disable tracking of variances, defaults to True.
+    :type track_variances: bool
+    """
+
     def __init__(
         self,
-        input_dim,
-        output_dim,
-        noise_var,
-        design_count,
+        input_dim: int,
+        output_dim: int,
+        noise_var: float,
+        design_count: int,
         track_means: bool = True,
         track_variances: bool = True,
     ):

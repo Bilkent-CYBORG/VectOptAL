@@ -54,8 +54,7 @@ class PaVeBa(PALAlgorithm):
         >>> pareto_indices = algorithm.P
 
     Reference:
-        "Learning the Pareto Set Under Incomplete Preferences:
-            Pure Exploration in Vector Bandits",
+        "Learning the Pareto Set Under Incomplete Preferences: Pure Exploration in Vector Bandits",
         Karagözlü, Yıldırım, Ararat, Tekin, AISTATS, '24
         https://proceedings.mlr.press/v238/karagozlu24a.html
     """
