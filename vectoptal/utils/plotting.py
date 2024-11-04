@@ -1,18 +1,28 @@
 from os import PathLike
-from typing import Optional, Union
+from typing import Optional, Union, Callable
 
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.patches import Polygon
 
-# from vectoptal.order import Order
-# from vectoptal.ordering_cone import OrderingCone
-# from vectoptal.utils import get_2d_w
+from vectoptal.utils import get_2d_w
 
 
-def plot_2d_cone(ordering_cone, path: Optional[Union[str, PathLike]] = None):
+def plot_2d_theta_cone(
+    cone_degree: float, path: Optional[Union[str, PathLike]] = None
+) -> plt.Figure:
     """
-    Plot the 2D cone with the given cone degree.
+    Plot the 2D cone defined by the given cone degree, symmetric around :math:`y=x`.
+
+    This function plots a 2D cone based on the specified cone degree. The plot is created using
+    Matplotlib and can be saved to a specified path if provided.
+
+    :param cone_degree: The degree of the cone to be plotted.
+    :type cone_degree: float
+    :param path: The file path where the plot will be saved. If None, the plot is not saved.
+    :type path: Optional[Union[str, PathLike]]
+    :return: The Matplotlib figure object containing the plot.
+    :rtype: plt.Figure
     """
     xlim = [-5, 5]
     ylim = [-5, 5]
@@ -27,8 +37,7 @@ def plot_2d_cone(ordering_cone, path: Optional[Union[str, PathLike]] = None):
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
-    W = ordering_cone.W
-    cone_degree = ordering_cone.cone_degree if hasattr(ordering_cone, "cone_degree") else 90
+    W = get_2d_w(cone_degree)
 
     m1 = W[0][0] / -W[0][1] if cone_degree != 90 else 0
     m2 = W[1][0] / -W[1][1]
@@ -80,12 +89,73 @@ def plot_2d_cone(ordering_cone, path: Optional[Union[str, PathLike]] = None):
     return fig
 
 
-def plot_3d_cone(ordering_cone, path: Optional[Union[str, PathLike]] = None):
+def plot_2d_cone(
+    cone_membership: Callable[[np.ndarray], np.ndarray], path: Optional[Union[str, PathLike]] = None
+):
     """
-    Given a W matrix of shape N-by-3 representing the cone, plot the 3D region of the cone.
-    Rows of the matrix represent the normal vectors of the constraints.
-    Create a list that includes the corners of the region, than plot the region using
-    Poly3DCollection. Use boundaries for the plot limits.
+    Plot the 2D cone by checking membership of the points in the cone.
+
+    This function plots a 2D cone by checking the membership of points within the cone using the
+    provided `cone_membership` function. The plot is created using Matplotlib and can be saved
+    to a specified path if provided.
+
+    :param cone_membership: A callable that takes an array of points and returns a boolean array
+        indicating whether each point is inside the cone.
+    :type cone_membership: Callable[[np.ndarray], np.ndarray]
+    :param path: The file path where the plot will be saved. If None, the plot is not saved.
+    :type path: Optional[Union[str, PathLike]]
+    :return: The Matplotlib figure object containing the plot.
+    :rtype: plt.Figure
+    """
+    xlim = [-5, 5]
+    ylim = [-5, 5]
+
+    fig, ax = plt.subplots(1, 1, figsize=(8, 5))
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+
+    ax.set(xticks=[], xticklabels=[], yticks=[], yticklabels=[])
+    ax.spines["bottom"].set_position("zero")
+    ax.spines["left"].set_position("zero")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    ax.plot([xlim[0], xlim[1]], [0, 0], [0, 0], color="black")
+    ax.plot([0, 0], [ylim[0], ylim[1]], [0, 0], color="black")
+
+    x_pts = np.linspace(xlim[0], xlim[1], 25)
+    y_pts = np.linspace(ylim[0], ylim[1], 25)
+
+    X, Y = np.meshgrid(x_pts, y_pts)
+    pts = np.vstack([X.ravel(), Y.ravel()]).T
+    pts = pts[cone_membership(pts)]
+    X, Y = pts[:, 0], pts[:, 1]
+
+    ax.scatter(X, Y, alpha=0.3, c="blue", s=8)
+
+    if path is not None:
+        fig.savefig(path)
+
+    return fig
+
+
+def plot_3d_cone(
+    cone_membership: Callable[[np.ndarray], np.ndarray], path: Optional[Union[str, PathLike]] = None
+):
+    """
+    Plot the 3D cone by checking membership of the points in the cone.
+
+    This function plots a 3D cone by checking the membership of points within the cone using the
+    provided `cone_membership` function. The plot is created using Matplotlib and can be saved
+    to a specified path if provided.
+
+    :param cone_membership: A callable that takes an array of points and returns a boolean array
+        indicating whether each point is inside the cone.
+    :type cone_membership: Callable[[np.ndarray], np.ndarray]
+    :param path: The file path where the plot will be saved. If None, the plot is not saved.
+    :type path: Optional[Union[str, PathLike]]
+    :return: The Matplotlib figure object containing the plot.
+    :rtype: plt.Figure
     """
 
     xlim = [-5, 5]
@@ -115,7 +185,7 @@ def plot_3d_cone(ordering_cone, path: Optional[Union[str, PathLike]] = None):
 
     X, Y, Z = np.meshgrid(x_pts, y_pts, z_pts)
     pts = np.vstack([X.ravel(), Y.ravel(), Z.ravel()]).T
-    pts = pts[ordering_cone.is_inside(pts)]
+    pts = pts[cone_membership(pts)]
     X, Y, Z = pts[:, 0], pts[:, 1], pts[:, 2]
 
     ax.scatter(X, Y, Z, alpha=0.3, c="blue", s=8)
@@ -126,13 +196,36 @@ def plot_3d_cone(ordering_cone, path: Optional[Union[str, PathLike]] = None):
     return fig
 
 
-def plot_pareto_front(order, elements: np.ndarray, path: Optional[Union[str, PathLike]] = None):
-    dim = elements.shape[1]
-    assert elements.ndim == 2, "Elements array should be N-by-dim."
-    assert dim in [2, 3], "Only 2D and 3D plots are supported."
-    fig = plt.figure(figsize=(8, 5))
+def plot_pareto_front(
+    elements: np.ndarray, pareto_indices: np.ndarray, path: Optional[Union[str, PathLike]] = None
+):
+    """
+    Plot the Pareto front for a given set of elements.
 
-    pareto_indices = order.get_pareto_set(elements)
+    This function plots the Pareto front for a given set of elements in either 2D or 3D space. The
+    elements that belong to the Pareto front are highlighted in a different color.
+    The plot is created using Matplotlib and can be saved to a specified path if provided.
+
+    :param elements: An array of shape (N, dim) representing the elements to be plotted.
+    :type elements: np.ndarray
+    :param pareto_indices: An array of indices indicating which elements belong to the Pareto front.
+    :type pareto_indices: np.ndarray
+    :param path: The file path where the plot will be saved. If None, the plot is not saved.
+    :type path: Optional[Union[str, PathLike]]
+    :return: The Matplotlib figure object containing the plot.
+    :rtype: plt.Figure
+
+    :raises AssertionError: If the elements array is not 2-dimensional.
+    :raises AssertionError: If the dimension of the elements is not 2 or 3.
+    """
+    dim = elements.shape[1]
+
+    if elements.ndim != 2:
+        raise AssertionError("Elements array should be N-by-dim.")
+    if dim not in [2, 3]:
+        raise AssertionError("Only 2D and 3D plots are supported.")
+
+    fig = plt.figure(figsize=(8, 5))
 
     mask = np.ones(len(elements), dtype=np.uint8)
     mask[pareto_indices] = 0

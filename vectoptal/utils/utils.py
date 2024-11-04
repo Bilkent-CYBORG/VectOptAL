@@ -20,7 +20,7 @@ def set_seed(seed: int) -> None:
     torch.random.manual_seed(seed)
 
 
-def get_2d_w(cone_angle: float) -> np.ndarray:
+def get_2d_w(cone_degree: float) -> np.ndarray:
     """
     This function generates a 2D cone matrix W with boundaries at an angle cone_angle and
     symmetric around `y=x`.
@@ -30,8 +30,8 @@ def get_2d_w(cone_angle: float) -> np.ndarray:
     :return: A 2x2 numpy array where each row is a normalized normal vector.
     :rtype: numpy.ndarray
     """
-    angle_radian = (cone_angle / 180) * np.pi
-    if cone_angle <= 90:
+    angle_radian = (cone_degree / 180) * np.pi
+    if cone_degree <= 90:
         W_1 = np.array([-np.tan(np.pi / 4 - angle_radian / 2), 1])
         W_2 = np.array([+np.tan(np.pi / 4 + angle_radian / 2), -1])
     else:

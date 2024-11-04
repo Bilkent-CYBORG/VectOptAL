@@ -4,7 +4,7 @@ from typing import Union, Optional
 import numpy as np
 
 from vectoptal.utils import get_2d_w, get_alpha_vec
-from vectoptal.utils.plotting import plot_2d_cone, plot_3d_cone
+from vectoptal.utils.plotting import plot_2d_theta_cone, plot_2d_cone, plot_3d_cone
 
 
 class OrderingCone:
@@ -19,17 +19,19 @@ class OrderingCone:
     def __eq__(self, other: "OrderingCone") -> bool:
         return np.allclose(self.W, other.W)
 
-    def is_inside(self, x: np.ndarray) -> bool:
+    def is_inside(self, x: np.ndarray) -> np.ndarray:
         if x.ndim == 1:
             x = x.reshape(1, -1)
         return (x @ self.W.T >= 0).all(axis=-1)
 
     def plot(self, path: Optional[Union[str, PathLike]] = None):
-        assert self.dim in [2, 3], "Only 2D and 3D plots are supported."
+        if self.dim not in [2, 3]:
+            raise ValueError("Only 2D and 3D plots are supported.")
+
         if self.dim == 2:
-            fig = plot_2d_cone(self, path)
+            fig = plot_2d_cone(self.is_inside, path)
         else:
-            fig = plot_3d_cone(self, path)
+            fig = plot_3d_cone(self.is_inside, path)
 
         return fig
 
@@ -40,6 +42,10 @@ class ConeTheta2D(OrderingCone):
         W = get_2d_w(cone_degree)
 
         super().__init__(W)
+
+    def plot(self, path: Optional[Union[str, PathLike]] = None):
+        fig = plot_2d_theta_cone(self.cone_degree, path)
+        return fig
 
     @property
     def beta(self) -> float:

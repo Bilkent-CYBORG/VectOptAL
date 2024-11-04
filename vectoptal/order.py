@@ -58,7 +58,7 @@ class Order(ABC):
         assert elements.ndim == 2, "Elements array should be N-by-dim."
         assert elements.shape[1] in [2, 3], "Only 2D and 3D plots are supported."
 
-        fig = plot_pareto_front(self, elements, path)
+        fig = plot_pareto_front(elements, self.get_pareto_set(elements), path)
 
         return fig
 
