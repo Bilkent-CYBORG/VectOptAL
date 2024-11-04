@@ -5,9 +5,24 @@
 
 import os
 import sys
+import ast
+import pkgutil
+import importlib
+from pathlib import Path
+from types import ModuleType
 
 sys.path.append(os.path.abspath(os.path.join(__file__, "..", "..", "..")))
-autodoc_mock_imports = ["numpy"]
+autodoc_mock_imports = [
+    "cvxpy",
+    "botorch",
+    "clarabel",
+    "gpytorch",
+    "scipy",
+    "matplotlib",
+    "torch",
+    "sklearn",
+    "numpy",
+]
 
 
 # -- Project information -----------------------------------------------------
