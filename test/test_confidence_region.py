@@ -3,8 +3,8 @@ import copy
 
 import numpy as np
 
-from vectoptal.confidence_region import RectangularConfidenceRegion, EllipsoidalConfidenceRegion
 from vectoptal.order import ComponentwiseOrder
+from vectoptal.confidence_region import RectangularConfidenceRegion, EllipsoidalConfidenceRegion
 
 
 class TestRectangularConfidenceRegion(TestCase):

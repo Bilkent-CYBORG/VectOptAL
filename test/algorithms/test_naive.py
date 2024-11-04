@@ -1,7 +1,6 @@
 from unittest import TestCase
 
-import numpy as np
-
+from vectoptal.utils import set_seed
 from vectoptal.utils.seed import SEED
 from vectoptal.order import ConeTheta2DOrder
 from vectoptal.algorithms import NaiveElimination
@@ -14,7 +13,7 @@ class TestNaiveElimination(TestCase):
 
     def setUp(self):
         """A basic setup for the model."""
-        np.random.seed(SEED)
+        set_seed(SEED)
 
         self.epsilon = 0.1
         self.delta = 0.1

@@ -2,6 +2,7 @@ from unittest import TestCase
 
 import numpy as np
 
+from vectoptal.utils import set_seed
 from vectoptal.utils.seed import SEED
 from vectoptal.algorithms import Auer
 from vectoptal.order import ComponentwiseOrder
@@ -14,7 +15,7 @@ class TestAuer(TestCase):
 
     def setUp(self):
         """A basic setup for the model."""
-        np.random.seed(SEED)
+        set_seed(SEED)
 
         self.epsilon = 0.1
         self.delta = 0.1

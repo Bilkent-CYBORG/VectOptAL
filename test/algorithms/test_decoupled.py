@@ -1,7 +1,6 @@
 from unittest import TestCase
 
-import numpy as np
-
+from vectoptal.utils import set_seed
 from vectoptal.utils.seed import SEED
 from vectoptal.order import ComponentwiseOrder
 from vectoptal.algorithms import DecoupledGP
@@ -14,7 +13,7 @@ class TestDecoupledGP(TestCase):
 
     def setUp(self):
         """A basic setup for the model."""
-        np.random.seed(SEED)
+        set_seed(SEED)
 
         self.epsilon = 0.1
         self.delta = 0.1
@@ -56,7 +55,7 @@ class TestDecoupledGP(TestCase):
             list(pareto_indices),
             self.epsilon,
         )
-        self.assertTrue(eps_f1 > 0.9)  # Even though algorithm is not using of epsilon.
+        self.assertTrue(eps_f1 > 0.9)  # Even though algorithm is not using epsilon.
         self.assertLess(self.algorithm.total_cost, self.cost_budget + max(self.costs))
         self.assertLessEqual(self.algorithm.total_cost, self.algorithm.round * max(self.costs))
         self.assertGreaterEqual(self.algorithm.total_cost, self.algorithm.round * min(self.costs))

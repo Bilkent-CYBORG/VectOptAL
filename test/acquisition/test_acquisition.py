@@ -3,6 +3,8 @@ from unittest import mock, TestCase
 import numpy as np
 
 from vectoptal.order import Order
+from vectoptal.utils import set_seed
+from vectoptal.utils.seed import SEED
 from vectoptal.ordering_cone import OrderingCone
 from vectoptal.design_space import FixedPointsDesignSpace
 from vectoptal.models.gpytorch import GPyTorchModelListExactModel
@@ -61,6 +63,10 @@ class TestMaxVarianceDecoupledAcquisition(TestCase):
 
 class TestThompsonEntropyDecoupledAcquisition(TestCase):
     """Test the ThompsonEntropyDecoupledAcquisition class."""
+
+    def setUp(self) -> None:
+        """Set up the seed for the test."""
+        set_seed(SEED)
 
     def test_forward(self):
         """Test the forward method."""
