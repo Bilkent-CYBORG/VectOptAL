@@ -2,48 +2,55 @@ from unittest import mock, TestCase
 
 import numpy as np
 
-from vectoptal.acquisition import SumVarianceAcquisition, \
-    MaxVarianceDecoupledAcquisition, ThompsonEntropyDecoupledAcquisition,\
-    MaxDiagonalAcquisition, optimize_acqf_discrete, optimize_decoupled_acqf_discrete
+from vectoptal.order import Order
+from vectoptal.ordering_cone import OrderingCone
 from vectoptal.design_space import FixedPointsDesignSpace
 from vectoptal.models.gpytorch import GPyTorchModelListExactModel
-from vectoptal.ordering_cone import OrderingCone
-from vectoptal.order import Order
+from vectoptal.acquisition import (
+    SumVarianceAcquisition,
+    MaxVarianceDecoupledAcquisition,
+    ThompsonEntropyDecoupledAcquisition,
+    MaxDiagonalAcquisition,
+    optimize_acqf_discrete,
+    optimize_decoupled_acqf_discrete,
+)
+
 
 class TestSumVarianceAcquisition(TestCase):
     """Test the SumVarianceAcquisition class."""
-    def setUp(self):
-        pass
 
     def test_forward(self):
         """Test the forward method."""
-        choices = np.array([[1,2], [3,4], [5,6]])
-        values = np.array([np.eye(2), 3*np.eye(2), 4*np.eye(2)])
+        choices = np.array([[1, 2], [3, 4], [5, 6]])
+        values = np.array([np.eye(2), 3 * np.eye(2), 4 * np.eye(2)])
+
         def side_effect_func(inp):
             vals = []
             for idx in range(inp.shape[0]):
                 vals.append(values[np.where((choices == inp[idx]).all(axis=1))][0])
             return 12, np.array(vals)
+
         mock_model = mock.MagicMock(side_effect=side_effect_func)
         mock_model.predict.side_effect = side_effect_func
         acq = SumVarianceAcquisition(mock_model)
         ret_values = acq(choices)
         self.assertTrue(np.allclose(ret_values, np.array([2, 6, 8])))
 
+
 class TestMaxVarianceDecoupledAcquisition(TestCase):
     """Test the MaxVarianceDecoupledAcquisition class."""
-    def setUp(self):
-        pass
 
     def test_forward(self):
         """Test the forward method."""
-        choices = np.array([[1,2], [3,4], [5,6]])
-        values = np.array([np.eye(2), np.array([[4,0],[0,0.9]]), np.array([[0.5,0],[0,7]])])
+        choices = np.array([[1, 2], [3, 4], [5, 6]])
+        values = np.array([np.eye(2), np.array([[4, 0], [0, 0.9]]), np.array([[0.5, 0], [0, 7]])])
+
         def side_effect_func(inp):
             vals = []
             for idx in range(inp.shape[0]):
                 vals.append(values[np.where((choices == inp[idx]).all(axis=1))][0])
             return 12, np.array(vals)
+
         mock_model = mock.MagicMock(side_effect=side_effect_func)
         mock_model.predict.side_effect = side_effect_func
         acq = MaxVarianceDecoupledAcquisition(mock_model)
@@ -51,19 +58,19 @@ class TestMaxVarianceDecoupledAcquisition(TestCase):
         ret_values = acq(choices)
         self.assertTrue(np.allclose(ret_values, np.array([1, 0.9, 7])))
 
+
 class TestThompsonEntropyDecoupledAcquisition(TestCase):
     """Test the ThompsonEntropyDecoupledAcquisition class."""
-    def setUp(self):
-        pass
+
     def test_forward(self):
         """Test the forward method."""
         GP = GPyTorchModelListExactModel(2, 2, 0.3)
-        choices = np.array([[1,0], [-1,0]])
-        GP.add_sample(choices, np.array([1, -1]), [0,0])
-        GP.add_sample(choices, np.zeros(2), [1,1])
+        choices = np.array([[1, 0], [-1, 0]])
+        GP.add_sample(choices, np.array([1, -1]), [0, 0])
+        GP.add_sample(choices, np.zeros(2), [1, 1])
         GP.update()
-        ordering1 = OrderingCone(np.array([[1,0], [1,0]]))
-        ordering2 = OrderingCone(np.array([[0,1], [0,1]]))
+        ordering1 = OrderingCone(np.array([[1, 0], [1, 0]]))
+        ordering2 = OrderingCone(np.array([[0, 1], [0, 1]]))
         order1 = Order(ordering1)
         order2 = Order(ordering2)
         acq1 = ThompsonEntropyDecoupledAcquisition(GP, order1, 1)
@@ -78,67 +85,69 @@ class TestThompsonEntropyDecoupledAcquisition(TestCase):
 
 class TestMaxDiagonalAcquisition(TestCase):
     """Test the MaxDiagonalAcquisition class."""
-    def setUp(self):
-        pass
+
     def test_forward(self):
         """Test the forward method."""
         q = 2
-        choices = np.array([[1,2], [3,4], [5,6]])
+        choices = np.array([[1, 2], [3, 4], [5, 6]])
         design_space = FixedPointsDesignSpace(choices, 2)
         mock_model = mock.MagicMock()
-        mock_model.predict.return_value = (np.array([12,12,12]), np.array([np.eye(2), 3*np.eye(2), 4*np.eye(2)]))
+        mock_model.predict.return_value = (
+            np.array([12, 12, 12]),
+            np.array([np.eye(2), 3 * np.eye(2), 4 * np.eye(2)]),
+        )
         design_space.update(mock_model, np.array([1]), [0, 1, 2])
         axq = MaxDiagonalAcquisition(design_space)
         ret_values = axq(choices)
-        print(np.sqrt(2)*np.array([2, 3, 4]))
-        self.assertTrue(np.allclose(ret_values, np.sqrt(2)*np.array([2, 2*np.sqrt(3), 4])))
+        print(np.sqrt(2) * np.array([2, 3, 4]))
+        self.assertTrue(np.allclose(ret_values, np.sqrt(2) * np.array([2, 2 * np.sqrt(3), 4])))
 
-class test_optimize_acqf_discrete(TestCase):
+
+class TestOptimizeAcqfDiscrete(TestCase):
     """Test the optimize_acqf_discrete function."""
-    def setUp(self):
-        pass
 
     def test_optimize_acqf_discrete(self):
         q = 2
-        choices = np.array([[1,2], [3,4], [5,6]])
+        choices = np.array([[1, 2], [3, 4], [5, 6]])
         values = np.array([1, 3, 2])
+
         def side_effect_func(inp):
             vals = []
             for idx in range(inp.shape[0]):
                 vals.append(values[np.where((choices == inp[idx]).all(axis=1))][0])
             return np.array(vals)
+
         mock_acqf = mock.MagicMock(side_effect=side_effect_func)
         points, ret_values = optimize_acqf_discrete(mock_acqf, q, choices)
         self.assertTrue(
-                np.allclose(points, np.array([[3,4], [5,6]]))
-                and np.allclose(ret_values, np.array([3, 2]))
-            )
+            np.allclose(points, np.array([[3, 4], [5, 6]]))
+            and np.allclose(ret_values, np.array([3, 2]))
+        )
 
-class test_optimize_decoupled_acqf_discrete(TestCase):
+
+class TestOptimizeDecoupledAcqfDiscrete(TestCase):
     """Test the optimize_decoupled_acqf_discrete function."""
-    def setUp(self):
-        pass
-    
+
     def test_optimize_decoupled_acqf_discrete(self):
         q = 2
-        choices = np.array([[1,2], [3,4], [5,6]])
+        choices = np.array([[1, 2], [3, 4], [5, 6]])
         values = [np.array([1, 3.1, 2]), np.array([7, -1, 3])]
 
         def side_effect_func_0(inp):
             return side_effect_func(inp, mock_acqf.evaluation_index)
-        
+
         def side_effect_func(inp, eval):
             vals = []
             for idx in range(inp.shape[0]):
                 x = values[eval][np.where((choices == inp[idx]).all(axis=1))][0]
                 vals.append(x)
             return np.array(vals)
-        
+
         mock_acqf = mock.MagicMock(side_effect=side_effect_func_0)
         mock_acqf.out_dim = 2
         mock_acqf.evaluation_index = 0
 
         points, ret_values, idxs = optimize_decoupled_acqf_discrete(mock_acqf, q, choices)
-        self.assertTrue(np.allclose(points, np.array([[1,2], [3,4]])))
+        self.assertTrue(np.allclose(points, np.array([[1, 2], [3, 4]])))
         self.assertTrue(np.allclose(ret_values, np.array([7, 3.1])))
         self.assertTrue(np.allclose(idxs, np.array([1, 0])))

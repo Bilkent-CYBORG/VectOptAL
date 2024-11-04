@@ -51,21 +51,25 @@ class DecoupledAcquisitionStrategy(AcquisitionStrategy):
 
 class SumVarianceAcquisition(AcquisitionStrategy):
     """
-    Acquisition function that returns the sum of variances of the objectives.
+    Acquisition function that returns the sum of variances of the objectives assuming
+    independent objectives, _i.e.,_ trace of covariance matrix.
 
-    :param model: Model to be used.
+    :param model: Model to be used for predictions.
     :type model: Model
     """
+
     def __init__(self, model: Model) -> None:
         super().__init__()
         self.model = model
 
-    def forward(self, x):
+    def forward(self, x: np.ndarray) -> np.ndarray:
         """
         Compute the sum of variances of the objectives at the given points.
 
         :param x: Points to evaluate the acquisition function.
         :type x: np.ndarray
+        :return: Trace of the covariance matrices at the given points.
+        :rtype: np.ndarray
         """
         _, variances = self.model.predict(x)
         return np.sum(np.diagonal(variances, axis1=-2, axis2=-1), axis=-1)
@@ -75,25 +79,28 @@ class MaxVarianceDecoupledAcquisition(DecoupledAcquisitionStrategy):
     """
     Decoupled acquisition function that returns the maximum variance in a given objective.
 
-    :param model: Model to be used.
+    :param model: Model to be used for predictions.
     :type model: ModelList
     :param evaluation_index: Index of the objective to be evaluated.
     :type evaluation_index: Optional[int]
     :param costs: Costs of evaluating each objective.
     :type costs: Optional[list]
     """
+
     def __init__(
         self, model: ModelList, evaluation_index: Optional[int] = None, costs: Optional[list] = None
     ) -> None:
         self.model = model
         super().__init__(self.model.output_dim, evaluation_index, costs)
 
-    def forward(self, x):
+    def forward(self, x: np.ndarray) -> np.ndarray:
         """
-        Compute the maximum variance in a given objective at the given points.
+        Compute the variance in a given objective at the given points.
 
         :param x: Points to evaluate the acquisition function.
         :type x: np.ndarray
+        :return: Corresponding value of the diagonal of the covariance matrices at the given points.
+        :rtype: np.ndarray
         """
         if self.evaluation_index is None:
             raise AssertionError("evaluation_index can't be None during forward.")
@@ -111,7 +118,7 @@ class ThompsonEntropyDecoupledAcquisition(DecoupledAcquisitionStrategy):
 
     First, Thompson samples are drawn from the posterior distribution to identify the Pareto set.
     Then, the empirical frequencies of points being in the Pareto set
-        are recorded to estimate the etrnopies.
+        are recorded to estimate the entropies.
     Finally, the mean empirical frequencies of points being in the Pareto set
         given their true value in the evaluation index are calculated to form the acquisition value.
 
@@ -123,9 +130,9 @@ class ThompsonEntropyDecoupledAcquisition(DecoupledAcquisitionStrategy):
     .. math::
         X = \mathbb{I} \{x \in P^*\}.
 
-    :param model: Model to be used.
+    :param model: Model to be used for predictions.
     :type model: ModelList
-    :param order: Order object to be used.
+    :param order: Order object to be used for Pareto optimal calculation.
     :type order: Order
     :param evaluation_index: Index of the objective to be evaluated.
     :type evaluation_index: Optional[int]
@@ -134,6 +141,7 @@ class ThompsonEntropyDecoupledAcquisition(DecoupledAcquisitionStrategy):
     :param num_thompson_samples: Number of Thompson samples to draw.
     :type num_thompson_samples: int
     """
+
     def __init__(
         self,
         model: ModelList,
@@ -157,12 +165,14 @@ class ThompsonEntropyDecoupledAcquisition(DecoupledAcquisitionStrategy):
         self._cache_pareto_mask = None
         self._cache_prior_entropy = None
 
-    def forward(self, x: np.ndarray):
+    def forward(self, x: np.ndarray) -> np.ndarray:
         """
         Compute the expected entropy reduction of given points being in the Pareto set.
 
         :param x: Points to evaluate the acquisition function.
         :type x: np.ndarray
+        :return: Expected entropy reductions of Pareto set caused by the given points.
+        :rtype: np.ndarray
         """
         if self.evaluation_index is None:
             raise AssertionError("evaluation_index can't be None during forward.")
@@ -203,29 +213,31 @@ class ThompsonEntropyDecoupledAcquisition(DecoupledAcquisitionStrategy):
 
 class MaxDiagonalAcquisition(AcquisitionStrategy):
     """
-    Returns the maximum distance between any two points in the confidence region.
-    Works for DiscreteDesignSpace.
+    Calculates the length of the diagonals for each point given. Diagonal means the maximum
+    distance inside the confidence region. It needs the design space to be a `DiscreteDesignSpace`
+    in order to e confidence regions.
 
-    :param design_space: Design space to be used.
+    :param design_space: Design space to take confidence regions from.
     :type design_space: DiscreteDesignSpace
     """
+
     def __init__(self, design_space: DiscreteDesignSpace) -> None:
         super().__init__()
         self.design_space = design_space
 
-    def forward(self, x):
+    def forward(self, x: np.ndarray) -> np.ndarray:
         """
         Compute the diameter of the confidence region at the given points.
 
         :param x: Points to evaluate the acquisition function.
         :type x: np.ndarray
+        :return: Length of the diagonals of the confidence regions at the given points.
+        :rtype: np.ndarray
         """
         indices = self.design_space.locate_points(x)
         value = np.zeros(len(x))
 
         for idx, design_i in enumerate(indices):
-            print()
-            print(self.design_space.confidence_regions[design_i].diagonal(), 'sexs')
             value[idx] = self.design_space.confidence_regions[design_i].diagonal()
 
         return value
@@ -235,15 +247,16 @@ def optimize_acqf_discrete(
     acq: AcquisitionStrategy, q: int, choices: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Optimize the acquisition function over the given choices.
+    Optimize the acquisition function over the given discrete choices.
 
     :param acq: Acquisition function to be optimized.
     :type acq: AcquisitionStrategy
-    :param q: Number of points to select. (Batch size)
+    :param q: Number of points to select, _i.e., batch size.
     :type q: int
     :param choices: Choices to optimize the acquisition function over.
     :type choices: np.ndarray
-    :return: Tuple of selected points and their acquisition values.
+    :return: Tuple of selected points and their corresponding acquisition values.
+    :rtype: Tuple[np.ndarray, np.ndarray]
     """
     candidate_list, acq_value_list = [], []
 
@@ -254,7 +267,7 @@ def optimize_acqf_discrete(
     while chosen < q:
         with torch.no_grad():
             acq_values = acq(choices)
-        
+
         best_idx = np.argmax(acq_values)
         candidate_list.append(choices[best_idx])
         acq_value_list.append(acq_values[best_idx])
@@ -270,16 +283,16 @@ def optimize_decoupled_acqf_discrete(
     acq: DecoupledAcquisitionStrategy, q: int, choices: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Optimize the decoupled acquisition function over the given choices.
+    Optimize the decoupled acquisition function over the given discrete choices.
 
     :param acq: Decoupled acquisition function to be optimized.
     :type acq: DecoupledAcquisitionStrategy
-    :param q: Number of points to select. (Batch size)
+    :param q: Number of points to select, _i.e., batch size.
     :type q: int
     :param choices: Choices to optimize the acquisition function over.
     :type choices: np.ndarray
-    :return: Tuple of selected points, their acquisition values,
-        their objective indices to evaluate.
+    :return: Tuple of selected points, their corresponding acquisition values
+        and their corresponding objective indices to evaluate.
     """
     saved_eval_i = acq.evaluation_index
 
