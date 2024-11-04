@@ -12,6 +12,10 @@ import numpy as np
 
 
 class AcquisitionStrategy(ABC):
+    """
+    Abstract class for acquisition functions.
+    """
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -25,7 +29,15 @@ class AcquisitionStrategy(ABC):
 
 class DecoupledAcquisitionStrategy(AcquisitionStrategy):
     """
+    Abstract class for decoupled settings.
     Acquisition values are inversely weighted by costs.
+
+    :param output_dim: Number of objectives.
+    :type output_dim: int
+    :param evaluation_index: Index of the objective to be evaluated.
+    :type evaluation_index: Optional[int]
+    :param costs: Costs of evaluating each objective.
+    :type costs: Optional[list]
     """
 
     def __init__(
@@ -38,16 +50,38 @@ class DecoupledAcquisitionStrategy(AcquisitionStrategy):
 
 
 class SumVarianceAcquisition(AcquisitionStrategy):
+    """
+    Acquisition function that returns the sum of variances of the objectives.
+
+    :param model: Model to be used.
+    :type model: Model
+    """
     def __init__(self, model: Model) -> None:
         super().__init__()
         self.model = model
 
     def forward(self, x):
+        """
+        Compute the sum of variances of the objectives at the given points.
+
+        :param x: Points to evaluate the acquisition function.
+        :type x: np.ndarray
+        """
         _, variances = self.model.predict(x)
         return np.sum(np.diagonal(variances, axis1=-2, axis2=-1), axis=-1)
 
 
 class MaxVarianceDecoupledAcquisition(DecoupledAcquisitionStrategy):
+    """
+    Decoupled acquisition function that returns the maximum variance in a given objective.
+
+    :param model: Model to be used.
+    :type model: ModelList
+    :param evaluation_index: Index of the objective to be evaluated.
+    :type evaluation_index: Optional[int]
+    :param costs: Costs of evaluating each objective.
+    :type costs: Optional[list]
+    """
     def __init__(
         self, model: ModelList, evaluation_index: Optional[int] = None, costs: Optional[list] = None
     ) -> None:
@@ -55,7 +89,14 @@ class MaxVarianceDecoupledAcquisition(DecoupledAcquisitionStrategy):
         super().__init__(self.model.output_dim, evaluation_index, costs)
 
     def forward(self, x):
-        assert self.evaluation_index is not None, "evaluation_index can't be None during forward."
+        """
+        Compute the maximum variance in a given objective at the given points.
+
+        :param x: Points to evaluate the acquisition function.
+        :type x: np.ndarray
+        """
+        if self.evaluation_index is None:
+            raise AssertionError("evaluation_index can't be None during forward.")
         _, variances = self.model.predict(x)
         value = np.diagonal(variances, axis1=-2, axis2=-1)[..., self.evaluation_index]
         if self.costs is not None:
@@ -64,6 +105,35 @@ class MaxVarianceDecoupledAcquisition(DecoupledAcquisitionStrategy):
 
 
 class ThompsonEntropyDecoupledAcquisition(DecoupledAcquisitionStrategy):
+    r"""
+    A novel acquisition function that returns the expected entropy reduction of
+        given points being in the Pareto set.
+
+    First, Thompson samples are drawn from the posterior distribution to identify the Pareto set.
+    Then, the empirical frequencies of points being in the Pareto set
+        are recorded to estimate the etrnopies.
+    Finally, the mean empirical frequencies of points being in the Pareto set
+        given their true value in the evaluation index are calculated to form the acquisition value.
+
+    Mathematically, the acquisition function is defined as:
+    .. math::
+        \alpha_t^i (x) = \frac{H (X | \mathcal{D}_{t-1}) - \mathbb E_{y_i \sim GP^i_t(x)}
+        [H (X | \mathcal{D}_{t-1}, y_i)]}{c_i},
+    where
+    .. math::
+        X = \mathbb{I} \{x \in P^*\}.
+
+    :param model: Model to be used.
+    :type model: ModelList
+    :param order: Order object to be used.
+    :type order: Order
+    :param evaluation_index: Index of the objective to be evaluated.
+    :type evaluation_index: Optional[int]
+    :param costs: Costs of evaluating each objective.
+    :type costs: Optional[list]
+    :param num_thompson_samples: Number of Thompson samples to draw.
+    :type num_thompson_samples: int
+    """
     def __init__(
         self,
         model: ModelList,
@@ -80,12 +150,22 @@ class ThompsonEntropyDecoupledAcquisition(DecoupledAcquisitionStrategy):
         self._clear_cache()
 
     def _clear_cache(self):
+        """
+        Clear the cache.
+        """
         self._cache_x = None
         self._cache_pareto_mask = None
         self._cache_prior_entropy = None
 
     def forward(self, x: np.ndarray):
-        assert self.evaluation_index is not None, "evaluation_index can't be None during forward."
+        """
+        Compute the expected entropy reduction of given points being in the Pareto set.
+
+        :param x: Points to evaluate the acquisition function.
+        :type x: np.ndarray
+        """
+        if self.evaluation_index is None:
+            raise AssertionError("evaluation_index can't be None during forward.")
 
         # TODO: Model might've been updated for batch selection. That also coincides with
         # a change in array x, but need to be sure.
@@ -122,15 +202,30 @@ class ThompsonEntropyDecoupledAcquisition(DecoupledAcquisitionStrategy):
 
 
 class MaxDiagonalAcquisition(AcquisitionStrategy):
+    """
+    Returns the maximum distance between any two points in the confidence region.
+    Works for DiscreteDesignSpace.
+
+    :param design_space: Design space to be used.
+    :type design_space: DiscreteDesignSpace
+    """
     def __init__(self, design_space: DiscreteDesignSpace) -> None:
         super().__init__()
         self.design_space = design_space
 
     def forward(self, x):
+        """
+        Compute the diameter of the confidence region at the given points.
+
+        :param x: Points to evaluate the acquisition function.
+        :type x: np.ndarray
+        """
         indices = self.design_space.locate_points(x)
         value = np.zeros(len(x))
 
         for idx, design_i in enumerate(indices):
+            print()
+            print(self.design_space.confidence_regions[design_i].diagonal(), 'sexs')
             value[idx] = self.design_space.confidence_regions[design_i].diagonal()
 
         return value
@@ -139,6 +234,17 @@ class MaxDiagonalAcquisition(AcquisitionStrategy):
 def optimize_acqf_discrete(
     acq: AcquisitionStrategy, q: int, choices: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Optimize the acquisition function over the given choices.
+
+    :param acq: Acquisition function to be optimized.
+    :type acq: AcquisitionStrategy
+    :param q: Number of points to select. (Batch size)
+    :type q: int
+    :param choices: Choices to optimize the acquisition function over.
+    :type choices: np.ndarray
+    :return: Tuple of selected points and their acquisition values.
+    """
     candidate_list, acq_value_list = [], []
 
     # TODO: Another batch selection method might be updating model at each step.
@@ -148,7 +254,7 @@ def optimize_acqf_discrete(
     while chosen < q:
         with torch.no_grad():
             acq_values = acq(choices)
-
+        
         best_idx = np.argmax(acq_values)
         candidate_list.append(choices[best_idx])
         acq_value_list.append(acq_values[best_idx])
@@ -163,6 +269,18 @@ def optimize_acqf_discrete(
 def optimize_decoupled_acqf_discrete(
     acq: DecoupledAcquisitionStrategy, q: int, choices: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Optimize the decoupled acquisition function over the given choices.
+
+    :param acq: Decoupled acquisition function to be optimized.
+    :type acq: DecoupledAcquisitionStrategy
+    :param q: Number of points to select. (Batch size)
+    :type q: int
+    :param choices: Choices to optimize the acquisition function over.
+    :type choices: np.ndarray
+    :return: Tuple of selected points, their acquisition values,
+        their objective indices to evaluate.
+    """
     saved_eval_i = acq.evaluation_index
 
     candidate_list = np.empty((0, choices.shape[-1]))
