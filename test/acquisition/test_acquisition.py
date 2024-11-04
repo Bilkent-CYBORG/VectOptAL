@@ -88,7 +88,6 @@ class TestMaxDiagonalAcquisition(TestCase):
 
     def test_forward(self):
         """Test the forward method."""
-        q = 2
         choices = np.array([[1, 2], [3, 4], [5, 6]])
         design_space = FixedPointsDesignSpace(choices, 2)
         mock_model = mock.MagicMock()
@@ -99,7 +98,6 @@ class TestMaxDiagonalAcquisition(TestCase):
         design_space.update(mock_model, np.array([1]), [0, 1, 2])
         axq = MaxDiagonalAcquisition(design_space)
         ret_values = axq(choices)
-        print(np.sqrt(2) * np.array([2, 3, 4]))
         self.assertTrue(np.allclose(ret_values, np.sqrt(2) * np.array([2, 2 * np.sqrt(3), 4])))
 
 
