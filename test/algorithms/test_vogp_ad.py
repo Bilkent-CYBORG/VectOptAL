@@ -5,9 +5,7 @@ from vectoptal.order import ConeTheta2DOrder
 from vectoptal.algorithms.vogp_ad import VOGP_AD
 from vectoptal.utils import set_seed
 from vectoptal.maximization_problem import ContinuousProblem, get_continuous_problem
-from vectoptal.utils.evaluate import (
-    calculate_hypervolume_discrepancy_for_model
-)
+from vectoptal.utils.evaluate import calculate_hypervolume_discrepancy_for_model
 
 
 class TestVOGP_AD(unittest.TestCase):
@@ -20,7 +18,9 @@ class TestVOGP_AD(unittest.TestCase):
         self.delta = 0.05
         self.noise_var = self.epsilon
         self.problem_name = "BraninCurrin"
-        self.problem: ContinuousProblem = get_continuous_problem(name=self.problem_name, noise_var=self.noise_var)
+        self.problem: ContinuousProblem = get_continuous_problem(
+            name=self.problem_name, noise_var=self.noise_var
+        )
         self.order = ConeTheta2DOrder(cone_degree=90)
         self.iter_count = 1
         self.hv_values = []
@@ -38,22 +38,17 @@ class TestVOGP_AD(unittest.TestCase):
         )
         self.beta = self.algorithm.compute_beta()
 
-        print("setUp: Parameters and VOGP instance initialized.")
-
     def tearDown(self):
         """
         This method is run after each test
         to clean up resources or reset states.
         """
         self.algorithm = None
-        print("tearDown: VOGP instance destroyed.")
 
     def test_ustar(self):
         """Test the calculation of u_star. Ensures that the computed u*
         is correctly calculated to be inside the cone."""
-        in_cone = np.all(
-            self.algorithm.order.ordering_cone.W @ self.algorithm.u_star >= 0
-        )
+        in_cone = np.all(self.algorithm.order.ordering_cone.W @ self.algorithm.u_star >= 0)
         msg = "u* is not inside the cone. Check u* calculation."
         self.assertTrue(in_cone, msg=msg)
 
@@ -69,7 +64,6 @@ class TestVOGP_AD(unittest.TestCase):
             initial_S_size,
             "S should shrink or remain the same after discarding.",
         )
-        print("test_discarding passed.")
 
     def test_epsilon_covering(self):
         """Test the epsilon covering phase of VOGP_AD by ensuring
@@ -83,7 +77,6 @@ class TestVOGP_AD(unittest.TestCase):
             initial_S_size,
             "S should shrink or remain the same after epsilon covering.",
         )
-        print("test_epsilon_covering passed.")
 
     def test_vogp_ad_run(self):
         """This test performs a full run of the VOGP_AD algorithm
@@ -132,15 +125,9 @@ class TestVOGP_AD(unittest.TestCase):
             log_hv_discrepancy = calculate_hypervolume_discrepancy_for_model(
                 self.order, self.problem, algorithm.model
             )
-            print(f"Logarithm HV discrepancy is: {log_hv_discrepancy:.2f}")
             self.hv_values.append(log_hv_discrepancy)
         avg_hv = sum(self.hv_values) / len(self.hv_values)
-        print(
-            f"Avg. hypervolume score: {avg_hv:.2f}"
-        )
-        self.assertLessEqual(
-            avg_hv, -0.5, "Avg. hypervolume score should be reasonably high."
-        )
+        self.assertLessEqual(avg_hv, -0.5, "Avg. hypervolume score should be reasonably high.")
 
 
 if __name__ == "__main__":

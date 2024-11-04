@@ -19,6 +19,45 @@ from vectoptal.confidence_region import (
 
 
 class VOGP(PALAlgorithm):
+    """
+    Implement the Vector Optimization with Gaussian Process (VOGP) algorithm.
+
+    :param epsilon: Accuracy parameter for the PAC algorithm
+    :type epsilon: float
+    :param delta: Confidence parameter for the PAC algorithm
+    :type delta: float
+    :param dataset_name: Name of the dataset to be used
+    :type dataset_name: str
+    :param order: An instance of the Order class representing the ordering cone
+    :type order: Order
+    :param noise_var: Variance of the noise in observations
+    :type noise_var: float
+    :param conf_contraction: Factor for contracting the confidence region, defaults to 32
+    :type conf_contraction: int, optional
+    :param batch_size: Batch size for evaluation, defaults to 1
+    :type batch_size: int, optional
+
+    Attributes include:
+
+    - `m`: Dimension of the output space
+    - `design_space`: The design space containing fixed points and confidence types (e.g., hyperrectangle)
+    - `problem`: An instance of the `ProblemFromDataset` class, constructed from the specified dataset
+    - `model`: A GP model to estimate outcomes
+    - `S`: The set of uncertain designs at each iteration
+    - `P`: The set of Pareto optimal designs identified by the algorithm
+    - `round`: Tracks the current round of the algorithm
+    - `sample_count`: Tracks the total count of samples evaluated across all rounds
+
+    Example Usage:
+        >>> from vectoptal.order import ComponentwiseOrder
+        >>> from vectoptal.algorithms import VOGP
+        >>>
+        >>> vogp = VOGP(epsilon=0.1, delta=0.05, dataset_name='DiskBrake', order=ComponentwiseOrder(2), noise_var=0.01)
+        >>> while not vogp.run_one_step():
+        >>>     pass
+        >>> pareto_set = vogp.P
+    """
+
     def __init__(
         self,
         epsilon,
@@ -62,12 +101,19 @@ class VOGP(PALAlgorithm):
         self.sample_count = 0
 
     def modeling(self):
+        """
+        Updates confidence regions for all active nodes.
+        """
         self.beta = self.compute_beta()
         # Active nodes, union of sets s_t and p_t at the beginning of round t
         W = self.S.union(self.P)
         self.design_space.update(self.model, self.beta, list(W))
 
     def discarding(self):
+        """
+        Discards designs that are highly likely to be dominated based on
+        current confidence regions.
+        """
         pessimistic_set = self.compute_pessimistic_set()
         difference = self.S.difference(pessimistic_set)
 
@@ -85,6 +131,10 @@ class VOGP(PALAlgorithm):
             self.S.remove(pt)
 
     def epsiloncovering(self):
+        """
+        Identifies and removes designs from `S` that are not covered by the confidence region of other designs,
+        adding them to `P` as Pareto-optimal.
+        """
         W = self.S.union(self.P)
 
         is_index_pareto = []
@@ -109,6 +159,10 @@ class VOGP(PALAlgorithm):
                 self.P.add(pt)
 
     def evaluating(self):
+        """
+        Selects designs for evaluation based on an acquisition function and
+        updates the model with new observations.
+        """
         W = self.S.union(self.P)
         acq = MaxDiagonalAcquisition(self.design_space)
         active_pts = self.design_space.points[list(W)]
@@ -121,6 +175,13 @@ class VOGP(PALAlgorithm):
         self.model.update()
 
     def run_one_step(self) -> bool:
+        """
+        Executes one iteration of the VOGP algorithm, performing modeling, discarding, epsilon-covering,
+        and evaluating phases.
+
+        :return: True if the set `S` is empty, indicating termination, False otherwise
+        :rtype: bool
+        """
         if len(self.S) == 0:
             return True
 
@@ -151,6 +212,12 @@ class VOGP(PALAlgorithm):
         return len(self.S) == 0
 
     def compute_beta(self):
+        """
+        Computes the confidence scaling parameter `beta` for Gaussian Process modeling.
+
+        :return: A vector representing `beta` for each dimension of the output space
+        :rtype: np.ndarray
+        """
         # This is according to the proofs.
         beta_sqr = 2 * np.log(
             self.m
@@ -165,38 +232,26 @@ class VOGP(PALAlgorithm):
 
     def compute_u_star(self):
         """
-        Given a matrix W that corresponds to a polyhedral ordering cone, this function
-        computes the ordering difficulty of the cone and u^* direction of the cone.
+        Computes the normalized direction vector `u_star` and the ordering difficulty `d1` of a polyhedral ordering cone
+        defined by the matrix `W`.
 
-        The function solves an optimization problem where the objective is to minimize the
-        Euclidean norm of `z`, subject to the constraint that W @ z >= 1 for each row
-        of W.
+        :return: A tuple containing `u_star`, the normalized direction vector of the cone, and `d1`, the Euclidean norm of `z`
+        :rtype: tuple (numpy.ndarray, float)
 
-        Parameters
-        ----------
-        W : numpy.ndarray
-            A numpy array representing the matrix that defines the half-spaces of the
-            polyhedral cone. Each row of W corresponds to a linear constraint on `z`.
+        :notes:
+            The optimization is performed using the Sequential Least Squares Programming (SLSQP) method from
+            `scipy.optimize.minimize`. The initial guess for `z` is a vector of ones. The optimization has a
+            high maximum iteration limit and tight function tolerance to ensure convergence to an optimal solution.
 
-        Returns
-        -------
-        u_star of cone : numpy.ndarray
-            The normalized optimized vector `z`.
-        d(1) of cone : float
-            The Euclidean norm of the optimized `z`.
-
-        Notes
-        -----
-        The optimization problem is solved using the Sequential Least SQuares Programming (SLSQP)
-        method provided by scipy.optimize.minimize. The initial guess is a vector of ones, and
-        the optimization runs with a very high maximum iteration limit and tight function tolerance
-        to ensure convergence.
-
-        Examples
-        --------
-        >>> W = W = np.sqrt(21)*np.array([[1, -2, 4], [4, 1, -2], [-2, 4, 1]])
-        >>> u_star_optimized,d_1 = compute_ustar_scipy(W)
+        **Example**:
+            >>> import numpy as np
+            >>>
+            >>> W = np.sqrt(21)*np.array([[1, -2, 4], [4, 1, -2], [-2, 4, 1]])
+            >>> u_star_optimized,d_1 = compute_ustar_scipy(W)
+            >>> print("u_star:", u_star_optimized)
+            >>> print("d1:", d1)
         """
+
         cone_matrix = self.order.ordering_cone.W
 
         n = cone_matrix.shape[0]
@@ -231,7 +286,9 @@ class VOGP(PALAlgorithm):
     def compute_pessimistic_set(self) -> set:
         """
         The pessimistic Pareto set of the set S+P of designs.
+
         :return: Set of pessimistic Pareto indices.
+        :rtype: set
         """
         W = self.S.union(self.P)
 
