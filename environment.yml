@@ -33,3 +33,5 @@ dependencies:
 - black
 - bandit
 - sphinx_rtd_theme
+- pip:
+    - docs/requirements.txt

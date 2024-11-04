@@ -20,4 +20,5 @@ flake8-print
 pydocstyle
 black
 bandit
-sphinx_rtd_theme
+
+-r docs/requirements.txt
