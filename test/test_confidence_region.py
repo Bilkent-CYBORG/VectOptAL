@@ -1,5 +1,5 @@
-from unittest import TestCase
 import copy
+from unittest import TestCase
 
 import numpy as np
 
