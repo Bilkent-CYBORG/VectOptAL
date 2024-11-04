@@ -22,6 +22,7 @@ author = "Cahit Yildirim"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx_rtd_theme",
+    "notfound.extension",
 ]
 
 templates_path = ["_templates"]
