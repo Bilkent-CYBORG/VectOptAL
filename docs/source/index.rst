@@ -3,14 +3,38 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to VectOptAL's documentation!
+:github_url: https://github.com/Bilkent-CYBORG/VectOptAL
+
+VectOptAL's documentation!
 =====================================
 
 .. toctree::
+   :glob:
+   :maxdepth: 1
+   :caption: Tutorials:
+
+   examples/tutorial.ipynb
+
+.. toctree::
+   :glob:
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Examples:
 
+   examples/**/index
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Package Reference
+
+   order
+   models
+   algorithms
+   acquisiton
+   datasets
+   utils
+   design_space
+   confidence_region
+   
 
 Indices and tables
 ==================

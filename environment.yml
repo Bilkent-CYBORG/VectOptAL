@@ -32,3 +32,4 @@ dependencies:
 - pydocstyle
 - black
 - bandit
+- sphinx_rtd_theme
