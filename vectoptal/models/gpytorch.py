@@ -633,7 +633,8 @@ class GPyTorchModelListExactModel(GPyTorchModel, ModelList):
 
         :param X: M x dim input data points for kernel evaluation.
         :type X: torch.Tensor
-        :return: Covariance matrix of shape NM x NM, where N is the number of models, i.e. output dimension.
+        :return: Covariance matrix of shape NM x NM, where N is the number of models,
+            _i.e._, output dimension.
         :rtype: np.ndarray
         """
         N = len(self.model.models)

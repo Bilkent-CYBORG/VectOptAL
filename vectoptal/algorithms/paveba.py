@@ -29,7 +29,7 @@ class PaVeBa(PALAlgorithm):
     :param noise_var: Variance of the Gaussian sampling noise.
     :type noise_var: float
     :param conf_contraction: Contraction coefficient to shrink
-        the confidence regions empirically.
+        the confidence regions empirically. Defaults to 32.
     :type conf_contraction: float
 
     The algorithm sequentially samples design rewards with a multivariate
@@ -66,7 +66,7 @@ class PaVeBa(PALAlgorithm):
         dataset_name: str,
         order: Order,
         noise_var: float,
-        conf_contraction: int = 32,
+        conf_contraction: float = 32,
     ) -> None:
         super().__init__(epsilon, delta)
 
@@ -178,7 +178,7 @@ class PaVeBa(PALAlgorithm):
 
     def evaluating(self):
         """
-        Observe the active designs via sampling.
+        Observe the active designs via sampling and update the model.
         """
         A = self.S.union(self.U)
         active_pts = self.design_space.points[list(A)]

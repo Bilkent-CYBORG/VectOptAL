@@ -52,7 +52,9 @@ class TestBatchIndependentExactGPModel(unittest.TestCase):
 
 
 class TestableGPyTorchMultioutputExactModel(GPyTorchMultioutputExactModel):
-    """Subclass of GPyTorchMultioutputExactModel to implement the abstract predict method for testing."""
+    """
+    Subclass of GPyTorchMultioutputExactModel to implement the abstract predict method for testing.
+    """
 
     def predict(self, X):
         """Mock predict implementation for testing."""
