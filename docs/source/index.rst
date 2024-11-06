@@ -29,7 +29,7 @@ VectOptAL's documentation!
    order
    models
    algorithms
-   acquisiton
+   acquisition
    datasets
    utils
    design_space

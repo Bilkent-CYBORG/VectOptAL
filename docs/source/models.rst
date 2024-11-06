@@ -22,7 +22,7 @@ Empirical Models
 -----------------------------
 
 :hidden:`EmpiricalMeanVarModel`
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: EmpiricalMeanVarModel
     :members:
@@ -47,19 +47,19 @@ Gaussian Process Based Models
     :members:
 
 :hidden:`CorrelatedExactGPyTorchModel`
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: CorrelatedExactGPyTorchModel
     :members:
 
 :hidden:`IndependentExactGPyTorchModel`
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: IndependentExactGPyTorchModel
     :members:
 
 :hidden:`GPyTorchModelListExactModel`
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: GPyTorchModelListExactModel
     :members:

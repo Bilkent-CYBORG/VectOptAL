@@ -1,8 +1,13 @@
 from vectoptal.models.model import Model, GPModel, ModelList
 from vectoptal.models.gpytorch import (
-    IndependentExactGPyTorchModel,
+    GPyTorchModel,
+    MultitaskExactGPModel,
+    BatchIndependentExactGPModel,
+    GPyTorchMultioutputExactModel,
     CorrelatedExactGPyTorchModel,
+    IndependentExactGPyTorchModel,
     get_gpytorch_model_w_known_hyperparams,
+    SingleTaskGP,
     GPyTorchModelListExactModel,
     get_gpytorch_modellist_w_known_hyperparams,
 )
@@ -12,6 +17,11 @@ __all__ = [
     "Model",
     "GPModel",
     "ModelList",
+    "SingleTaskGP",
+    "GPyTorchModel",
+    "MultitaskExactGPModel",
+    "BatchIndependentExactGPModel",
+    "GPyTorchMultioutputExactModel",
     "IndependentExactGPyTorchModel",
     "CorrelatedExactGPyTorchModel",
     "get_gpytorch_model_w_known_hyperparams",

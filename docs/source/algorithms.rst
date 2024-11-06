@@ -12,7 +12,7 @@ Algorithms for Vector Optimization
 -----------------------------
 
 :hidden:`NaiveElimination`
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: NaiveElimination
     :members:
@@ -50,13 +50,13 @@ Algorithms for Vector Optimization with Decoupled Objectives
 -----------------------------
 
 :hidden:`PaVeBaPartialGP`
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: PaVeBaPartialGP
     :members:
 
 :hidden:`DecoupledGP`
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: DecoupledGP
     :members:
@@ -72,7 +72,7 @@ Algorithms for Multi-Objective Optimization
     :members:
 
 :hidden:`EpsilonPAL`
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: EpsilonPAL
     :members:
