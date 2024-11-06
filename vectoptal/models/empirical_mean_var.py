@@ -116,7 +116,7 @@ class EmpiricalMeanVarModel(Model):
         test inputs.
 
         :param test_X: The test inputs for which predictions are to be made. The last column of
-        `test_X` should contain indices.
+            `test_X` should contain indices.
         :type test_X: np.ndarray
         :return: A tuple containing two numpy arrays: the predicted means and variances.
         :rtype: tuple[np.ndarray, np.ndarray]

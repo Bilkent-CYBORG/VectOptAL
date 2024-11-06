@@ -123,12 +123,16 @@ class ThompsonEntropyDecoupledAcquisition(DecoupledAcquisitionStrategy):
     acquisition value.
 
     Mathematically, the acquisition function is defined as:
+
     .. math::
+
         \alpha_t^i (x) = \frac{H (X | \mathcal{D}_{t-1}) - \mathbb E_{y_i \sim GP^i_t(x)}
         [H (X | \mathcal{D}_{t-1}, y_i)]}{c_i},
 
     where
+
     .. math::
+
         X = \mathbb{I} \{x \in P^*\}.
 
     :param model: Model to be used for predictions.
