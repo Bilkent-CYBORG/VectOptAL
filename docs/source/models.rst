@@ -12,7 +12,7 @@ vectoptal.models
     :members:
 
 .. autoclass:: ModelList
-    
+    :members:
 
 .. autoclass:: GPModel
     :members:
