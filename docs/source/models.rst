@@ -29,7 +29,7 @@ Empirical Models
 
 
 Gaussian Process Based Models
------------------------------
+-----------------------------------
 
 .. autoclass:: GPyTorchModel
     :members:

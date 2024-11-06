@@ -113,19 +113,20 @@ class MaxVarianceDecoupledAcquisition(DecoupledAcquisitionStrategy):
 
 class ThompsonEntropyDecoupledAcquisition(DecoupledAcquisitionStrategy):
     r"""
-    A novel acquisition function that returns the expected entropy reduction of
-        given points being in the Pareto set.
+    A novel acquisition function that returns the expected entropy reduction of given points
+    being in the Pareto set.
 
     First, Thompson samples are drawn from the posterior distribution to identify the Pareto set.
-    Then, the empirical frequencies of points being in the Pareto set
-        are recorded to estimate the entropies.
-    Finally, the mean empirical frequencies of points being in the Pareto set
-        given their true value in the evaluation index are calculated to form the acquisition value.
+    Then, the empirical frequencies of points being in the Pareto set are recorded to
+    estimate the entropies. Finally, the mean empirical frequencies of points being in the
+    Pareto set given their true value in the evaluation index are calculated to form the
+    acquisition value.
 
     Mathematically, the acquisition function is defined as:
     .. math::
         \alpha_t^i (x) = \frac{H (X | \mathcal{D}_{t-1}) - \mathbb E_{y_i \sim GP^i_t(x)}
         [H (X | \mathcal{D}_{t-1}, y_i)]}{c_i},
+
     where
     .. math::
         X = \mathbb{I} \{x \in P^*\}.

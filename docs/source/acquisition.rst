@@ -28,7 +28,7 @@ Acquisiton Strategies
 
 
 Decoupled Acquisiton Strategies
------------------------------
+-----------------------------------
 
 .. autoclass:: DecoupledAcquisitionStrategy
     :members:
@@ -46,7 +46,7 @@ Decoupled Acquisiton Strategies
     :members:
 
 Utilities for Acquisiton Strategies
------------------------------
+-----------------------------------------
 
 .. autofunction:: optimize_acqf_discrete
 

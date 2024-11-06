@@ -9,7 +9,7 @@ vectoptal.algorithms
 
 
 Algorithms for Vector Optimization
------------------------------
+-----------------------------------
 
 :hidden:`NaiveElimination`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -24,7 +24,7 @@ Algorithms for Vector Optimization
     :members:
 
 :hidden:`PaVeBaGP`
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: PaVeBaGP
     :members:
@@ -37,7 +37,7 @@ Algorithms for Vector Optimization
 
 
 Algorithms for Vector Optimization in Continuous Domains
------------------------------
+-----------------------------------------------------------
 
 :hidden:`VOGP_AD`
 ~~~~~~~~~~~~~~~~~
@@ -47,7 +47,7 @@ Algorithms for Vector Optimization in Continuous Domains
 
 
 Algorithms for Vector Optimization with Decoupled Objectives
------------------------------
+-----------------------------------------------------------------
 
 :hidden:`PaVeBaPartialGP`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -63,7 +63,7 @@ Algorithms for Vector Optimization with Decoupled Objectives
 
 
 Algorithms for Multi-Objective Optimization
------------------------------
+-----------------------------------------------
 
 :hidden:`Auer`
 ~~~~~~~~~~~~~~~~~
