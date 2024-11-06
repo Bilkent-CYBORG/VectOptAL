@@ -1,5 +1,6 @@
 from vectoptal.acquisition.acquisition import (
     AcquisitionStrategy,
+    DecoupledAcquisitionStrategy,
     SumVarianceAcquisition,
     MaxDiagonalAcquisition,
     MaxVarianceDecoupledAcquisition,
@@ -11,6 +12,7 @@ from vectoptal.acquisition.acquisition import (
 
 __all__ = [
     "AcquisitionStrategy",
+    "DecoupledAcquisitionStrategy",
     "SumVarianceAcquisition",
     "MaxDiagonalAcquisition",
     "MaxVarianceDecoupledAcquisition",

@@ -15,13 +15,13 @@ Acquisiton Strategies
 -----------------------------
 
 :hidden:`SumVarianceAcquisition`
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: SumVarianceAcquisition
     :members:
 
 :hidden:`MaxDiagonalAcquisition`
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: MaxDiagonalAcquisition
     :members:
@@ -34,13 +34,13 @@ Decoupled Acquisiton Strategies
     :members:
 
 :hidden:`MaxVarianceDecoupledAcquisition`
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: MaxVarianceDecoupledAcquisition
     :members:
 
 :hidden:`ThompsonEntropyDecoupledAcquisition`
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: ThompsonEntropyDecoupledAcquisition
     :members:
