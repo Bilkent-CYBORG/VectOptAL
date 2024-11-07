@@ -23,7 +23,7 @@ def set_seed(seed: int) -> None:
 def get_2d_w(cone_degree: float) -> np.ndarray:
     """
     This function generates a 2D cone matrix W with boundaries at an angle cone_angle and
-    symmetric around `y=x`.
+    symmetric around :math:`y=x`.
 
     :param cone_angle: The angle of the cone in degrees.
     :type cone_angle: float
@@ -198,9 +198,10 @@ def get_smallmij(vi: np.ndarray, vj: np.ndarray, W: np.ndarray, alpha_vec: np.nd
 
 
 def get_delta(mu: np.ndarray, W: np.ndarray, alpha_vec: np.ndarray) -> np.ndarray:
-    """
-    This method computes Delta^*_i gap value for each point in the input array `mu`. Delta^*_i is
-    calculated based on the provided constraint matrix `W` and the alpha vector `alpha_vec`.
+    r"""
+    This method computes :math:`\Delta^*_i` gap value for each point in the input array `mu`.
+    :math:`\Delta^*_i` is calculated based on the provided constraint matrix `W` and the alpha
+    vector `alpha_vec`.
 
     :param mu: An array of shape (n_points, D) representing the points.
     :type mu: np.ndarray
@@ -208,7 +209,7 @@ def get_delta(mu: np.ndarray, W: np.ndarray, alpha_vec: np.ndarray) -> np.ndarra
     :type W: np.ndarray
     :param alpha_vec: An array of shape (n_constraint, 1) representing the alphas of W.
     :type alpha_vec: np.ndarray
-    :return: An array of shape (n_points, 1) containing Delta^*_i for each point.
+    :return: An array of shape (n_points, 1) containing :math:`\Delta^*_i` for each point.
     :rtype: np.ndarray
     """
     num_points = mu.shape[0]
@@ -402,7 +403,7 @@ def is_pt_in_extended_polytope(
     This method checks if a point `pt` is an element of the polytope defined by the vertices in
     `polytope` and extended along to infinity along the axes. This corresponds to the Minkowski
     addition of a hyperrectangle with a right-angled cone. The `invert_extension` parameter can be
-    used to invert the extension to negative infinity, _i.e._, Minkowski addition with negative of
+    used to invert the extension to negative infinity, *i.e.*, Minkowski addition with negative of
     the right angle.
 
     :param pt: A (D, ) array for the point to check.

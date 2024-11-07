@@ -52,7 +52,7 @@ class DecoupledAcquisitionStrategy(AcquisitionStrategy):
 class SumVarianceAcquisition(AcquisitionStrategy):
     """
     Acquisition function that returns the sum of variances of the objectives assuming
-    independent objectives, _i.e.,_ trace of covariance matrix.
+    independent objectives, *i.e.*, trace of covariance matrix.
 
     :param model: Model to be used for predictions.
     :type model: Model
@@ -256,7 +256,7 @@ def optimize_acqf_discrete(
 
     :param acq: Acquisition function to be optimized.
     :type acq: AcquisitionStrategy
-    :param q: Number of points to select, _i.e., batch size.
+    :param q: Number of points to select, *i.e.*, batch size.
     :type q: int
     :param choices: Choices to optimize the acquisition function over.
     :type choices: np.ndarray
@@ -292,7 +292,7 @@ def optimize_decoupled_acqf_discrete(
 
     :param acq: Decoupled acquisition function to be optimized.
     :type acq: DecoupledAcquisitionStrategy
-    :param q: Number of points to select, _i.e., batch size.
+    :param q: Number of points to select, *i.e.*, batch size.
     :type q: int
     :param choices: Choices to optimize the acquisition function over.
     :type choices: np.ndarray

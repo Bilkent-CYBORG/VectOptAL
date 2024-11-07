@@ -27,17 +27,31 @@ class Model(ABC):
 
 
 class ModelList(Model):
+    """
+    Defines the abstract model list class.
+    """
+
     def __init__(self) -> None:
         super().__init__()
 
 
 class GPModel(Model):
+    """
+    Defines the abstract Gaussian process model (GP) class.
+    """
+
     def __init__(self) -> None:
         super().__init__()
 
     def get_lengthscale_and_var(self):
+        """
+        Get the lengthscale and variance of the GP model.
+        """
         raise NotImplementedError
 
     def get_kernel_type(self):
+        """
+        Get the kernel type of the GP model.
+        """
         # TODO: Define an enum for kernel type.
         raise NotImplementedError
