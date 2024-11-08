@@ -12,6 +12,7 @@ from vectoptal.utils.evaluate import calculate_epsilonF1_score
 
 
 class TestVOGP(unittest.TestCase):
+    """Test the VOGP algorithm class."""
 
     def setUp(self):
         """
@@ -40,7 +41,6 @@ class TestVOGP(unittest.TestCase):
             noise_var=self.noise_var,
             conf_contraction=self.conf_contraction,
         )
-        self.beta = self.algorithm.compute_beta()
 
     def test_ustar(self):
         """

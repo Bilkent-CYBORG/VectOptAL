@@ -1,3 +1,4 @@
+import random
 import itertools
 from typing import Union, Iterable, Optional
 
@@ -16,6 +17,7 @@ def set_seed(seed: int) -> None:
     :param seed: The seed value to set for the random number generators.
     :type seed: int
     """
+    random.seed(seed)
     np.random.seed(seed)
     torch.random.manual_seed(seed)
 
@@ -168,7 +170,8 @@ def generate_sobol_samples(dim: int, n: int) -> np.ndarray:
     :return: An array of Sobol sequence samples.
     :rtype: np.ndarray
     """
-    sampler = Sobol(dim, scramble=True)
+    local_generator = np.random.default_rng(np.random.randint(0, 1000))
+    sampler = Sobol(dim, scramble=True, seed=local_generator)
     samples = sampler.random(n)
 
     return samples

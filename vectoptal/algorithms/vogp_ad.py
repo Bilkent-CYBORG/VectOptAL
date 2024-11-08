@@ -1,4 +1,3 @@
-import copy
 import logging
 
 import numpy as np
@@ -19,7 +18,8 @@ from vectoptal.confidence_region import (
 
 class VOGP_AD(PALAlgorithm):
     """
-    Implement the Vector Optimization with Gaussian Process (VOGP) algorithm.
+    Implement the Vector Optimization with Gaussian Process (VOGP) algorithm for continuous
+    domains using adaptive discretization.
 
     :param epsilon: Accuracy parameter for the PAC algorithm.
     :type epsilon: float
@@ -157,7 +157,7 @@ class VOGP_AD(PALAlgorithm):
 
         W = self.S.union(self.P)
 
-        is_index_pareto = []
+        new_pareto_pts = []
         for pt in self.S:
             pt_conf = self.design_space.confidence_regions[pt]
             for pt_prime in W:
@@ -167,16 +167,14 @@ class VOGP_AD(PALAlgorithm):
                 pt_p_conf = self.design_space.confidence_regions[pt_prime]
 
                 if confidence_region_is_covered(self.order, pt_conf, pt_p_conf, self.u_star_eps):
-                    is_index_pareto.append(False)
                     break
             else:
-                is_index_pareto.append(True)
+                new_pareto_pts.append(pt)
 
-        tmp_S = copy.deepcopy(self.S)
-        for is_pareto, pt in zip(is_index_pareto, tmp_S):
-            if is_pareto:
-                self.S.remove(pt)
-                self.P.add(pt)
+        for pt in new_pareto_pts:
+            self.S.remove(pt)
+            self.P.add(pt)
+        logging.debug(f"Pareto: {str(self.P)}")
 
     def evaluate_refine(self):
         """
@@ -260,9 +258,7 @@ class VOGP_AD(PALAlgorithm):
         )
 
         beta_sqr = beta_sqr**2  # Instead of dividing with sqrt of conf_contraction.
-        return np.sqrt(beta_sqr / self.conf_contraction) * np.ones(
-            self.m,
-        )
+        return np.sqrt(beta_sqr / self.conf_contraction)
 
     def compute_u_star(self):
         """
@@ -270,7 +266,7 @@ class VOGP_AD(PALAlgorithm):
         a polyhedral ordering cone defined in the order self.order.ordering_cone.
 
         :return: A tuple containing `u_star`, the normalized direction vector of the cone, and
-        `d1`, the Euclidean norm of the vector that gives `u_star` when normalized, _i.e._, `z`.
+        `d1`, the Euclidean norm of the vector that gives `u_star` when normalized, *i.e.*, `z`.
         :rtype: Tuple[np.ndarray, float]
         """
 
