@@ -14,6 +14,7 @@ from vectoptal.models.gpytorch import (
     SingleTaskGP,
     GPyTorchModelListExactModel,
     get_gpytorch_modellist_w_known_hyperparams,
+    get_gpytorch_model_w_known_hyperparams,
 )
 
 from vectoptal.maximization_problem import Problem
@@ -25,7 +26,7 @@ class TestMultitaskExactGPModel(unittest.TestCase):
     def setUp(self):
         """Set up sample data and model for tests."""
         self.X = torch.randn(10, 2)
-        self.Y = torch.randn(10, 3)
+        self.Y = torch.randn(10, 2)
         self.likelihood = MultitaskGaussianLikelihood(num_tasks=self.Y.shape[-1])
         self.model = MultitaskExactGPModel(self.X, self.Y, self.likelihood, RBFKernel)
 
@@ -41,7 +42,7 @@ class TestBatchIndependentExactGPModel(unittest.TestCase):
     def setUp(self):
         """Set up sample data and model for tests."""
         self.X = torch.randn(10, 2)
-        self.Y = torch.randn(10, 3)
+        self.Y = torch.randn(10, 2)
         self.likelihood = GaussianLikelihood()
         self.model = BatchIndependentExactGPModel(self.X, self.Y, self.likelihood, RBFKernel)
 
@@ -52,9 +53,7 @@ class TestBatchIndependentExactGPModel(unittest.TestCase):
 
 
 class TestableGPyTorchMultioutputExactModel(GPyTorchMultioutputExactModel):
-    """
-    Subclass of GPyTorchMultioutputExactModel to implement the abstract predict method for testing.
-    """
+    """Subclass of GPyTorchMultioutputExactModel to implement the abstract predict method for testing."""
 
     def predict(self, X):
         """Mock predict implementation for testing."""
@@ -70,12 +69,12 @@ class TestGPyTorchMultioutputExactModel(unittest.TestCase):
         """Set up model instance with test data."""
         # Use the testable subclass to avoid abstract class issues
         self.model = TestableGPyTorchMultioutputExactModel(
-            input_dim=2, output_dim=3, noise_var=0.1, model_kind=MultitaskExactGPModel
+            input_dim=2, output_dim=2, noise_var=0.1, model_kind=MultitaskExactGPModel
         )
 
         # Sample test data
         self.X = torch.randn(5, 2)
-        self.Y = torch.randn(5, 3)
+        self.Y = torch.randn(5, 2)
 
         # Add sample and update model
         self.model.add_sample(self.X, self.Y)
@@ -96,6 +95,16 @@ class TestGPyTorchMultioutputExactModel(unittest.TestCase):
         """Test evaluate_kernel method."""
         kernel_matrix = self.model.evaluate_kernel(self.X)
         self.assertIsInstance(kernel_matrix, np.ndarray, "Kernel matrix type mismatch.")
+        eigenvalue, eigenvector = np.linalg.eig(kernel_matrix)
+        self.assertGreater(
+            np.min(eigenvalue), 0, "Kernel did not return positive semidefinite matrix."
+        )
+
+    def test_get_lengthscale_and_var(self):
+        """Test get_lengthscale_and_var method."""
+        lengthscales, variances = self.model.get_lengthscale_and_var()
+        self.assertGreaterEqual(np.min(variances), 0, "Negative variance.")
+        self.assertGreaterEqual(np.min(lengthscales), 0, "Negative lengthscale.")
 
 
 class TestCorrelatedExactGPyTorchModel(unittest.TestCase):
@@ -103,9 +112,9 @@ class TestCorrelatedExactGPyTorchModel(unittest.TestCase):
 
     def setUp(self):
         """Set up correlated multitask model."""
-        self.model = CorrelatedExactGPyTorchModel(input_dim=2, output_dim=3, noise_var=0.1)
+        self.model = CorrelatedExactGPyTorchModel(input_dim=2, output_dim=2, noise_var=0.1)
         self.X = torch.randn(5, 2)
-        self.Y = torch.randn(5, 3)
+        self.Y = torch.randn(5, 2)
         self.model.add_sample(self.X, self.Y)
         self.model.update()
 
@@ -114,6 +123,7 @@ class TestCorrelatedExactGPyTorchModel(unittest.TestCase):
         means, variances = self.model.predict(self.X)
         self.assertIsInstance(means, np.ndarray, "Means type mismatch.")
         self.assertIsInstance(variances, np.ndarray, "Variances type mismatch.")
+        self.assertGreaterEqual(np.min(variances), 0, "Negative variance.")
 
 
 class TestIndependentExactGPyTorchModel(unittest.TestCase):
@@ -121,9 +131,9 @@ class TestIndependentExactGPyTorchModel(unittest.TestCase):
 
     def setUp(self):
         """Set up independent multitask model."""
-        self.model = IndependentExactGPyTorchModel(input_dim=2, output_dim=3, noise_var=0.1)
+        self.model = IndependentExactGPyTorchModel(input_dim=2, output_dim=2, noise_var=0.1)
         self.X = torch.randn(5, 2)
-        self.Y = torch.randn(5, 3)
+        self.Y = torch.randn(5, 2)
         self.model.add_sample(self.X, self.Y)
         self.model.update()
 
@@ -132,6 +142,62 @@ class TestIndependentExactGPyTorchModel(unittest.TestCase):
         means, variances = self.model.predict(self.X)
         self.assertIsInstance(means, np.ndarray, "Means type mismatch.")
         self.assertIsInstance(variances, np.ndarray, "Variances type mismatch.")
+        self.assertGreaterEqual(np.min(variances), 0, "Negative variance.")
+
+
+class TestGetGPyTorchModelWithKnownHyperparams(unittest.TestCase):
+    """Tests for the `get_gpytorch_model_w_known_hyperparams` function."""
+
+    def test_model_with_given_data(self):
+        """Test if the model is created correctly when X and Y data are provided."""
+        self.input_dim = 2
+        self.output_dim = 2
+        self.noise_var = 0.1
+        self.initial_sample_cnt = 0
+        self.problem = unittest.mock.Mock()
+        self.problem.in_dim = self.input_dim
+        self.problem.evaluate.return_value = np.random.randn(10, self.output_dim)
+
+        X = np.random.randn(10, self.input_dim)
+        Y = np.random.randn(10, self.output_dim)
+
+        # Call the function with provided X and Y
+        model = get_gpytorch_model_w_known_hyperparams(
+            model_class=CorrelatedExactGPyTorchModel,
+            problem=self.problem,
+            noise_var=self.noise_var,
+            initial_sample_cnt=self.initial_sample_cnt,
+            X=X,
+            Y=Y,
+        )
+
+        # Check if model is an instance of GPyTorchMultioutputExactModel
+        self.assertIsInstance(model, GPyTorchMultioutputExactModel)
+        # Check to confirm it’s unconditioned on training data
+
+        if (
+            hasattr(model, "models")
+            and hasattr(model.models, "train_inputs")
+            and hasattr(model.models, "train_targets")
+        ):
+
+            self.assertTrue(
+                all(model.input_tensor.numel() == 0 for model in model.models),
+                "Internal model is conditioned on training inputs.",
+            )
+            self.assertTrue(
+                all(model.train_targets.numel() == 0 for model in model.models),
+                "Internal model is conditioned on training targets",
+            )
+        else:
+            self.assertTrue(
+                model.train_targets.numel() == 0,
+                "Internal model is conditioned on training inputs.",
+            )
+            self.assertTrue(
+                model.train_targets.numel() == 0,
+                "Internal model is conditioned on training targets.",
+            )
 
 
 class TestSingleTaskGP(unittest.TestCase):
@@ -155,9 +221,9 @@ class TestGPyTorchModelListExactModel(unittest.TestCase):
 
     def setUp(self):
         """Set up multi-output GP model list."""
-        self.model = GPyTorchModelListExactModel(input_dim=2, output_dim=3, noise_var=0.1)
+        self.model = GPyTorchModelListExactModel(input_dim=2, output_dim=2, noise_var=0.1)
         self.X = torch.randn(5, 2)
-        self.Y = torch.randn(5, 3)
+        self.Y = torch.randn(5, 2)
         for i in range(self.Y.shape[1]):
             self.model.add_sample(self.X, self.Y[:, i], dim_index=i)
         self.model.update()
