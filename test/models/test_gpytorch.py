@@ -53,7 +53,9 @@ class TestBatchIndependentExactGPModel(unittest.TestCase):
 
 
 class TestableGPyTorchMultioutputExactModel(GPyTorchMultioutputExactModel):
-    """Subclass of GPyTorchMultioutputExactModel to implement the abstract predict method for testing."""
+    """
+    Subclass of GPyTorchMultioutputExactModel to implement the abstract predict method for testing.
+    """
 
     def predict(self, X):
         """Mock predict implementation for testing."""
@@ -94,10 +96,9 @@ class TestGPyTorchMultioutputExactModel(unittest.TestCase):
     def test_evaluate_kernel(self):
         """Test evaluate_kernel method."""
         kernel_matrix = self.model.evaluate_kernel(self.X)
-        self.assertIsInstance(kernel_matrix, np.ndarray, "Kernel matrix type mismatch.")
-        eigenvalue, eigenvector = np.linalg.eig(kernel_matrix)
-        self.assertGreater(
-            np.min(eigenvalue), 0, "Kernel did not return positive semidefinite matrix."
+        eigenvalues, eigenvectors = np.linalg.eig(kernel_matrix)
+        self.assertGreaterEqual(
+            np.min(eigenvalues), 0, "Kernel did not return positive semidefinite matrix."
         )
 
     def test_get_lengthscale_and_var(self):
@@ -121,8 +122,6 @@ class TestCorrelatedExactGPyTorchModel(unittest.TestCase):
     def test_predict(self):
         """Test predict method."""
         means, variances = self.model.predict(self.X)
-        self.assertIsInstance(means, np.ndarray, "Means type mismatch.")
-        self.assertIsInstance(variances, np.ndarray, "Variances type mismatch.")
         self.assertGreaterEqual(np.min(variances), 0, "Negative variance.")
 
 
@@ -140,8 +139,6 @@ class TestIndependentExactGPyTorchModel(unittest.TestCase):
     def test_predict(self):
         """Test predict method."""
         means, variances = self.model.predict(self.X)
-        self.assertIsInstance(means, np.ndarray, "Means type mismatch.")
-        self.assertIsInstance(variances, np.ndarray, "Variances type mismatch.")
         self.assertGreaterEqual(np.min(variances), 0, "Negative variance.")
 
 
@@ -173,31 +170,16 @@ class TestGetGPyTorchModelWithKnownHyperparams(unittest.TestCase):
 
         # Check if model is an instance of GPyTorchMultioutputExactModel
         self.assertIsInstance(model, GPyTorchMultioutputExactModel)
+
         # Check to confirm it’s unconditioned on training data
-
-        if (
-            hasattr(model, "models")
-            and hasattr(model.models, "train_inputs")
-            and hasattr(model.models, "train_targets")
-        ):
-
-            self.assertTrue(
-                all(model.input_tensor.numel() == 0 for model in model.models),
-                "Internal model is conditioned on training inputs.",
-            )
-            self.assertTrue(
-                all(model.train_targets.numel() == 0 for model in model.models),
-                "Internal model is conditioned on training targets",
-            )
-        else:
-            self.assertTrue(
-                model.train_targets.numel() == 0,
-                "Internal model is conditioned on training inputs.",
-            )
-            self.assertTrue(
-                model.train_targets.numel() == 0,
-                "Internal model is conditioned on training targets.",
-            )
+        self.assertTrue(
+            model.train_targets.numel() == 0,
+            "Internal model is conditioned on training inputs.",
+        )
+        self.assertTrue(
+            model.train_targets.numel() == 0,
+            "Internal model is conditioned on training targets.",
+        )
 
 
 class TestSingleTaskGP(unittest.TestCase):
@@ -221,9 +203,13 @@ class TestGPyTorchModelListExactModel(unittest.TestCase):
 
     def setUp(self):
         """Set up multi-output GP model list."""
-        self.model = GPyTorchModelListExactModel(input_dim=2, output_dim=2, noise_var=0.1)
-        self.X = torch.randn(5, 2)
-        self.Y = torch.randn(5, 2)
+        self.input_dim = 2
+        self.output_dim = 2
+        self.model = GPyTorchModelListExactModel(
+            input_dim=self.input_dim, output_dim=self.output_dim, noise_var=0.1
+        )
+        self.X = torch.randn(5, self.input_dim)
+        self.Y = torch.randn(5, self.output_dim)
         for i in range(self.Y.shape[1]):
             self.model.add_sample(self.X, self.Y[:, i], dim_index=i)
         self.model.update()
@@ -237,12 +223,16 @@ class TestGPyTorchModelListExactModel(unittest.TestCase):
     def test_sample_from_posterior(self):
         """Test sample_from_posterior method."""
         samples = self.model.sample_from_posterior(self.X, sample_count=3)
-        self.assertEqual(samples.shape[0], 3, "Sample count mismatch.")
+        self.assertTupleEqual(
+            samples.shape, (3, len(self.X), self.output_dim), "Sample shape mismatch."
+        )
 
     def test_sample_from_single_posterior(self):
         """Test sample_from_single_posterior method."""
         samples = self.model.sample_from_single_posterior(self.X, dim_index=1, sample_count=2)
-        self.assertEqual(samples.shape[0], 2, "Sample count mismatch for single posterior.")
+        self.assertTupleEqual(
+            samples.shape, (2, len(self.X)), "Sample shape mismatch for single posterior."
+        )
 
 
 class TestGetGPyTorchModelListWithKnownHyperparams(unittest.TestCase):
@@ -274,6 +264,8 @@ class TestGetGPyTorchModelListWithKnownHyperparams(unittest.TestCase):
 
         # Ensure that the problem's evaluate method was called (to generate initial Y)
         self.assertGreaterEqual(self.problem.evaluate.call_count, 1)
+
+        # Check that the correct number of initial samples were added
         total_samples = 0
         for dim in range(self.output_dim):
             total_samples += model.train_inputs[dim].shape[0]
@@ -297,9 +289,8 @@ class TestGetGPyTorchModelListWithKnownHyperparams(unittest.TestCase):
         )
 
         self.assertEqual(self.problem.evaluate.call_count, 1)
-        # Check that the correct number of initial samples were added
-        self.assertEqual(len(model.train_inputs), self.output_dim)
 
+        # Check that the correct number of initial samples were added
         total_samples = 0
         for dim in range(self.output_dim):
             total_samples += model.train_inputs[dim].shape[0]

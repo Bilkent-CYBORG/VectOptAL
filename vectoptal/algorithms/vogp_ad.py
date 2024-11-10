@@ -208,7 +208,7 @@ class VOGP_AD(PALAlgorithm):
         """
         Run one step of the algorithm and return algorithm status.
 
-        :return: True if the algorithm is over, _i.e._, `S` is empty, False otherwise.
+        :return: True if the algorithm is over, *i.e.*, `S` is empty, False otherwise.
         :rtype: bool
         """
         if len(self.S) == 0:

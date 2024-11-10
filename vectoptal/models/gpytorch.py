@@ -1,6 +1,6 @@
 import logging
 from abc import ABC
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Literal
 
 import torch
 import gpytorch
@@ -8,6 +8,7 @@ from gpytorch.mlls import SumMarginalLogLikelihood
 from botorch.fit import fit_gpytorch_mll
 
 import numpy as np
+from numpy.typing import ArrayLike
 
 from vectoptal.models import GPModel, ModelList
 from vectoptal.maximization_problem import Problem
@@ -22,15 +23,17 @@ class GPyTorchModel(GPModel, ABC):
     utility methods for data handling and kernel type identification.
     """
 
+    device: str
+
     def __init__(self) -> None:
         super().__init__()
 
-    def to_tensor(self, data) -> torch.Tensor:
+    def to_tensor(self, data: ArrayLike) -> torch.Tensor:
         """
-        Converts input data to a PyTorch tensor.
+        Convert input data to a PyTorch tensor.
 
         :param data: Input data to convert to tensor format.
-        :type data: array-like or torch.Tensor
+        :type data: ArrayLike
         :return: Converted PyTorch tensor.
         :rtype: torch.Tensor
         """
@@ -39,12 +42,12 @@ class GPyTorchModel(GPModel, ABC):
 
         return data
 
-    def get_kernel_type(self):
+    def get_kernel_type(self) -> Literal["RBF", "Other"]:
         """
-        Identifies the type of kernel used in the model, such as RBF or Multitask.
+        Identify the type of kernel used in the model iteratively.
 
-        :return: Kernel type as a string ("RBF", "Multitask", or "Other").
-        :rtype: str
+        :return: Kernel type as a string. Currently only "RBF", or "Other" are returned.
+        :rtype: Literal["RBF", "Other"]
         """
         kernel = self.model.covar_module
         while True:
@@ -63,7 +66,8 @@ class GPyTorchModel(GPModel, ABC):
 # TODO: Make GPyTorch models optionally take covar_module and mean_module.
 class MultitaskExactGPModel(gpytorch.models.ExactGP):
     """
-    Exact GP model for multitask problems with dependent objectives.
+    Exact GP model for multitask problems with dependent objectives, *i.e.*, a Linear Model
+    of Coregionalization (LMC).
 
     :param train_inputs: Input training data.
     :type train_inputs: torch.Tensor
@@ -72,10 +76,16 @@ class MultitaskExactGPModel(gpytorch.models.ExactGP):
     :param likelihood: Gaussian likelihood module.
     :type likelihood: gpytorch.likelihoods.MultitaskGaussianLikelihood
     :param kernel: Kernel type for covariance computation.
-    :type kernel: gpytorch.kernels.Kernel
+    :type kernel: type[gpytorch.kernels.Kernel]
     """
 
-    def __init__(self, train_inputs, train_targets, likelihood, kernel):
+    def __init__(
+        self,
+        train_inputs: torch.Tensor,
+        train_targets: torch.Tensor,
+        likelihood: gpytorch.likelihoods.MultitaskGaussianLikelihood,
+        kernel: type[gpytorch.kernels.Kernel],
+    ):
         super().__init__(train_inputs, train_targets, likelihood)
 
         input_dim = train_inputs.shape[-1]
@@ -96,13 +106,13 @@ class MultitaskExactGPModel(gpytorch.models.ExactGP):
         self.mean_module.requires_grad_(True)
         self.covar_module.requires_grad_(True)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> gpytorch.distributions.MultitaskMultivariateNormal:
         """
-        Computes the mean and covariance.
+        Computes the marginalized joint distribution over the given input points.
 
         :param x: Input data.
         :type x: torch.Tensor
-        :return: MultitaskMultivariateNormal distribution with mean and covariance.
+        :return: An instance of MultitaskMultivariateNormal distribution.
         :rtype: gpytorch.distributions.MultitaskMultivariateNormal
         """
         mean_x = self.mean_module(x)
@@ -119,12 +129,18 @@ class BatchIndependentExactGPModel(gpytorch.models.ExactGP):
     :param train_targets: Target training data.
     :type train_targets: torch.Tensor
     :param likelihood: Gaussian likelihood module.
-    :type likelihood: gpytorch.likelihoods.GaussianLikelihood
+    :type likelihood: gpytorch.likelihoods.MultitaskGaussianLikelihood
     :param kernel: Kernel type for covariance computation.
-    :type kernel: gpytorch.kernels.Kernel
+    :type kernel: type[gpytorch.kernels.Kernel]
     """
 
-    def __init__(self, train_inputs, train_targets, likelihood, kernel):
+    def __init__(
+        self,
+        train_inputs: torch.Tensor,
+        train_targets: torch.Tensor,
+        likelihood: gpytorch.likelihoods.MultitaskGaussianLikelihood,
+        kernel: type[gpytorch.kernels.Kernel],
+    ):
         super().__init__(train_inputs, train_targets, likelihood)
 
         input_dim = train_inputs.shape[-1]
@@ -140,13 +156,13 @@ class BatchIndependentExactGPModel(gpytorch.models.ExactGP):
         self.mean_module.requires_grad_(True)
         self.covar_module.requires_grad_(True)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> gpytorch.distributions.MultitaskMultivariateNormal:
         """
-        Computes the mean and covariance.
+        Computes the marginalized joint distribution over the given input points.
 
         :param x: Input data.
         :type x: torch.Tensor
-        :return: MultitaskMultivariateNormal distribution with mean and covariance.
+        :return: An instance of MultitaskMultivariateNormal distribution.
         :rtype: gpytorch.distributions.MultitaskMultivariateNormal
         """
         mean_x = self.mean_module(x)
@@ -158,35 +174,24 @@ class BatchIndependentExactGPModel(gpytorch.models.ExactGP):
 
 class GPyTorchMultioutputExactModel(GPyTorchModel, ABC):
     """
-    Multioutput GP model with exact inference, assuming known noise variance.
+    Multioutput GP model with exact inference, assuming known noise variance/covariance.
 
     :param input_dim: Dimensionality of the input data.
     :type input_dim: int
     :param output_dim: Dimensionality of the output data.
     :type output_dim: int
     :param noise_var: Noise variance for Gaussian likelihood.
-    :type noise_var: float
+    :type noise_var: Union[float, ArrayLike]
     :param model_kind: Type of Exact GP model to be used.
-    :type model_kind: gpytorch.models.ExactGP
-
-    Methods
-    -------
-    add_sample(X_t, Y_t)
-        Adds a new sample to the training data.
-    clear_data()
-        Clears stored training data.
-    update()
-        Updates the GP model with the current training data.
-    train()
-        Trains the GP model using maximum likelihood estimation.
-    evaluate_kernel(X=None)
-        Evaluates the kernel for given data points.
-    get_lengthscale_and_var()
-        Returns the lengthscale and variance of the kernel.
+    :type model_kind: type[Union[BatchIndependentExactGPModel, MultitaskExactGPModel]]
     """
 
     def __init__(
-        self, input_dim, output_dim, noise_var, model_kind: gpytorch.models.ExactGP
+        self,
+        input_dim: int,
+        output_dim: int,
+        noise_var: Union[float, ArrayLike],
+        model_kind: type[Union[BatchIndependentExactGPModel, MultitaskExactGPModel]],
     ) -> None:
         super().__init__()
 
@@ -200,7 +205,7 @@ class GPyTorchMultioutputExactModel(GPyTorchModel, ABC):
         self.clear_data()
 
         # Set up likelihood
-        self.noise_var = torch.tensor(noise_var)
+        self.noise_var = self.to_tensor(noise_var)
         if self.noise_var.dim() > 1:
             self.likelihood = gpytorch.likelihoods.MultitaskGaussianLikelihood(
                 num_tasks=self.output_dim,
@@ -222,36 +227,37 @@ class GPyTorchMultioutputExactModel(GPyTorchModel, ABC):
         self.kernel_type = gpytorch.kernels.RBFKernel
         self.model = None
 
-    def add_sample(self, X_t, Y_t):
+    def add_sample(self, X_t: ArrayLike, Y_t: ArrayLike):
         """
-        Adds a new sample to the training data.
+        Add new samples to the training data.
 
         :param X_t: Input data sample.
-        :type X_t: torch.Tensor
+        :type X_t: ArrayLike
         :param Y_t: Target data sample.
-        :type Y_t: torch.Tensor
+        :type Y_t: ArrayLike
         """
+        if X_t.ndim != 2 or Y_t.ndim != 2:
+            raise ValueError(
+                "Model expects a 2D and 2D tensors for X_t and Y_t,"
+                f"but got {X_t.ndim} and {Y_t.ndim} instead."
+            )
+
         X_t = self.to_tensor(X_t[..., : self.input_dim])
         Y_t = self.to_tensor(Y_t)
-
-        assert X_t.ndim == 2 and Y_t.ndim == 2, (
-            "Model expects a 2D and 1D tensors for X_t and Y_t,"
-            f"but got {X_t.ndim} and {Y_t.ndim} instead."
-        )
 
         self.train_inputs = torch.cat([self.train_inputs, X_t], 0)
         self.train_targets = torch.cat([self.train_targets, Y_t], 0)
 
     def clear_data(self):
         """
-        Clears stored training data.
+        Clear stored training data.
         """
         self.train_inputs = torch.empty((0, self.input_dim)).to(self.device)
         self.train_targets = torch.empty((0, self.output_dim)).to(self.device)
 
     def update(self):
         """
-        Updates the GP model with the current training data.
+        Create GP model or update it with the current training data.
         """
         if self.model is None:
             self.model = self.model_kind(
@@ -265,7 +271,7 @@ class GPyTorchMultioutputExactModel(GPyTorchModel, ABC):
 
     def train(self):
         """
-        Trains the GP model.
+        Train the hyperparameters of GP model.
         """
 
         self.model.train()
@@ -280,33 +286,39 @@ class GPyTorchMultioutputExactModel(GPyTorchModel, ABC):
         self.model.eval()
         self.likelihood.eval()
 
-    def evaluate_kernel(self, X=None):
+    def evaluate_kernel(self, X: ArrayLike = None):
         """
-        Evaluates the kernel for given data points.
+        Evaluate the kernel matrix for given data points.
 
-        :param X: Input data to evaluate. Defaults to training data if None.
-        :type X: torch.Tensor, optional
-        :return: Kernel matrix.
+        :param X: Input data to evaluate the kernel for. Defaults to training data if None.
+        :type X: ArrayLike
+        :return: Evaluated kernel matrix.
         :rtype: np.ndarray
         """
 
-        assert self.model is not None, "Kernel evaluated before model initialization."
+        if self.model is None:
+            raise AssertionError("Kernel evaluated before model initialization.")
 
         if X is None:
             X = self.train_inputs
-        Kn = self.model.covar_module(X, X).evaluate()
+        else:
+            X = self.to_tensor(X)
+
+        Kn = self.model.covar_module(X, X).to_dense()
         Kn = Kn.numpy(force=True)
 
         return Kn
 
-    def get_lengthscale_and_var(self):
+    def get_lengthscale_and_var(self) -> tuple[np.ndarray, np.ndarray]:
         """
-        Returns the kernel lengthscale and variance.
+        Return the kernel lengthscales and variances.
 
         :return: Lengthscales and variances as arrays.
-        :rtype: tuple (np.ndarray, np.ndarray)
+        :rtype: tuple[np.ndarray, np.ndarray]
         """
-        assert self.model is not None, "Model not initialized."
+
+        if self.model is None:
+            raise AssertionError("Model not initialized.")
 
         cov_module = self.model.covar_module
         if isinstance(self.model, MultitaskExactGPModel):
@@ -328,20 +340,20 @@ class CorrelatedExactGPyTorchModel(GPyTorchMultioutputExactModel):
     :param output_dim: Dimensionality of the output data.
     :type output_dim: int
     :param noise_var: Noise variance for Gaussian likelihood.
-    :type noise_var: float
+    :type noise_var: Union[float, ArrayLike]
     """
 
-    def __init__(self, input_dim, output_dim, noise_var) -> None:
+    def __init__(self, input_dim: int, output_dim: int, noise_var: Union[float, ArrayLike]) -> None:
         super().__init__(input_dim, output_dim, noise_var, MultitaskExactGPModel)
 
-    def predict(self, test_X):
+    def predict(self, test_X: ArrayLike) -> tuple[np.ndarray, np.ndarray]:
         """
-        Makes predictions on test data.
+        Make predictions on test data.
 
         :param test_X: Test data.
-        :type test_X: torch.Tensor
-        :return: Predicted means and variances.
-        :rtype: tuple (np.ndarray, np.ndarray)
+        :type test_X: ArrayLike
+        :return: Predicted means and variances corresponding to each test point.
+        :rtype: tuple[np.ndarray, np.ndarray]
         """
         # Last column of X_t are sample space indices.
         test_X = self.to_tensor(test_X[:, : self.input_dim])
@@ -351,9 +363,9 @@ class CorrelatedExactGPyTorchModel(GPyTorchMultioutputExactModel):
         with torch.no_grad(), torch.autograd.set_detect_anomaly(True):
             res = self.model(test_X)
 
-            means = res.mean.squeeze().cpu().numpy()  # Squeeze the sample dimension
+            means = res.mean.squeeze().numpy(force=True)  # Squeeze the sample dimension
             variances = res.covariance_matrix
-            variances = variances.cpu().numpy()
+            variances = variances.numpy(force=True)
 
         return means, variances
 
@@ -367,20 +379,20 @@ class IndependentExactGPyTorchModel(GPyTorchMultioutputExactModel):
     :param output_dim: Dimensionality of the output data.
     :type output_dim: int
     :param noise_var: Noise variance for Gaussian likelihood.
-    :type noise_var: float
+    :type noise_var: Union[float, ArrayLike]
     """
 
-    def __init__(self, input_dim, output_dim, noise_var) -> None:
+    def __init__(self, input_dim: int, output_dim: int, noise_var: Union[float, ArrayLike]) -> None:
         super().__init__(input_dim, output_dim, noise_var, BatchIndependentExactGPModel)
 
-    def predict(self, test_X):
+    def predict(self, test_X: ArrayLike) -> tuple[np.ndarray, np.ndarray]:
         """
-        Makes predictions on test data.
+        Make predictions on test data.
 
         :param test_X: Test data.
-        :type test_X: torch.Tensor
-        :return: Predicted means and variances.
-        :rtype: tuple (np.ndarray, np.ndarray)
+        :type test_X: ArrayLike
+        :return: Predicted means and variances corresponding to each test point.
+        :rtype: tuple[np.ndarray, np.ndarray]
         """
         # Last column of X_t are sample space indices.
         test_X = self.to_tensor(test_X[..., : self.input_dim])
@@ -388,38 +400,39 @@ class IndependentExactGPyTorchModel(GPyTorchMultioutputExactModel):
         with torch.no_grad(), torch.autograd.set_detect_anomaly(True):
             res = self.model(test_X)
 
-            means = res.mean.squeeze().cpu().numpy()  # Squeeze the sample dimension
-            variances = (
-                torch.einsum("ij,ki->kij", torch.eye(self.output_dim), res.variance).cpu().numpy()
+            means = res.mean.squeeze().numpy(force=True)  # Squeeze the sample dimension
+            variances = torch.einsum("ij,ki->kij", torch.eye(self.output_dim), res.variance).numpy(
+                force=True
             )
 
         return means, variances
 
 
 def get_gpytorch_model_w_known_hyperparams(
-    model_class,
+    model_class: type[Union[CorrelatedExactGPyTorchModel, IndependentExactGPyTorchModel]],
     problem: Problem,
-    noise_var: float,
+    noise_var: Union[float, ArrayLike],
     initial_sample_cnt: int,
     X: Optional[np.ndarray] = None,
     Y: Optional[np.ndarray] = None,
 ) -> GPyTorchMultioutputExactModel:
     """
     Creates and returns a GPyTorch model after training and freezing model parameters.
-    If X and Y is not given, sobol samples are evaluated to generate a learning dataset.
+    If `X` and `Y` is not given, sobol samples are evaluated to generate a learning dataset. Also,
+    takes the initial samples to jump-start the GP.
 
     :param model_class: Class of the GP model to instantiate.
     :type model_class: type
     :param problem: Problem instance defining the optimization problem.
     :type problem: Problem
     :param noise_var: Noise variance for Gaussian likelihood.
-    :type noise_var: float
-    :param initial_sample_cnt: Number of initial samples to use for training.
+    :type noise_var: Union[float, ArrayLike]
+    :param initial_sample_cnt: Number of initial samples to jump-start the GP.
     :type initial_sample_cnt: int
-    :param X: Optional initial input data for training.
-    :type X: np.ndarray, optional
-    :param Y: Optional initial target data for training.
-    :type Y: np.ndarray, optional
+    :param X: Input data for training the hyperparameters and taking the initial samples.
+    :type X: Optional[np.ndarray]
+    :param Y: Target data for training the hyperparameters and taking the initial samples.
+    :type Y: Optional[np.ndarray]
     :return: Trained GP model instance.
     :rtype: GPyTorchMultioutputExactModel
     """
@@ -452,7 +465,7 @@ def get_gpytorch_model_w_known_hyperparams(
 
 class SingleTaskGP(gpytorch.models.ExactGP):
     """
-    Single-task Gaussian Process (GP) model with exact inference.
+    Exact GP model for single-task problems.
 
     :param train_inputs: Training input data.
     :type train_inputs: torch.Tensor
@@ -461,10 +474,16 @@ class SingleTaskGP(gpytorch.models.ExactGP):
     :param likelihood: Gaussian likelihood module.
     :type likelihood: gpytorch.likelihoods.GaussianLikelihood
     :param kernel: Kernel function for the covariance module.
-    :type kernel: gpytorch.kernels.Kernel
+    :type kernel: type[gpytorch.kernels.Kernel]
     """
 
-    def __init__(self, train_inputs, train_targets, likelihood, kernel):
+    def __init__(
+        self,
+        train_inputs: torch.Tensor,
+        train_targets: torch.Tensor,
+        likelihood: gpytorch.likelihoods.GaussianLikelihood,
+        kernel: type[gpytorch.kernels.Kernel],
+    ):
         super().__init__(train_inputs, train_targets, likelihood)
 
         input_dim = train_inputs.shape[-1]
@@ -475,13 +494,13 @@ class SingleTaskGP(gpytorch.models.ExactGP):
         self.mean_module.requires_grad_(True)
         self.covar_module.requires_grad_(True)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> gpytorch.distributions.MultivariateNormal:
         """
-        Computes the forward pass for the single-task GP model.
+        Computes the marginalized joint distribution over the given input points.
 
         :param x: Input data.
         :type x: torch.Tensor
-        :return: MultivariateNormal distribution with computed mean and covariance.
+        :return: An instance of MultivariateNormal distribution.
         :rtype: gpytorch.distributions.MultivariateNormal
         """
         mean = self.mean_module(x)
@@ -491,13 +510,15 @@ class SingleTaskGP(gpytorch.models.ExactGP):
 
 class GPyTorchModelListExactModel(GPyTorchModel, ModelList):
     """
-    Multi-output GP model implemented as a list of independent single-task GP models.
+    Multi-output GP model implemented as a list of independent single-task GP models, allowing
+    decoupled updates.
 
     :param input_dim: Dimensionality of the input data.
     :type input_dim: int
     :param output_dim: Dimensionality of the output data.
     :type output_dim: int
-    :param noise_var: Noise variance for the Gaussian likelihood.
+    :param noise_var: Noise variance for the Gaussian likelihood, which is assumed to be the
+        same for each objective.
     :type noise_var: float
     """
 
@@ -513,7 +534,7 @@ class GPyTorchModelListExactModel(GPyTorchModel, ModelList):
         self.clear_data()
 
         # Set up likelihood
-        self.noise_var = torch.tensor(noise_var)
+        self.noise_var = self.to_tensor(noise_var)
         likelihood = gpytorch.likelihoods.GaussianLikelihood(
             noise_constraint=gpytorch.constraints.GreaterThan(1e-10),
         ).to(self.device)
@@ -524,38 +545,41 @@ class GPyTorchModelListExactModel(GPyTorchModel, ModelList):
         self.kernel_type = gpytorch.kernels.RBFKernel
         self.model = None
 
-    def _add_sample_single(self, X_t, Y_t, dim_index: int):
+    def _add_sample_single(self, X_t: ArrayLike, Y_t: ArrayLike, dim_index: int):
         """
-        Adds a new sample to the training data for specified output dimension(s).
+        Add new samples to the training data for specified output dimension.
 
         :param X_t: Input sample data.
-        :type X_t: torch.Tensor
+        :type X_t: ArrayLike
         :param Y_t: Target sample data.
-        :type Y_t: torch.Tensor
-        :param dim_index: Index or indices of output dimensions to update.
-        :type dim_index: int or list of int
+        :type Y_t: ArrayLike
+        :param dim_index: Index of output objective to update.
+        :type dim_index: int
         """
         self.train_inputs[dim_index] = torch.cat([self.train_inputs[dim_index], X_t], 0)
         self.train_targets[dim_index] = torch.cat([self.train_targets[dim_index], Y_t], 0)
 
-    def add_sample(self, X_t, Y_t, dim_index: Union[int, List[int]]):
+    def add_sample(self, X_t: ArrayLike, Y_t: ArrayLike, dim_index: Union[int, List[int]]):
         """
-        Adds a new sample to the training data for specified output dimension(s).
+        Add new samples to the training data for specified output dimension(s).
 
         :param X_t: Input sample data.
-        :type X_t: torch.Tensor
+        :type X_t: ArrayLike
         :param Y_t: Target sample data.
-        :type Y_t: torch.Tensor
-        :param dim_index: Index or indices of output dimensions to update.
-        :type dim_index: int or list of int
+        :type Y_t: ArrayLike
+        :param dim_index: Index or indices of output dimensions to update. If an integer is
+            provided, the sample is added to the corresponding model. If a list of
+            integers is provided, the samples are added to the corresponding models.
+        :type dim_index: Union[int, List[int]]
         """
         X_t = self.to_tensor(X_t[..., : self.input_dim])
         Y_t = self.to_tensor(Y_t)
 
-        assert X_t.ndim == 2 and Y_t.ndim == 1, (
-            "Model expects a 2D and 1D tensors for X_t and Y_t,"
-            f"but got {X_t.ndim} and {Y_t.ndim} instead."
-        )
+        if X_t.ndim != 2 or Y_t.ndim != 1:
+            raise ValueError(
+                "Model expects a 2D and 1D tensors for X_t and Y_t,"
+                f"but got {X_t.ndim} and {Y_t.ndim} instead."
+            )
 
         # All samples belongs to same model
         if isinstance(dim_index, int):
@@ -563,7 +587,8 @@ class GPyTorchModelListExactModel(GPyTorchModel, ModelList):
             return
 
         # Each sample is for corresponding model
-        assert len(dim_index) == len(X_t), "dim_index should be the same length as data"
+        if len(dim_index) != len(X_t):
+            raise ValueError("dim_index should be the same length as data")
 
         dim_index = torch.tensor(dim_index, dtype=torch.int32)
         unique_dims = torch.unique(dim_index)
@@ -575,7 +600,7 @@ class GPyTorchModelListExactModel(GPyTorchModel, ModelList):
 
     def clear_data(self):
         """
-        Clears all stored training data.
+        Clear stored training data.
         """
         self.train_inputs = [
             torch.empty((0, self.input_dim)).to(self.device) for _ in range(self.output_dim)
@@ -584,8 +609,7 @@ class GPyTorchModelListExactModel(GPyTorchModel, ModelList):
 
     def update(self):
         """
-        Updates the model with the current training data.
-        Initializes the model if not already set.
+        Create GP model or update it with the current training data.
         """
         if self.model is None:
             models = [
@@ -612,7 +636,7 @@ class GPyTorchModelListExactModel(GPyTorchModel, ModelList):
 
     def train(self):
         """
-        Trains the model.
+        Train the hyperparameters of GP model.
         """
 
         self.model.train()
@@ -627,31 +651,30 @@ class GPyTorchModelListExactModel(GPyTorchModel, ModelList):
         self.model.eval()
         self.likelihood.eval()
 
-    def evaluate_kernel(self, X):
+    def evaluate_kernel(self, X: ArrayLike):
         """
-        Evaluates the covariance kernel for the input data across all output dimensions.
+        Evaluate the kernels for the input data across all output dimensions and combine.
 
-        :param X: M x dim input data points for kernel evaluation.
-        :type X: torch.Tensor
-        :return: Covariance matrix of shape NM x NM, where N is the number of models,
-            _i.e._, output dimension.
+        :param X: Input data to evaluate the kernel for.
+        :type X: ArrayLike
+        :return: Covariance matrix of shape (num_objective*num_data) x (num_objective*num_data).
         :rtype: np.ndarray
         """
         N = len(self.model.models)
         M = len(X)
 
-        Kn_i = torch.stack([model.covar_module(X, X).evaluate() for model in self.model.models])
+        Kn_i = torch.stack([model.covar_module(X, X).to_dense() for model in self.model.models])
         Kn = Kn_i.unsqueeze(2).expand(-1, -1, N, -1).reshape(N * M, N * M)
         Kn = Kn.numpy(force=True)
 
         return Kn
 
-    def get_lengthscale_and_var(self):
+    def get_lengthscale_and_var(self) -> tuple[np.ndarray, np.ndarray]:
         """
-        Retrieves the kernel lengthscale and variance for each model (output dimension).
+        Return the kernel lengthscales and variances for each model (objective).
 
-        :return: Lengthscales and variances for each output dimension.
-        :rtype: tuple (np.ndarray, np.ndarray)
+        :return: Lengthscales and variances for each objective.
+        :rtype: tuple[np.ndarray, np.ndarray]
         """
         lengthscales = np.zeros(self.input_dim)
         variances = np.zeros(self.input_dim)
@@ -665,14 +688,14 @@ class GPyTorchModelListExactModel(GPyTorchModel, ModelList):
 
         return lengthscales, variances
 
-    def predict(self, test_X):
+    def predict(self, test_X: ArrayLike) -> tuple[np.ndarray, np.ndarray]:
         """
-        Makes predictions on test data across all output dimensions.
+        Make predictions on test data.
 
-        :param test_X: Test data input.
-        :type test_X: torch.Tensor
-        :return: Predicted means and variances for each output dimension.
-        :rtype: tuple (np.ndarray, np.ndarray)
+        :param test_X: Test data.
+        :type test_X: ArrayLike
+        :return: Predicted means and variances corresponding to each test point.
+        :rtype: tuple[np.ndarray, np.ndarray]
         """
         test_X = self.to_tensor(test_X)
 
@@ -692,15 +715,16 @@ class GPyTorchModelListExactModel(GPyTorchModel, ModelList):
 
         return means, variances
 
-    def sample_from_posterior(self, test_X, sample_count=1):
+    def sample_from_posterior(self, test_X: ArrayLike, sample_count: int = 1):
         """
-        Samples from the posterior distribution of all output dimensions.
+        Sample from the posterior distribution, considering all objectives.
 
-        :param test_X: Test data input.
-        :type test_X: torch.Tensor
+        :param test_X: Test data.
+        :type test_X: ArrayLike
         :param sample_count: Number of samples to draw.
         :type sample_count: int
-        :return: Samples from the posterior distribution.
+        :return: Samples from the posterior distribution
+            with shape `sample_count` x num_test_data x num_objective.
         :rtype: np.ndarray
         """
         test_X = self.to_tensor(test_X)
@@ -719,17 +743,18 @@ class GPyTorchModelListExactModel(GPyTorchModel, ModelList):
 
         return samples
 
-    def sample_from_single_posterior(self, test_X, dim_index: int, sample_count=1):
+    def sample_from_single_posterior(self, test_X: ArrayLike, dim_index: int, sample_count=1):
         """
-        Samples from the posterior distribution of a single output dimension.
+        Sample from the posterior distribution, considering only one objective.
 
-        :param test_X: Test data input.
-        :type test_X: torch.Tensor
-        :param dim_index: Index of the output dimension.
+        :param test_X: Test data.
+        :type test_X: ArrayLike
+        :param dim_index: Index of the objective to take posterior samples from.
         :type dim_index: int
         :param sample_count: Number of samples to draw.
         :type sample_count: int
-        :return: Samples from the posterior distribution of the specified dimension.
+        :return: Samples from the posterior distribution of the specified objective,
+            with shape `sample_count` x num_test_data.
         :rtype: np.ndarray
         """
         test_X = self.to_tensor(test_X)
@@ -750,20 +775,21 @@ def get_gpytorch_modellist_w_known_hyperparams(
     Y: Optional[np.ndarray] = None,
 ) -> GPyTorchModelListExactModel:
     """
-    Creates and returns a GPyTorch model list after training and freezing model parameters.
-    If `X` and `Y` is not given, sobol samples are evaluated to generate a learning dataset.
+    Creates and returns a GPyTorch model after training and freezing model parameters.
+    If X and Y is not given, sobol samples are evaluated to generate a learning dataset. Also,
+    takes the initial samples to jump-start the GP.
 
     :param problem: An instance of the optimization problem.
     :type problem: Problem
     :param noise_var: Noise variance for Gaussian likelihood.
     :type noise_var: float
-    :param initial_sample_cnt: Number of samples to initially use for training.
+    :param initial_sample_cnt: Number of initial samples to jump-start the GP.
     :type initial_sample_cnt: int
-    :param X: Initial input data for training, if available.
-    :type X: np.ndarray, optional
-    :param Y: Initial target data for training, if available.
-    :type Y: np.ndarray, optional
-    :return: Trained multi-output GP model list.
+    :param X: Input data for training the hyperparameters and taking the initial samples.
+    :type X: Optional[np.ndarray]
+    :param Y: Target data for training the hyperparameters and taking the initial samples.
+    :type Y: Optional[np.ndarray]
+    :return: Trained multi-output GP model list instance.
     :rtype: GPyTorchModelListExactModel
     """
     if X is None:
