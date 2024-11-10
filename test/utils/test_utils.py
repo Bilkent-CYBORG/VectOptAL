@@ -4,6 +4,7 @@ import torch
 import numpy as np
 
 from vectoptal.datasets import get_dataset_instance
+from vectoptal.utils.seed import SEED
 from vectoptal.utils import (
     set_seed,
     get_2d_w,
@@ -152,6 +153,17 @@ class TestGenerateSobolSamples(TestCase):
         self.assertTrue(np.all(samples >= 0))
         self.assertTrue(np.all(samples < 1))
         self.assertEqual(len(np.unique(samples, axis=0)), n)
+
+    def test_generate_sobol_samples_randomness(self):
+        """Test the randomness of generate_sobol_samples function."""
+        dim = 2
+        n = 16
+        set_seed(SEED)
+        samples_fst = generate_sobol_samples(dim, n)
+        set_seed(SEED)
+        samples_scd = generate_sobol_samples(dim, n)
+
+        np.testing.assert_allclose(samples_fst, samples_scd)
 
 
 class TestGetSmallmij(TestCase):

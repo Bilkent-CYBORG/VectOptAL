@@ -32,12 +32,12 @@ class PaVeBaGP(PALAlgorithm):
     :param noise_var: Variance of the Gaussian sampling noise.
     :type noise_var: float
     :param conf_contraction: Contraction coefficient to shrink the
-        confidence regions empirically.
+        confidence regions empirically. Defaults to 32.
     :type conf_contraction: float
     :param type: Specifies if the algorithm uses dependent ellipsoidal or
-        independent hyperrectangular confidence regions.
+        independent hyperrectangular confidence regions. Defaults to "IH".
     :type type: Literal["IH", "DE"]
-    :param batch_size: Number of samples to be taken in each round.
+    :param batch_size: Number of samples to be taken in each round. Defaults to 1.
     :type batch_size: int
 
     The algorithm sequentially samples design rewards with a multivariate
@@ -76,7 +76,7 @@ class PaVeBaGP(PALAlgorithm):
         dataset_name: str,
         order: Order,
         noise_var: float,
-        conf_contraction: int = 32,
+        conf_contraction: float = 32,
         type: Literal["IH", "DE"] = "IH",
         batch_size: int = 1,
     ) -> None:
@@ -199,7 +199,7 @@ class PaVeBaGP(PALAlgorithm):
     def evaluating(self):
         """
         Observe the self.batch_size number of designs from active designs, selecting by
-        largest sum of variances.
+        largest sum of variances and update the model.
         """
         A = self.S.union(self.U)
         acq = SumVarianceAcquisition(self.model)

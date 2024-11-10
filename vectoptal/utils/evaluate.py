@@ -88,9 +88,9 @@ def calculate_hypervolume_discrepancy_for_model(
     hypervolume_true = hypervolume_instance.compute(torch.tensor(f_W[true_pareto_indices]))
     hypervolume_pred = hypervolume_instance.compute(torch.tensor(f_W[pred_pareto_indices]))
 
-    assert (
-        hypervolume_true - hypervolume_pred > 1e-4
-    ), "Hypervolumes are the same."  # TODO: magic number
+    if hypervolume_true - hypervolume_pred <= 1e-4:  # TODO: magic number
+        raise AssertionError("Hypervolumes are the same.")
+
     log_hv_disc = np.log(hypervolume_true - hypervolume_pred)
 
     return log_hv_disc

@@ -1,4 +1,3 @@
-import copy
 import logging
 
 import numpy as np
@@ -18,15 +17,60 @@ from vectoptal.confidence_region import (
 
 
 class VOGP_AD(PALAlgorithm):
+    """
+    Implement the Vector Optimization with Gaussian Process (VOGP) algorithm for continuous
+    domains using adaptive discretization.
+
+    :param epsilon: Accuracy parameter for the PAC algorithm.
+    :type epsilon: float
+    :param delta: Confidence parameter for the PAC algorithm.
+    :type delta: float
+    :param problem: Problem instance to be optimized.
+    :type problem: ContinuousProblem
+    :param order: An instance of the Order class for managing comparisons.
+    :type order: Order
+    :param noise_var: Variance of the Gaussian sampling noise.
+    :type noise_var: float
+    :param conf_contraction: Contraction coefficient to shrink the
+        confidence regions empirically. Defaults to 32.
+    :type conf_contraction: float
+    :param batch_size: Number of samples to be taken in each round. Defaults to 1.
+    :type batch_size: int
+
+    The algorithm sequentially samples design rewards with a multivariate
+    white Gaussian noise whose diagonal entries are specified by the user.
+    It uses Gaussian Process regression to model the rewards and confidence
+    regions of the continuous function defined with problem.
+
+    Example Usage:
+        >>> from vectoptal.algorithms import VOGP_AD
+        >>> from vectoptal.order import ComponentwiseOrder
+        >>> from vectoptal.maximization_problem import get_continuous_problem
+        >>>
+        >>> epsilon, delta, noise_var = 0.1, 0.05, 0.01
+        >>> problem = get_continuous_problem("BraninCurrin")
+        >>> order_right = ComponentwiseOrder(2)
+        >>>
+        >>> algorithm = VOGP_AD(epsilon, delta, problem, order_right, noise_var)
+        >>>
+        >>> while True:
+        >>>     is_done = algorithm.run_one_step()
+        >>>
+        >>>     if is_done:
+        >>>          break
+        >>>
+        >>> predictive_model = algorithm.model
+    """
+
     def __init__(
         self,
-        epsilon,
-        delta,
+        epsilon: float,
+        delta: float,
         problem: ContinuousProblem,
         order: Order,
-        noise_var,
-        conf_contraction=32,
-        batch_size=1,
+        noise_var: float,
+        conf_contraction: float = 32,
+        batch_size: int = 1,
     ) -> None:
         super().__init__(epsilon, delta)
 
@@ -34,11 +78,15 @@ class VOGP_AD(PALAlgorithm):
         self.conf_contraction = conf_contraction
 
         self.batch_size = batch_size
-        assert (
-            self.batch_size == 1
-        ), "Only batch size of 1 is supported with adaptive discretization."
+        if self.batch_size != 1:
+            raise AssertionError(
+                "Currently, only batch size of 1 is supported"
+                " with VOGP that uses adaptive discretization."
+            )
 
-        assert hasattr(problem, "depth_max"), "Problem does not have a max depth defined."
+        if not hasattr(problem, "depth_max"):
+            raise AssertionError("Problem does not have a max depth defined.")
+
         self.max_discretization_depth = problem.depth_max
 
         self.m = problem.out_dim
@@ -66,11 +114,18 @@ class VOGP_AD(PALAlgorithm):
         self.enable_epsilon_covering = False
 
     def modeling(self):
+        """
+        Updates confidence regions for all currently active design nodes.
+        """
         # Active nodes, union of sets s_t and p_t at the beginning of round t
         W = self.S.union(self.P)
         self.design_space.update(self.model, self.beta, list(W))
 
     def discarding(self):
+        """
+        Discards design nodes that are highly likely to be dominated based on
+        current confidence regions.
+        """
         pessimistic_set = self.compute_pessimistic_set()
         difference = self.S.difference(pessimistic_set)
 
@@ -88,6 +143,11 @@ class VOGP_AD(PALAlgorithm):
             self.S.remove(pt)
 
     def epsiloncovering(self):
+        """
+        Identify and remove design nodes from `S` that are not covered by the confidence region of
+        other design nodes, adding them to `P` as Pareto-optimal. This stage is only enabled after
+        all design nodes in `S` have reached the maximum discretization depth.
+        """
         if not self.enable_epsilon_covering:
             for design_i in self.S:
                 if self.design_space.point_depths[design_i] != self.max_discretization_depth:
@@ -97,7 +157,7 @@ class VOGP_AD(PALAlgorithm):
 
         W = self.S.union(self.P)
 
-        is_index_pareto = []
+        new_pareto_pts = []
         for pt in self.S:
             pt_conf = self.design_space.confidence_regions[pt]
             for pt_prime in W:
@@ -107,18 +167,20 @@ class VOGP_AD(PALAlgorithm):
                 pt_p_conf = self.design_space.confidence_regions[pt_prime]
 
                 if confidence_region_is_covered(self.order, pt_conf, pt_p_conf, self.u_star_eps):
-                    is_index_pareto.append(False)
                     break
             else:
-                is_index_pareto.append(True)
+                new_pareto_pts.append(pt)
 
-        tmp_S = copy.deepcopy(self.S)
-        for is_pareto, pt in zip(is_index_pareto, tmp_S):
-            if is_pareto:
-                self.S.remove(pt)
-                self.P.add(pt)
+        for pt in new_pareto_pts:
+            self.S.remove(pt)
+            self.P.add(pt)
+        logging.debug(f"Pareto: {str(self.P)}")
 
     def evaluate_refine(self):
+        """
+        Selects a design node for based on maximum diagonals and either updates the model with new
+        observations or refines the design node.
+        """
         W = self.S.union(self.P)
         acq = MaxDiagonalAcquisition(self.design_space)
         active_pts = self.design_space.points[list(W)]
@@ -143,6 +205,12 @@ class VOGP_AD(PALAlgorithm):
             self.model.update()
 
     def run_one_step(self) -> bool:
+        """
+        Run one step of the algorithm and return algorithm status.
+
+        :return: True if the algorithm is over, *i.e.*, `S` is empty, False otherwise.
+        :rtype: bool
+        """
         if len(self.S) == 0:
             return True
 
@@ -175,6 +243,12 @@ class VOGP_AD(PALAlgorithm):
         return len(self.S) == 0
 
     def compute_beta(self):
+        """
+        Compute the confidence scaling parameter `beta` for Gaussian Process modeling.
+
+        :return: A vector representing `beta` for each dimension of the output space.
+        :rtype: np.ndarray
+        """
         Kn = self.model.evaluate_kernel()
         rkhs_bound = 0.1
         beta_sqr = rkhs_bound + np.sqrt(
@@ -184,44 +258,20 @@ class VOGP_AD(PALAlgorithm):
         )
 
         beta_sqr = beta_sqr**2  # Instead of dividing with sqrt of conf_contraction.
-        return np.sqrt(beta_sqr / self.conf_contraction) * np.ones(
-            self.m,
-        )
+        return np.sqrt(beta_sqr / self.conf_contraction)
 
     def compute_u_star(self):
         """
-        Given a matrix W that corresponds to a polyhedral ordering cone, this function
-        computes the ordering difficulty of the cone and u^* direction of the cone.
+        Computes the normalized direction vector `u_star` and the ordering difficulty `d1` of
+        a polyhedral ordering cone defined in the order self.order.ordering_cone.
 
-        The function solves an optimization problem where the objective is to minimize the
-        Euclidean norm of `z`, subject to the constraint that W @ z >= 1 for each row
-        of W.
-
-        Parameters
-        ----------
-        W : numpy.ndarray
-            A numpy array representing the matrix that defines the half-spaces of the
-            polyhedral cone. Each row of W corresponds to a linear constraint on `z`.
-
-        Returns
-        -------
-        u_star of cone : numpy.ndarray
-            The normalized optimized vector `z`.
-        d(1) of cone : float
-            The Euclidean norm of the optimized `z`.
-
-        Notes
-        -----
-        The optimization problem is solved using the Sequential Least SQuares Programming (SLSQP)
-        method provided by scipy.optimize.minimize. The initial guess is a vector of ones, and
-        the optimization runs with a very high maximum iteration limit and tight function tolerance
-        to ensure convergence.
-
-        Examples
-        --------
-        >>> W = W = np.sqrt(21)*np.array([[1, -2, 4], [4, 1, -2], [-2, 4, 1]])
-        >>> u_star_optimized,d_1 = compute_ustar_scipy(W)
+        :return: A tuple containing `u_star`, the normalized direction vector of the cone, and
+        `d1`, the Euclidean norm of the vector that gives `u_star` when normalized, *i.e.*, `z`.
+        :rtype: Tuple[np.ndarray, float]
         """
+
+        # TODO: Convert to CVXPY and check if efficient.
+
         cone_matrix = self.order.ordering_cone.W
 
         n = cone_matrix.shape[0]
@@ -256,7 +306,9 @@ class VOGP_AD(PALAlgorithm):
     def compute_pessimistic_set(self) -> set:
         """
         The pessimistic Pareto set of the set S+P of designs.
+
         :return: Set of pessimistic Pareto indices.
+        :rtype: set
         """
         W = self.S.union(self.P)
 

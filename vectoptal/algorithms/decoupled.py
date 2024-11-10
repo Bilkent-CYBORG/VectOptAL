@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 import numpy as np
 
@@ -28,8 +27,8 @@ class DecoupledGP(Algorithm):
     :param cost_budget: Cost budget for the algorithm.
     :type cost_budget: float
     :param costs: Cost associated with sampling each objective.
-    :type costs: Optional[list]
-    :param batch_size: Number of samples to be taken in each round.
+    :type costs: list
+    :param batch_size: Number of samples to be taken in each round. Defaults to 1.
     :type batch_size: int
 
     The algorithm sequentially samples design rewards with a multivariate
@@ -65,7 +64,7 @@ class DecoupledGP(Algorithm):
         order: Order,
         noise_var: float,
         cost_budget: float,
-        costs: Optional[list],
+        costs: list,
         batch_size: int = 1,
     ) -> None:
         super().__init__()
@@ -103,7 +102,7 @@ class DecoupledGP(Algorithm):
     def evaluating(self):
         """
         Observe the self.batch_size number of designs from active designs, selecting by
-        the `ThompsonEntropyDecoupledAcquisition` acquisition method.
+        the `ThompsonEntropyDecoupledAcquisition` acquisition method and update the model.
         """
         acq = ThompsonEntropyDecoupledAcquisition(self.model, order=self.order, costs=self.costs)
         candidate_list, acq_values, eval_indices = optimize_decoupled_acqf_discrete(

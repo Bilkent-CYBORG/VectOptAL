@@ -28,14 +28,16 @@ class PaVeBaPartialGP(PALAlgorithm):
     :param noise_var: Variance of the Gaussian sampling noise.
     :type noise_var: float
     :param conf_contraction: Contraction coefficient to shrink the confidence
-        regions empirically.
+        regions empirically. Defaults to 32.
     :type conf_contraction: float
-    :param costs: Cost associated with sampling each objective.
+    :param costs: Cost associated with sampling each objective. Defaults to None.
     :type costs: Optional[list]
+    :param cost_budget: Cost budget for the algorithm. Defaults to None.
+    :type cost_budget: Optional[float]
     :param confidence_type: Specifies if the algorithm uses ellipsoidal or
-        hyperrectangular confidence regions.
+        hyperrectangular confidence regions. Defaults to "hyperrectangle".
     :type confidence_type: Literal["hyperrectangle", "hyperellipsoid"]
-    :param batch_size: Number of samples to be taken in each round.
+    :param batch_size: Number of samples to be taken in each round. Defaults to 1.
     :type batch_size: int
 
     The algorithm sequentially samples design rewards with a multivariate
@@ -72,7 +74,7 @@ class PaVeBaPartialGP(PALAlgorithm):
         dataset_name: str,
         order: Order,
         noise_var: float,
-        conf_contraction: int = 32,
+        conf_contraction: float = 32,
         costs: Optional[list] = None,
         cost_budget: Optional[float] = None,
         confidence_type: Literal["hyperrectangle", "hyperellipsoid"] = "hyperrectangle",
@@ -189,7 +191,7 @@ class PaVeBaPartialGP(PALAlgorithm):
     def evaluating(self):
         """
         Observe the self.batch_size number of designs from active designs, selecting by
-        largest variance across designs and objectives.
+        largest variance across designs and objectives and update the model.
         """
         A = self.S.union(self.U)
         acq = MaxVarianceDecoupledAcquisition(self.model, costs=self.costs)
