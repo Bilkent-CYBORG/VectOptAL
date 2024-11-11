@@ -4,8 +4,8 @@ import numpy as np
 
 from vectoptal.utils import set_seed
 from vectoptal.utils.seed import SEED
-from vectoptal.algorithms.vogp import VOGP
-from vectoptal.order import ConeTheta2DOrder
+from vectoptal.algorithms import VOGP
+from vectoptal.order import ComponentwiseOrder
 from vectoptal.datasets import get_dataset_instance
 from vectoptal.design_space import FixedPointsDesignSpace
 from vectoptal.utils.evaluate import calculate_epsilonF1_score
@@ -26,11 +26,12 @@ class TestVOGP(unittest.TestCase):
         # Parameters for VOGP instance
         self.epsilon = 0.1
         self.delta = 0.1
-        self.noise_var = self.epsilon
+        self.noise_var = 0.00001
+        self.conf_contraction = 4
         self.dataset_name = "Test"
-        self.order = ConeTheta2DOrder(cone_degree=90)
+        self.order = ComponentwiseOrder(2)
+
         self.iter_count = 10
-        self.conf_contraction = 64
 
         # Create the VOGP instance
         self.algorithm = VOGP(
@@ -159,4 +160,4 @@ class TestVOGP(unittest.TestCase):
         )
 
         # Check the epsilon-F1 score
-        self.assertGreaterEqual(eps_f1, 0.8, "eps-F1 score should be reasonably high.")
+        self.assertGreaterEqual(eps_f1, 0.9, "eps-F1 score should be reasonably high.")

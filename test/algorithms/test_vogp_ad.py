@@ -1,9 +1,11 @@
 import unittest
+
 import numpy as np
-from vectoptal.utils.seed import SEED
-from vectoptal.order import ConeTheta2DOrder
-from vectoptal.algorithms.vogp_ad import VOGP_AD
+
 from vectoptal.utils import set_seed
+from vectoptal.utils.seed import SEED
+from vectoptal.algorithms import VOGP_AD
+from vectoptal.order import ComponentwiseOrder
 from vectoptal.maximization_problem import ContinuousProblem, get_continuous_problem
 from vectoptal.utils.evaluate import calculate_hypervolume_discrepancy_for_model
 
@@ -21,13 +23,13 @@ class TestVOGP_AD(unittest.TestCase):
         # Parameters for VOGP instance
         self.epsilon = 0.1
         self.delta = 0.1
-        self.noise_var = self.epsilon
+        self.noise_var = 0.00001
         self.problem_name = "BraninCurrin"
         self.problem: ContinuousProblem = get_continuous_problem(self.problem_name, self.noise_var)
-        self.order = ConeTheta2DOrder(cone_degree=90)
+        self.order = ComponentwiseOrder(2)
+        self.conf_contraction = 64
+
         self.iter_count = 1
-        self.conf_contraction = 32
-        self.hv_values = []
 
         # Create the VOGP instance
         self.algorithm = VOGP_AD(
@@ -60,7 +62,7 @@ class TestVOGP_AD(unittest.TestCase):
             or (len(self.algorithm.S) > initial_S_size)
         )
 
-    def test_vogp_ad_run(self):
+    def test_whole_class(self):
         """
         This test performs a full run of the VOGP_AD algorithm and calculates the log. hypervolume
         discrepancy from the resulting predictive model.
