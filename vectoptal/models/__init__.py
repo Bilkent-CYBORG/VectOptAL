@@ -1,4 +1,4 @@
-from vectoptal.models.model import Model, GPModel, ModelList
+from vectoptal.models.model import Model, GPModel, ModelList, UncertaintyPredictiveModel
 from vectoptal.models.gpytorch import (
     GPyTorchModel,
     MultitaskExactGPModel,
@@ -17,6 +17,7 @@ __all__ = [
     "Model",
     "GPModel",
     "ModelList",
+    "UncertaintyPredictiveModel",
     "SingleTaskGP",
     "GPyTorchModel",
     "MultitaskExactGPModel",

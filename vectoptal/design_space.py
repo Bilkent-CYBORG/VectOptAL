@@ -104,7 +104,7 @@ class FixedPointsDesignSpace(DiscreteDesignSpace):
         elif confidence_type == "hyperellipsoid":
             confidence_cls = EllipsoidalConfidenceRegion
         else:
-            raise NotImplementedError
+            raise NotImplementedError(f"Unsupported confidence type {confidence_type}.")
 
         self.points = points
         self.confidence_regions = []
@@ -138,7 +138,7 @@ class FixedPointsDesignSpace(DiscreteDesignSpace):
         if scale.ndim < 2:
             scale = np.repeat(np.atleast_1d(scale)[None, :], len(indices_to_update), axis=0)
         elif scale.ndim != 2 or len(scale) != len(indices_to_update):
-            raise AssertionError("Invalid scale shape.")
+            raise ValueError("Invalid scale shape.")
 
         mus, covs = model.predict(self.points[indices_to_update])
         for pt_i, mu, cov, s in zip(indices_to_update, mus, covs, scale):
@@ -226,7 +226,7 @@ class AdaptivelyDiscretizedDesignSpace(DiscreteDesignSpace):
         if scale.ndim < 2:
             scale = np.repeat(np.atleast_1d(scale)[None, :], len(indices_to_update), axis=0)
         elif scale.ndim != 2 or len(scale) != len(indices_to_update):
-            raise AssertionError("Invalid scale shape.")
+            raise ValueError("Invalid scale shape.")
 
         mus, covs = model.predict(self.points[indices_to_update])
         for pt_i, mu, cov, s in zip(indices_to_update, mus, covs, scale):
@@ -315,10 +315,10 @@ class AdaptivelyDiscretizedDesignSpace(DiscreteDesignSpace):
         :return: True if the design should be refined, False otherwise.
         :rtype: bool
         """
-        vh = self.calculate_design_vh(model, design_index)
         if self.point_depths[design_index] >= self.max_depth:
             return False
 
+        vh = self.calculate_design_vh(model, design_index)
         mu, cov = model.predict(self.points[[design_index]])
         std = np.sqrt(np.diag(cov.squeeze()))
 

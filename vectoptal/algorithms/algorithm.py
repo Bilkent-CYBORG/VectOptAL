@@ -2,6 +2,10 @@ from abc import ABC, abstractmethod
 
 
 class Algorithm(ABC):
+    """
+    Abstract base class for all algorithms.
+    """
+
     def __init__(self) -> None:
         super().__init__()
 

@@ -14,6 +14,9 @@ vectoptal.models
 .. autoclass:: ModelList
     :members:
 
+.. autoclass:: UncertaintyPredictiveModel
+    :members:
+
 .. autoclass:: GPModel
     :members:
 

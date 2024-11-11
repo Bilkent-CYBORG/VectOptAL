@@ -2,10 +2,10 @@ from typing import Iterable
 
 import numpy as np
 
-from vectoptal.models import Model
+from vectoptal.models import UncertaintyPredictiveModel
 
 
-class EmpiricalMeanVarModel(Model):
+class EmpiricalMeanVarModel(UncertaintyPredictiveModel):
     """
     Implements a model that tracks empirical means and variances for each design.
 

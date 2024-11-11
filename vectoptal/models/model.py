@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+from numpy.typing import ArrayLike
+
 
 class Model(ABC):
     """
@@ -35,7 +37,21 @@ class ModelList(Model):
         super().__init__()
 
 
-class GPModel(Model):
+class UncertaintyPredictiveModel(Model):
+    """
+    Defines the abstract uncertainty predictive model class, which gives mean and variance
+    estimates as predictions.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    @abstractmethod
+    def predict(self, test_X: ArrayLike) -> tuple[ArrayLike, ArrayLike]:
+        pass
+
+
+class GPModel(UncertaintyPredictiveModel):
     """
     Defines the abstract Gaussian process model (GP) class.
     """
