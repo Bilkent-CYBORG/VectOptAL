@@ -3,21 +3,52 @@ from typing import Union, Optional
 from abc import ABC
 
 import numpy as np
+from matplotlib import pyplot as plt
 
 from vectoptal.utils.plotting import plot_pareto_front
 from vectoptal.ordering_cone import OrderingCone, ConeTheta2D
 
 
 class Order(ABC):
-    def __init__(self, ordering_cone: OrderingCone) -> None:
+    """
+    Base class for defining an ordering relation using a specified ordering cone.
+    Provides methods to determine dominance between points, compute the Pareto set,
+    and plot the Pareto front in 2D or 3D.
+
+    :param ordering_cone: An instance of :obj:`OrderingCone` that defines the ordering relation.
+    :type ordering_cone: OrderingCone
+    """
+
+    def __init__(self, ordering_cone: OrderingCone):
         self.ordering_cone = ordering_cone
 
     def dominates(self, a: np.ndarray, b: np.ndarray) -> bool:
-        """Does a dominate b?"""
+        """
+        Determines if point :obj:`a` dominates point :obj:`b` according to the ordering cone.
+
+        :param a: The point to check for dominance.
+        :type a: np.ndarray
+        :param b: The point to be dominated.
+        :type b: np.ndarray
+        :return: `True` if :obj:`a` dominates :obj:`b` according to the order; otherwise, `False`.
+        :rtype: bool
+        """
         return self.ordering_cone.is_inside(a - b)
 
-    def get_pareto_set(self, elements: np.ndarray):
-        assert elements.ndim == 2, "Elements array should be N-by-dim."
+    def get_pareto_set(self, elements: np.ndarray) -> np.ndarray:
+        """
+        Computes the Pareto set from a set of elements, retaining only non-dominated points.
+
+        :param elements: An array of shape (N, dim), where `N` is the number of elements
+            and `dim` is the dimension of the elements and the ordering cone.
+        :type elements: np.ndarray
+        :return: Indices of the elements that belong to the Pareto set.
+        :rtype: np.ndarray
+        :raises ValueError: If :obj:`elements` is not a 2D array.
+        """
+        if elements.ndim != 2:
+            raise ValueError("Elements array should be N-by-dim.")
+
         is_pareto = np.arange(len(elements))
 
         # Next index in the is_pareto array to search for
@@ -40,7 +71,21 @@ class Order(ABC):
 
         return is_pareto
 
-    def get_pareto_set_naive(self, elements: np.ndarray):
+    def get_pareto_set_naive(self, elements: np.ndarray) -> np.ndarray:
+        """
+        Computes the Pareto set using a naive method by iterating over each element
+        and checking if it is dominated by any other.
+
+        :param elements: An array of shape (N, dim), where `N` is the number of elements
+            and `dim` is the dimension of the elements and the ordering cone.
+        :type elements: np.ndarray
+        :return: Indices of the elements that belong to the Pareto set.
+        :rtype: np.ndarray
+        :raises ValueError: If :obj:`elements` is not a 2D array.
+        """
+        if elements.ndim != 2:
+            raise ValueError("Elements array should be N-by-dim.")
+
         pareto_indices = []
         for el_i, el in enumerate(elements):
             for other_el in elements:
@@ -52,11 +97,29 @@ class Order(ABC):
             else:
                 pareto_indices.append(el_i)
 
-        return pareto_indices
+        return np.array(pareto_indices, dtype=int)
 
-    def plot_pareto_set(self, elements: np.ndarray, path: Optional[Union[str, PathLike]] = None):
-        assert elements.ndim == 2, "Elements array should be N-by-dim."
-        assert elements.shape[1] in [2, 3], "Only 2D and 3D plots are supported."
+    def plot_pareto_set(
+        self, elements: np.ndarray, path: Optional[Union[str, PathLike]] = None
+    ) -> plt.Figure:
+        """
+        Plots the Pareto front of the provided elements if the dimension is 2D or 3D.
+
+        :param elements: An array of shape (N, dim), where `N` is the number of elements
+            and `dim` is the dimension of the elements and the ordering cone.
+        :type elements: np.ndarray
+        :param path: The file path where the plot will be saved. If not provided,
+            the plot will only be displayed. Default is `None`.
+        :type path: Optional[Union[str, PathLike]]
+        :return: The matplotlib figure containing the plot.
+        :rtype: plt.Figure
+        :raises ValueError: If :obj:`elements` is not a 2D array
+            or has a dimension other than 2 or 3.
+        """
+        if elements.ndim != 2:
+            raise ValueError("Elements array should be N-by-dim.")
+        if elements.shape[1] not in [2, 3]:
+            raise ValueError("Only 2D and 3D plots are supported.")
 
         fig = plot_pareto_front(elements, self.get_pareto_set(elements), path)
 
@@ -64,7 +127,16 @@ class Order(ABC):
 
 
 class ComponentwiseOrder(Order):
-    def __init__(self, dim: int) -> None:
+    """
+    Component-wise ordering class that defines an ordering relation where each
+    dimension is considered independently. Vector optimization with this order corresponds to the
+    multi-objective optimization.
+
+    :param dim: The dimension of the space in which the ordering relation is defined.
+    :type dim: int
+    """
+
+    def __init__(self, dim: int):
         W = np.eye(dim)
         ordering_cone = OrderingCone(W)
 
@@ -72,6 +144,14 @@ class ComponentwiseOrder(Order):
 
 
 class ConeTheta2DOrder(Order):
+    """
+    Defines an ordering relation in 2D using a cone with a specified opening angle. The ordering
+    cone is an instance of :class:`vectoptal.ordering_cone.ConeTheta2D`.
+
+    :param cone_degree: The opening angle of the cone in degrees.
+    :type cone_degree: float
+    """
+
     def __init__(self, cone_degree) -> None:
         self.cone_degree = cone_degree
         ordering_cone = ConeTheta2D(cone_degree)
@@ -80,10 +160,26 @@ class ConeTheta2DOrder(Order):
 
 
 class ConeOrder3D(Order):
-    def __init__(self, cone_type: str) -> None:
-        """
-        :param cone_type: one of ['acute', 'right', 'obtuse']
-        """
+    """
+    Defines a 3D ordering relation using a specified cone type. The class supports
+    three predefined cone types—'acute', 'right', and 'obtuse'—each with its
+    unique constraint matrix, as used in [Karagozlu2024]_.
+
+    :param cone_type: The type of cone to use for ordering. Must be one of
+        'acute', 'right', or 'obtuse'.
+    :type cone_type: str
+
+    :raises ValueError: If :obj:`cone_type` is not one of the allowed values.
+
+    References:
+        .. [Karagozlu2024]
+            Karagözlü, Yıldırım, Ararat, Tekin.
+            Learning the Pareto Set Under Incomplete Preferences: Pure Exploration in Vector
+            Bandits.
+            Artificial Intelligence and Statistics (AISTATS), 2024.
+    """
+
+    def __init__(self, cone_type: str):
         if cone_type == "acute":
             W = np.array(
                 [
@@ -106,19 +202,44 @@ class ConeOrder3D(Order):
             )
             norm = np.linalg.norm(W[0])
             W /= norm
+        else:
+            raise ValueError("cone_type must be one of 'acute', 'right', or 'obtuse'.")
         ordering_cone = OrderingCone(W)
 
         super().__init__(ordering_cone)
 
 
 class ConeOrder3DIceCream(Order):
-    def __init__(self, cone_degree, num_halfspace) -> None:
+    """
+    Defines a 3D ordering relation approximating the shape of an ice cream cone with opening
+    defined by :obj:`cone_angle`. The ordering cone is constructed with equally rotated
+    half-spaces based on the specified number of half-spaces.
+
+    :param cone_degree: The opening angle of the cone in degrees.
+    :type cone_degree: float
+    :param num_halfspace: The number of half-spaces used to approximate the cone.
+    :type num_halfspace: int
+    """
+
+    def __init__(self, cone_degree: float, num_halfspace: int):
         W = self.compute_ice_cream_cone(num_halfspace, cone_degree)
         ordering_cone = OrderingCone(W)
 
         super().__init__(ordering_cone)
 
-    def compute_ice_cream_cone(self, K, theta):
+    def compute_ice_cream_cone(self, K: int, theta: float) -> np.ndarray:
+        r"""
+        Computes the constraint matrix `W` for the ice cream cone approximation.
+        The cone is constructed by rotating half-spaces around a central axis.
+
+        :param K: The number of half-spaces used to approximate the cone.
+        :type K: int
+        :param theta: The opening angle of the cone in degrees.
+        :type theta: float
+        :return: A 2D array representing the normal vectors for each half-space, *i.e.*, a cone
+            matrix :math:`\mathbf{W}` that approximates the ice cream cone.
+        :rtype: np.ndarray
+        """
         delta_angle = 2 * np.pi / K
         theta_rad = np.pi / 2 - np.radians(theta)
 
