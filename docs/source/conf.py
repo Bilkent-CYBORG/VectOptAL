@@ -40,6 +40,8 @@ extensions = [
 templates_path = ["_templates"]
 exclude_patterns = []
 
+primary_domain = "py"  # Set the primary domain as Python globally to omit `py` prefix in docs.
+
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
