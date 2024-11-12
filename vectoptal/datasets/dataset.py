@@ -30,6 +30,7 @@ class Dataset(ABC):
     """
     Abstract base class for datasets that handles min-max scaling of input and standardization of
     output. Any class inheriting from this class should implement the following properties:
+
     - _in_dim: int
     - _out_dim: int
     - _cardinality: int
@@ -87,6 +88,10 @@ def get_dataset_instance(dataset_name: str) -> Dataset:
 class Test(Dataset):
     """
     A miniature DiskBrake dataset variant for using in testing.
+
+    - _in_dim = 4
+    - _out_dim = 2
+    - _cardinality = 32
     """
 
     _in_dim = 4
@@ -107,6 +112,10 @@ class SNW(Dataset):
     Dataset for optimizing sorting network configurations in computational hardware design.
     The reward vector represents the trade-off between throughput and hardware area. The area is
     negated to maximize it. See [Zuluaga2012]_.
+
+    - _in_dim = 3
+    - _out_dim = 2
+    - _cardinality = 206
     """
 
     _in_dim = 3
@@ -128,6 +137,10 @@ class SNW(Dataset):
 class DiskBrake(Dataset):
     """
     Disc brake optimization balancing mass and stopping time. Based on [Tanabe2020]_.
+
+    - _in_dim = 4
+    - _out_dim = 2
+    - _cardinality = 128
     """
 
     _in_dim = 4
@@ -147,6 +160,10 @@ class VehicleSafety(Dataset):
     """
     Vehicle structure optimization dataset for enhancing crashworthiness. The reward vector
     includes weight, acceleration, and toe-board intrusion. See [Liao2008]_ and [Tanabe2020]_.
+
+    - _in_dim = 5
+    - _out_dim = 3
+    - _cardinality = 500
     """
 
     _in_dim = 5

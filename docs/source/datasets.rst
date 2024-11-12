@@ -2,7 +2,7 @@
     :class: hidden-section
 
 
-Datasets
+vectoptal.datasets
 ===================================
 
 .. automodule:: vectoptal.datasets
