@@ -31,9 +31,9 @@ class Dataset(ABC):
     Abstract base class for datasets that handles min-max scaling of input and standardization of
     output. Any class inheriting from this class should implement the following properties:
 
-    - _in_dim: int
-    - _out_dim: int
-    - _cardinality: int
+    - :obj:`_in_dim`: :type:`int`
+    - :obj:`_out_dim`: :type:`int`
+    - :obj:`_cardinality`: :type:`int`
     """
 
     @property

@@ -11,7 +11,7 @@ from vectoptal.utils.plotting import plot_2d_theta_cone, plot_2d_cone, plot_3d_c
 class OrderingCone:
     r"""
     Represents a polyhedral ordering cone in the form :math:`C := \{ x | \mathbf{W}x \geq 0 \}`,
-    where :math`\mathbf{W}` is a matrix defining the cone's boundaries. The ordering cone is
+    where :math:`\mathbf{W}` is a matrix defining the cone's boundaries. The ordering cone is
     used to check if points lie within the cone by testing if they satisfy the inequality.
 
     :param W: A 2D array (matrix) that defines the ordering cone. The shape of

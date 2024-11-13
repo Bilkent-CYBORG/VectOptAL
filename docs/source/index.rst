@@ -28,14 +28,15 @@ Welcome to VectOptAL, an open-source Python library built to tackle the challeng
    :maxdepth: 1
    :caption: Package Reference
 
-   order
-   models
    algorithms
+   models
+   order
+   ordering_cone
    acquisition
-   datasets
-   utils
    design_space
    confidence_region
+   datasets
+   utils
    
 
 Indices and tables

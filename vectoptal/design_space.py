@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 from vectoptal.confidence_region import (
+    ConfidenceRegion,
     RectangularConfidenceRegion,
     EllipsoidalConfidenceRegion,
 )
@@ -42,10 +43,22 @@ class DiscreteDesignSpace(DesignSpace):
     This class is an abstract implementation of the `DesignSpace` abstract base class. It
     represents a design space where the points are discrete. The class also maintains a list of
     confidence regions associated with the design points.
+
+    A derived class must define the following properties:
+
+    - :obj:`points`: :type:`np.ndarray`
+    - :obj:`confidence_regions`: :type:`list[ConfidenceRegion]`
     """
 
-    points: np.ndarray
-    confidence_regions: list
+    @property
+    @abstractmethod
+    def points(self) -> np.ndarray:
+        pass
+
+    @property
+    @abstractmethod
+    def confidence_regions(self) -> list[ConfidenceRegion]:
+        pass
 
     def __init__(self):
         super().__init__()
