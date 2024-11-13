@@ -15,13 +15,13 @@ Confidence Region Types
 -----------------------------
 
 :hidden:`RectangularConfidenceRegion`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: RectangularConfidenceRegion
     :members:
 
 :hidden:`EllipsoidalConfidenceRegion`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: EllipsoidalConfidenceRegion
     :members:

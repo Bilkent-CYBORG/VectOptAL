@@ -236,7 +236,7 @@ class VOGP(PALAlgorithm):
         a polyhedral ordering cone defined in the order self.order.ordering_cone.
 
         :return: A tuple containing `u_star`, the normalized direction vector of the cone, and
-        `d1`, the Euclidean norm of the vector that gives `u_star` when normalized, _i.e._, `z`.
+            `d1`, the Euclidean norm of the vector that gives `u_star` when normalized, _i.e._, `z`.
         :rtype: Tuple[np.ndarray, float]
         """
 

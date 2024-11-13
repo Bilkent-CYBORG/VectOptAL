@@ -70,7 +70,7 @@ def calculate_hypervolume_discrepancy_for_model(
     :param model: The model trained on the problem, used to predict the outputs.
     :type model: Model
     :return: The logarithm of the hypervolume discrepancy between
-    the true and predicted Pareto fronts.
+        the true and predicted Pareto fronts.
     :rtype: float
     :raises AssertionError: If the hypervolume discrepancy is less than or equal to a threshold.
     """

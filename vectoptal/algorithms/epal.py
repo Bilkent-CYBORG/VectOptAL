@@ -174,7 +174,7 @@ class EpsilonPAL(PALAlgorithm):
 
     def run_one_step(self) -> bool:
         r"""
-        Executes one iteration of the :math`\epsilon`-PAL algorithm, performing modeling,
+        Executes one iteration of the :math:`\epsilon`-PAL algorithm, performing modeling,
         discarding, epsilon-covering, and evaluating phases. Returns the algorithm termination
         status.
 
