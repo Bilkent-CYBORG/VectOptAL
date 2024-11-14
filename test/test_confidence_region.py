@@ -59,7 +59,7 @@ class TestRectangularConfidenceRegion(TestCase):
 
     def test_update(self):
         """Test the update method."""
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             self.confidence_region.update(np.array([1, 1]), np.ones([2, 3]))
 
         self.confidence_region.update(np.array([1.25, 1.25]), 0.25 * np.eye(2), np.array(2))

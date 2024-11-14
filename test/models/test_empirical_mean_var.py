@@ -27,12 +27,12 @@ class TestEmpiricalMeanVarModel(TestCase):
 
     def test_add_sample(self):
         """Test the add_sample method."""
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             indices = [0]
             Y_t = np.array([[1, 2], [3, 4]])
             self.model.add_sample(indices, Y_t)
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             indices = [6]
             Y_t = np.array([[1, 2]])
             self.model.add_sample(indices, Y_t)
