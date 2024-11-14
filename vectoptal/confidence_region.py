@@ -52,10 +52,11 @@ class RectangularConfidenceRegion(ConfidenceRegion):
         self.intersect_iteratively = intersect_iteratively
 
         if lower is not None and upper is not None:
-            assert (
-                len(lower) == dim and len(upper) == dim
-            ), "Bounds must have the same dimensions as the space."
-            assert np.all(lower <= upper), "Lower bound must be less than or equal to upper bound."
+            if len(lower) != dim or len(upper) != dim:
+                raise ValueError("Bounds must have the same dimensions as the space.")
+
+            if not np.all(lower <= upper):
+                raise ValueError("Lower bound must be less than or equal to upper bound.")
 
             self.lower = lower
             self.upper = upper
@@ -146,9 +147,11 @@ class RectangularConfidenceRegion(ConfidenceRegion):
         :rtype: bool
         """
 
-        assert np.array(slackness).size == 1 or slackness.size == len(
-            obj1.lower
-        ), "Slackness must be a scalar or a vector of the same size as the number of dimensions."
+        if np.array(slackness).size != 1 and slackness.size != len(obj1.lower):
+            raise ValueError(
+                "Slackness must be a scalar or a vector of the same size as the number of"
+                " dimensions."
+            )
 
         verts1 = hyperrectangle_get_vertices(obj1.lower, obj1.upper)
         verts2 = hyperrectangle_get_vertices(obj2.lower, obj2.upper)
@@ -212,9 +215,11 @@ class RectangularConfidenceRegion(ConfidenceRegion):
         cone_matrix = order.ordering_cone.W
         m = cone_matrix.shape[1]
 
-        assert (
-            np.array(slackness).size == 1 or slackness.size == m
-        ), "Slackness must be a scalar or a vector of the same size as the number of dimensions."
+        if np.array(slackness).size != 1 and slackness.size != m:
+            raise ValueError(
+                "Slackness must be a scalar or a vector of the same size as the number of"
+                " dimensions."
+            )
 
         z_point = cp.Variable(m)
         z_point2 = cp.Variable(m)
@@ -288,10 +293,10 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
         :type scale: np.ndarray
         """
 
-        assert covariance.shape[-1] == covariance.shape[-2], "Covariance matrix must be square."
-        assert (
-            np.array(scale).size == 1
-        ), "Scale must be a scalar for this type of confidence region."
+        if covariance.shape[-1] != covariance.shape[-2]:
+            raise ValueError("Covariance matrix must be square.")
+        if np.array(scale).size != 1:
+            raise ValueError("Scale must be a scalar for this type of confidence region.")
 
         self.center = mean
         self.sigma = covariance
@@ -319,9 +324,11 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
 
         if np.array(slackness).size == 1:
             slackness = np.array([slackness] * cone_matrix.shape[0])
-        assert (
-            slackness.size == cone_matrix.shape[0]
-        ), "Slackness must be a scalar or a vector of the same size as the number of constraints."
+        if slackness.size != cone_matrix.shape[0]:
+            raise ValueError(
+                "Slackness must be a scalar or a vector of the same size as the number of"
+                " constraints."
+            )
 
         mux = cp.Variable(output_dim)
         muy = cp.Variable(output_dim)
@@ -401,9 +408,11 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
         cone_matrix = order.ordering_cone.W
         output_dim = cone_matrix.shape[1]
 
-        assert (
-            np.array(slackness).size == 1 or slackness.size == cone_matrix.shape[0]
-        ), "Slackness must be a scalar or a vector of the same size as the number of constraints."
+        if np.array(slackness).size != 1 and slackness.size != cone_matrix.shape[0]:
+            raise ValueError(
+                "Slackness must be a scalar or a vector of the same size as the number of"
+                " constraints."
+            )
 
         mux = cp.Variable(output_dim)
         muy = cp.Variable(output_dim)

@@ -57,8 +57,10 @@ class EmpiricalMeanVarModel(UncertaintyPredictiveModel):
         :param Y_t: A N-by-output_dim array containing the new samples to be added.
         :type Y_t: np.ndarray
         """
-        assert len(indices) == len(Y_t), "Number of samples is ambiguous."
-        assert max(indices) < self.design_count, "Design index out of bounds."
+        if len(indices) != len(Y_t):
+            raise ValueError("Number of samples is ambiguous.")
+        if max(indices) >= self.design_count:
+            raise ValueError("Design index out of bounds.")
 
         for idx, y in zip(indices, Y_t):
             self.design_samples[idx] = np.concatenate(
@@ -121,9 +123,8 @@ class EmpiricalMeanVarModel(UncertaintyPredictiveModel):
         :return: A tuple containing two numpy arrays: the predicted means and variances.
         :rtype: tuple[np.ndarray, np.ndarray]
         """
-        assert (
-            test_X.shape[1] == self.input_dim + 1
-        ), "Test data needs to have an additional column for indices."
+        if test_X.shape[1] != self.input_dim + 1:
+            raise ValueError("Test data needs to have an additional column for indices.")
 
         indices = test_X[..., -1].astype(int)
         if self.track_means:

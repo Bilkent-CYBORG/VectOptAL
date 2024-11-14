@@ -72,7 +72,8 @@ class NaiveElimination(PALAlgorithm):
 
         self.K = len(self.dataset.in_data)
         if L is None:  # Use theoretical sampling count if not given.
-            assert hasattr(order.ordering_cone, "beta"), "Ordering complexity needs to be defined."
+            if not hasattr(order.ordering_cone, "beta"):
+                raise AttributeError("Ordering complexity needs to be defined.")
             ordering_complexity = order.ordering_cone.beta
 
             c = 1 + np.sqrt(2)  # Any c>0 should suffice according to Lemma B.12.
