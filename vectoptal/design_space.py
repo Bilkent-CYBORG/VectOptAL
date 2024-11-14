@@ -44,21 +44,14 @@ class DiscreteDesignSpace(DesignSpace):
     represents a design space where the points are discrete. The class also maintains a list of
     confidence regions associated with the design points.
 
-    A derived class must define the following properties:
+    A derived class must define the following attributes:
 
     - :obj:`points`: :type:`np.ndarray`
     - :obj:`confidence_regions`: :type:`list[ConfidenceRegion]`
     """
 
-    @property
-    @abstractmethod
-    def points(self) -> np.ndarray:
-        pass
-
-    @property
-    @abstractmethod
-    def confidence_regions(self) -> list[ConfidenceRegion]:
-        pass
+    points: np.ndarray
+    confidence_regions: list[ConfidenceRegion]
 
     def __init__(self):
         super().__init__()

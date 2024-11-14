@@ -87,29 +87,40 @@ class TestGetAlpha(TestCase):
 class TestGetClosestIndicesFromPoints(TestCase):
     """Test closest indices computation."""
 
+    def setUp(self):
+        self.points = torch.tensor([[0, 0], [1, 1]])
+        self.queries = torch.tensor([[0.1, 0.1], [0.5, 0.9], [1.2, 1.2]])
+
+    def test_does_return_first_match(self):
+        """Test if the get_closest_indices_from_points returns the first between equals."""
+        result = get_closest_indices_from_points(
+            torch.tensor([[0.5, 0.5]]), self.points, return_distances=False, squared=False
+        )
+        self.assertListEqual(result.tolist(), [0])
+
     def test_get_closest_indices_from_points(self):
         """Test the get_closest_indices_from_points function."""
-        points = torch.tensor([[0, 0], [1, 1]])
-        queries = torch.tensor([[0.1, 0.1], [0.5, 0.9], [1.2, 1.2]])
-
         self.assertListEqual(
-            get_closest_indices_from_points(queries, [], return_distances=False, squared=False), []
+            get_closest_indices_from_points(
+                self.queries, [], return_distances=False, squared=False
+            ),
+            [],
         )
 
         result_sq = get_closest_indices_from_points(
-            queries, points, return_distances=False, squared=True
+            self.queries, self.points, return_distances=False, squared=True
         )
         result = get_closest_indices_from_points(
-            queries, points, return_distances=False, squared=False
+            self.queries, self.points, return_distances=False, squared=False
         )
         self.assertListEqual(result_sq.tolist(), result.tolist())
         self.assertListEqual(result.tolist(), [0, 1, 1])
 
         result_sq, dists_sq = get_closest_indices_from_points(
-            queries, points, return_distances=True, squared=True
+            self.queries, self.points, return_distances=True, squared=True
         )
         result, dists = get_closest_indices_from_points(
-            queries, points, return_distances=True, squared=False
+            self.queries, self.points, return_distances=True, squared=False
         )
 
         self.assertListEqual(result_sq.tolist(), result.tolist())

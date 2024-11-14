@@ -20,7 +20,7 @@ References:
 """
 
 import os
-from abc import ABC, abstractmethod
+from abc import ABC
 
 import numpy as np
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
@@ -29,27 +29,16 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 class Dataset(ABC):
     """
     Abstract base class for datasets that handles min-max scaling of input and standardization of
-    output. Any class inheriting from this class should implement the following properties:
+    output. Any class inheriting from this class should implement the following attributes:
 
     - :obj:`_in_dim`: :type:`int`
     - :obj:`_out_dim`: :type:`int`
     - :obj:`_cardinality`: :type:`int`
     """
 
-    @property
-    @abstractmethod
-    def _in_dim(self) -> int:
-        pass
-
-    @property
-    @abstractmethod
-    def _out_dim(self) -> int:
-        pass
-
-    @property
-    @abstractmethod
-    def _cardinality(self) -> int:
-        pass
+    _in_dim: int
+    _out_dim: int
+    _cardinality: int
 
     def __init__(self):
         if (

@@ -87,7 +87,7 @@ class ProblemFromDataset(Problem):
 class ContinuousProblem(Problem):
     """
     Abstract base class for continuous optimization problems. It includes noise handling for
-    outputs based on a specified noise variance. It should have the following property defined:
+    outputs based on a specified noise variance. It should have the following attribute defined:
 
     - :obj:`out_dim`: :type:`int`
 
@@ -95,10 +95,7 @@ class ContinuousProblem(Problem):
     :type noise_var: float
     """
 
-    @property
-    @abstractmethod
-    def out_dim(self) -> int:
-        pass
+    out_dim: int
 
     def __init__(self, noise_var: float) -> None:
         super().__init__()
@@ -107,6 +104,34 @@ class ContinuousProblem(Problem):
 
         noise_covar = np.eye(self.out_dim) * noise_var
         self.noise_cholesky = np.linalg.cholesky(noise_covar)
+
+    @abstractmethod
+    def evaluate_true(self, x: np.ndarray) -> np.ndarray:
+        pass
+
+    def evaluate(self, x: np.ndarray, noisy: bool = True) -> np.ndarray:
+        """
+        Evaluates the problem at given points with optional Gaussian noise.
+
+        :param x: Input points to evaluate, given as an array of shape (N, 2).
+        :type x: np.ndarray
+        :param noisy: If `True`, adds Gaussian noise to the output based on the specified
+            noise variance. Defaults to `True`.
+        :type noisy: bool
+        :return: A 2D array with evaluated Branin and Currin values for each input,
+            with optional noise.
+        :rtype: np.ndarray
+        """
+        if x.ndim == 1:
+            x = x.reshape(1, -1)
+
+        f = self.evaluate_true(x)
+
+        if not noisy:
+            return f
+
+        y = get_noisy_evaluations_chol(f, self.noise_cholesky)
+        return y
 
 
 def get_continuous_problem(name: str, noise_var: float) -> ContinuousProblem:
@@ -208,30 +233,6 @@ class BraninCurrin(ContinuousProblem):
         Y = np.stack([-branin, -currin], axis=1)
         return Y
 
-    def evaluate(self, x: np.ndarray, noisy: bool = True) -> np.ndarray:
-        """
-        Evaluates the problem at given points with optional Gaussian noise.
-
-        :param x: Input points to evaluate, given as an array of shape (N, 2).
-        :type x: np.ndarray
-        :param noisy: If `True`, adds Gaussian noise to the output based on the specified
-            noise variance. Defaults to `True`.
-        :type noisy: bool
-        :return: A 2D array with evaluated Branin and Currin values for each input,
-            with optional noise.
-        :rtype: np.ndarray
-        """
-        if x.ndim == 1:
-            x = x.reshape(1, -1)
-
-        f = self.evaluate_true(x)
-
-        if not noisy:
-            return f
-
-        y = get_noisy_evaluations_chol(f, self.noise_cholesky)
-        return y
-
 
 class DecoupledEvaluationProblem(Problem):
     """
@@ -248,7 +249,10 @@ class DecoupledEvaluationProblem(Problem):
         self.problem = problem
 
     def evaluate(
-        self, x: np.ndarray, evaluation_index: Optional[Union[int, List[int]]] = None
+        self,
+        x: np.ndarray,
+        evaluation_index: Optional[Union[int, List[int]]] = None,
+        **evaluate_kwargs: dict,
     ) -> np.ndarray:
         """
         Evaluates the underlying problem at the given points and returns either the full
@@ -261,6 +265,9 @@ class DecoupledEvaluationProblem(Problem):
             - an `int` to return a specific objective across all points,
             - a list of indices to return specific objectives for each point.
         :type evaluation_index: Optional[Union[int, List[int]]]
+        :param evaluate_kwargs: Additional keyword arguments to pass to the evaluation function of
+            the underlying problem.
+        :type evaluate_kwargs: dict
         :return: An array of evaluated values, either the full output or specific objectives.
         :rtype: np.ndarray
         :raises ValueError: If :obj:`evaluation_index` has an invalid format or length.
@@ -274,7 +281,7 @@ class DecoupledEvaluationProblem(Problem):
                 "evaluation_index must; be None, have type int or have the same length as x."
             )
 
-        values = self.problem.evaluate(x)
+        values = self.problem.evaluate(x, **evaluate_kwargs)
 
         if evaluation_index is None:
             return values
