@@ -7,7 +7,6 @@ from vectoptal.utils import binary_entropy
 from vectoptal.models import Model, ModelList
 from vectoptal.design_space import DiscreteDesignSpace
 
-import torch
 import numpy as np
 
 
@@ -270,8 +269,7 @@ def optimize_acqf_discrete(
 
     chosen = 0
     while chosen < q:
-        with torch.no_grad():
-            acq_values = acq(choices)
+        acq_values = acq(choices)
 
         best_idx = np.argmax(acq_values)
         candidate_list.append(choices[best_idx])

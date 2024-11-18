@@ -1,30 +1,18 @@
-name: torch
+name: vectopt
 channels:
 - conda-forge
 - pytorch
 - gpytorch
-- nvidia
-- gurobi
-- mosek
 dependencies:
-- python=3.10
-- pytorch=2.0.1
-- pytorch-cuda=11.7
-- gpytorch=1.11.0
-- botorch=0.10.0
-- pymoo=0.5.0
+- python>=3.10
+- gpytorch
+- botorch<0.12.0
 - cvxpy
 - scikit-learn
 - scipy
-- oyaml
-- gpy
-- jupyter
 - matplotlib
 - numpy
-- pandas
-- seaborn
 - jupyter
-- gurobi
 - pytest
 - pytest-cov
 - flake8
@@ -34,4 +22,4 @@ dependencies:
 - bandit
 - sphinx_rtd_theme
 - pip:
-    - docs/requirements.txt
+    - -r docs/requirements.txt
