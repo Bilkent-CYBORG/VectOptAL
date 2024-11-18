@@ -224,7 +224,7 @@ class TestEllipsoidalConfidenceRegion(TestCase):
 
     def test_update(self):
         """Test the update method."""
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             self.confidence_region.update(np.array([1, 1]), np.ones([2, 3]))
 
         self.confidence_region_new = copy.deepcopy(self.confidence_region)

@@ -88,7 +88,7 @@ class TestEmpiricalMeanVarModel(TestCase):
 
         # NOTE: Actual coordinates of test points are not used, only the indices are used.
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             self.model.predict(np.array([[-1, -1]]))
 
         X = np.array([[-1, -1, 0], [-1, -1, 1]])

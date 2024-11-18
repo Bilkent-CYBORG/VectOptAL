@@ -676,11 +676,11 @@ class GPyTorchModelListExactModel(GPyTorchModel, ModelList):
         :return: Lengthscales and variances for each objective.
         :rtype: tuple[np.ndarray, np.ndarray]
         """
-        lengthscales = np.zeros(self.input_dim)
+        lengthscales = np.zeros((len(self.model.models), self.input_dim))
         variances = np.zeros(self.input_dim)
         for model_i, model in enumerate(self.model.models):
             cov_module = model.covar_module
-            lengthscale = cov_module.base_kernel.lengthscale.squeeze().numpy(force=True).item()
+            lengthscale = cov_module.base_kernel.lengthscale.squeeze().numpy(force=True)
             variance = cov_module.outputscale.squeeze().numpy(force=True).item()
 
             lengthscales[model_i] = lengthscale

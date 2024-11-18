@@ -234,6 +234,12 @@ class TestGPyTorchModelListExactModel(unittest.TestCase):
             samples.shape, (2, len(self.X)), "Sample shape mismatch for single posterior."
         )
 
+    def test_get_lengthscale_and_var(self):
+        """Test get_lengthscale_and_var method."""
+        lengthscales, variances = self.model.get_lengthscale_and_var()
+        self.assertGreaterEqual(np.min(variances), 0, "Negative variance.")
+        self.assertGreaterEqual(np.min(lengthscales), 0, "Negative lengthscale.")
+
 
 class TestGetGPyTorchModelListWithKnownHyperparams(unittest.TestCase):
     """Test the `get_gpytorch_modellist_w_known_hyperparams` function."""
