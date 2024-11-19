@@ -1,11 +1,11 @@
 .. role:: hidden
     :class: hidden-section
 
-vectoptal.acquisition
+vopy.acquisition
 ===================================
 
-.. automodule:: vectoptal.acquisition
-.. currentmodule:: vectoptal.acquisition
+.. automodule:: vopy.acquisition
+.. currentmodule:: vopy.acquisition
 
 .. autoclass:: AcquisitionStrategy
     :members:

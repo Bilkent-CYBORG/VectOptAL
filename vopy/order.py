@@ -5,8 +5,8 @@ from abc import ABC
 import numpy as np
 from matplotlib import pyplot as plt
 
-from vectoptal.utils.plotting import plot_pareto_front
-from vectoptal.ordering_cone import OrderingCone, ConeTheta2D
+from vopy.utils.plotting import plot_pareto_front
+from vopy.ordering_cone import OrderingCone, ConeTheta2D
 
 
 class Order(ABC):
@@ -146,7 +146,7 @@ class ComponentwiseOrder(Order):
 class ConeTheta2DOrder(Order):
     """
     Defines an ordering relation in 2D using a cone with a specified opening angle. The ordering
-    cone is an instance of :class:`vectoptal.ordering_cone.ConeTheta2D`.
+    cone is an instance of :class:`vopy.ordering_cone.ConeTheta2D`.
 
     :param cone_degree: The opening angle of the cone in degrees.
     :type cone_degree: float

@@ -1,4 +1,4 @@
-from vectoptal.utils.utils import (
+from vopy.utils.utils import (
     set_seed,
     get_2d_w,
     get_alpha,

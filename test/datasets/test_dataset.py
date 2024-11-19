@@ -3,7 +3,7 @@ import importlib
 
 import numpy as np
 
-from vectoptal.datasets import get_dataset_instance, Dataset
+from vopy.datasets import get_dataset_instance, Dataset
 
 
 class TestDataset(unittest.TestCase):
@@ -12,7 +12,7 @@ class TestDataset(unittest.TestCase):
     """
 
     def setUp(self):
-        module = importlib.import_module(name="vectoptal.datasets.dataset")
+        module = importlib.import_module(name="vopy.datasets.dataset")
         module_globals = module.__dict__
 
         self.dataset_names = [

@@ -1,22 +1,25 @@
 import logging
+from typing import Literal
 
 import numpy as np
 
-from vectoptal.order import Order
-from vectoptal.confidence_region import (
-    confidence_region_is_dominated,
-    confidence_region_is_covered,
+from vopy.order import Order
+from vopy.datasets import get_dataset_instance
+from vopy.algorithms.algorithm import PALAlgorithm
+from vopy.design_space import FixedPointsDesignSpace
+from vopy.maximization_problem import ProblemFromDataset
+from vopy.acquisition import SumVarianceAcquisition, optimize_acqf_discrete
+from vopy.confidence_region import confidence_region_is_dominated, confidence_region_is_covered
+from vopy.models import (
+    CorrelatedExactGPyTorchModel,
+    IndependentExactGPyTorchModel,
+    get_gpytorch_model_w_known_hyperparams,
 )
-from vectoptal.models import EmpiricalMeanVarModel
-from vectoptal.datasets import get_dataset_instance
-from vectoptal.algorithms.algorithm import PALAlgorithm
-from vectoptal.design_space import FixedPointsDesignSpace
-from vectoptal.maximization_problem import ProblemFromDataset
 
 
-class PaVeBa(PALAlgorithm):
+class PaVeBaGP(PALAlgorithm):
     """
-    Implement the Pareto Vector Bandits (PaVeBa) algorithm.
+    Implement the GP-based Pareto Vector Bandits (PaVeBa) algorithm.
 
     :param epsilon: Determines the accuracy of the PAC-learning framework.
     :type epsilon: float
@@ -28,22 +31,29 @@ class PaVeBa(PALAlgorithm):
     :type order: Order
     :param noise_var: Variance of the Gaussian sampling noise.
     :type noise_var: float
-    :param conf_contraction: Contraction coefficient to shrink
-        the confidence regions empirically. Defaults to 32.
+    :param conf_contraction: Contraction coefficient to shrink the
+        confidence regions empirically. Defaults to 32.
     :type conf_contraction: float
+    :param type: Specifies if the algorithm uses dependent ellipsoidal or
+        independent hyperrectangular confidence regions. Defaults to "IH".
+    :type type: Literal["IH", "DE"]
+    :param batch_size: Number of samples to be taken in each round. Defaults to 1.
+    :type batch_size: int
 
     The algorithm sequentially samples design rewards with a multivariate
     white Gaussian noise whose diagonal entries are specified by the user.
+    It uses Gaussian Process regression to model the rewards and confidence
+    regions.
 
     Example:
-        >>> from vectoptal.order import ComponentwiseOrder
-        >>> from vectoptal.algorithms import PaVeBa
+        >>> from vopy.order import ComponentwiseOrder
+        >>> from vopy.algorithms import PaVeBaGP
         >>>
         >>> epsilon, delta, noise_var = 0.1, 0.05, 0.01
         >>> dataset_name = "DiskBrake"
         >>> order_right = ComponentwiseOrder(2)
         >>>
-        >>> algorithm = PaVeBa(epsilon, delta, dataset_name, order_right, noise_var)
+        >>> algorithm = PaVeBaGP(epsilon, delta, dataset_name, order_right, noise_var)
         >>>
         >>> while True:
         >>>     is_done = algorithm.run_one_step()
@@ -67,26 +77,38 @@ class PaVeBa(PALAlgorithm):
         order: Order,
         noise_var: float,
         conf_contraction: float = 32,
+        type: Literal["IH", "DE"] = "IH",
+        batch_size: int = 1,
     ) -> None:
         super().__init__(epsilon, delta)
 
         self.order = order
-        self.noise_var = noise_var
+        self.batch_size = batch_size
         self.conf_contraction = conf_contraction
 
         dataset = get_dataset_instance(dataset_name)
 
         self.m = dataset.out_dim
 
-        # Trick to keep indices alongside points. This is for predictions from the model.
-        in_data = np.hstack((dataset.in_data, np.arange(len(dataset.in_data))[:, None]))
+        if type == "IH":
+            design_confidence_type = "hyperrectangle"
+            model_class = IndependentExactGPyTorchModel
+        elif type == "DE":
+            design_confidence_type = "hyperellipsoid"
+            model_class = CorrelatedExactGPyTorchModel
+
         self.design_space = FixedPointsDesignSpace(
-            in_data, dataset.out_dim, confidence_type="hyperellipsoid"
+            dataset.in_data, dataset.out_dim, confidence_type=design_confidence_type
         )
         self.problem = ProblemFromDataset(dataset, noise_var)
 
-        self.model = EmpiricalMeanVarModel(
-            dataset.in_dim, self.m, noise_var, self.design_space.cardinality, track_variances=False
+        self.model = get_gpytorch_model_w_known_hyperparams(
+            model_class,
+            self.problem,
+            noise_var,
+            initial_sample_cnt=1,
+            X=dataset.in_data,
+            Y=dataset.out_data,
         )
 
         self.cone_alpha = self.order.ordering_cone.alpha.flatten()
@@ -102,11 +124,9 @@ class PaVeBa(PALAlgorithm):
         """
         Construct the confidence regions of all active designs given all past observations.
         """
-        # All active designs have the same radius. We provide it as scale parameter.
-        # Model does not track variances, so scale*var = scale.
-        self.r_t = self.compute_radius()
+        self.alpha_t = self.compute_alpha()
         A = self.S.union(self.U)
-        self.design_space.update(self.model, self.r_t, list(A))
+        self.design_space.update(self.model, self.alpha_t, list(A))
 
     def discarding(self):
         """
@@ -178,15 +198,18 @@ class PaVeBa(PALAlgorithm):
 
     def evaluating(self):
         """
-        Observe the active designs via sampling and update the model.
+        Observe the self.batch_size number of designs from active designs, selecting by
+        largest sum of variances and update the model.
         """
         A = self.S.union(self.U)
+        acq = SumVarianceAcquisition(self.model)
         active_pts = self.design_space.points[list(A)]
+        candidate_list, _ = optimize_acqf_discrete(acq, self.batch_size, choices=active_pts)
 
-        observations = self.problem.evaluate(active_pts[:, :-1])
+        observations = self.problem.evaluate(candidate_list)
 
-        self.sample_count += len(A)
-        self.model.add_sample(A, observations)
+        self.sample_count += len(candidate_list)
+        self.model.add_sample(candidate_list, observations)
         self.model.update()
 
     def run_one_step(self) -> bool:
@@ -227,19 +250,15 @@ class PaVeBa(PALAlgorithm):
 
         return len(self.S) == 0
 
-    def compute_radius(self) -> float:
+    def compute_alpha(self) -> float:
         """
         Compute the radius of the confidence regions of the current round to be used in modeling.
 
         :return: The radius of the confidence regions.
         :rtype: float
         """
-        t1 = 8 * self.noise_var / self.round
-        t2 = np.log(  # ni**2 is equal to t**2 since only active arms are sampled
-            (np.pi**2 * (self.m + 1) * self.design_space.cardinality * self.round**2)
-            / (6 * self.delta)
+        alpha = 8 * self.m * np.log(6) + 4 * np.log(
+            (np.pi**2 * self.round**2 * self.design_space.cardinality) / (6 * self.delta)
         )
-        r = np.sqrt(t1 * t2)
 
-        # TODO: Do we need to scale because of norm-subgaussianity?
-        return r / self.conf_contraction
+        return alpha / self.conf_contraction

@@ -3,8 +3,8 @@ from unittest import TestCase
 import numpy as np
 from matplotlib import pyplot as plt
 
-from vectoptal.ordering_cone import OrderingCone, ConeTheta2D
-from vectoptal.order import (
+from vopy.ordering_cone import OrderingCone, ConeTheta2D
+from vopy.order import (
     Order,
     ComponentwiseOrder,
     ConeTheta2DOrder,

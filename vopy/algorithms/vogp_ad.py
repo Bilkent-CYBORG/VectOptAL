@@ -3,13 +3,13 @@ import logging
 import numpy as np
 from scipy.optimize import minimize
 
-from vectoptal.order import Order
-from vectoptal.algorithms.algorithm import PALAlgorithm
-from vectoptal.maximization_problem import ContinuousProblem
-from vectoptal.acquisition import MaxDiagonalAcquisition, optimize_acqf_discrete
-from vectoptal.design_space import AdaptivelyDiscretizedDesignSpace
-from vectoptal.models import CorrelatedExactGPyTorchModel, get_gpytorch_model_w_known_hyperparams
-from vectoptal.confidence_region import (
+from vopy.order import Order
+from vopy.algorithms.algorithm import PALAlgorithm
+from vopy.maximization_problem import ContinuousProblem
+from vopy.acquisition import MaxDiagonalAcquisition, optimize_acqf_discrete
+from vopy.design_space import AdaptivelyDiscretizedDesignSpace
+from vopy.models import CorrelatedExactGPyTorchModel, get_gpytorch_model_w_known_hyperparams
+from vopy.confidence_region import (
     confidence_region_is_dominated,
     confidence_region_check_dominates,
     confidence_region_is_covered,
@@ -43,9 +43,9 @@ class VOGP_AD(PALAlgorithm):
     regions of the continuous function defined with problem.
 
     Example Usage:
-        >>> from vectoptal.algorithms import VOGP_AD
-        >>> from vectoptal.order import ComponentwiseOrder
-        >>> from vectoptal.maximization_problem import get_continuous_problem
+        >>> from vopy.algorithms import VOGP_AD
+        >>> from vopy.order import ComponentwiseOrder
+        >>> from vopy.maximization_problem import get_continuous_problem
         >>>
         >>> epsilon, delta, noise_var = 0.1, 0.05, 0.01
         >>> problem = get_continuous_problem("BraninCurrin")

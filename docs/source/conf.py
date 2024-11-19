@@ -58,7 +58,7 @@ for root, dirs, files in os.walk(examples_source):
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "VectOptAL"
+project = "VOPy"
 copyright = "2024, Cahit Yildirim"
 author = "Cahit Yildirim"
 

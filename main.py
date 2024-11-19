@@ -2,11 +2,11 @@ import logging
 
 import numpy as np
 
-from vectoptal.utils.seed import SEED
-from vectoptal.datasets.dataset import Dataset, get_dataset_instance
-from vectoptal.maximization_problem import ContinuousProblem, get_continuous_problem
-from vectoptal.order import ConeTheta2DOrder, ComponentwiseOrder
-from vectoptal.algorithms import (  # noqa: F401
+from vopy.utils.seed import SEED
+from vopy.datasets.dataset import Dataset, get_dataset_instance
+from vopy.maximization_problem import ContinuousProblem, get_continuous_problem
+from vopy.order import ConeTheta2DOrder, ComponentwiseOrder
+from vopy.algorithms import (  # noqa: F401
     NaiveElimination,
     Auer,
     PaVeBa,
@@ -17,12 +17,12 @@ from vectoptal.algorithms import (  # noqa: F401
     VOGP,
     VOGP_AD,
 )
-from vectoptal.utils import set_seed
-from vectoptal.utils.evaluate import (
+from vopy.utils import set_seed
+from vopy.utils.evaluate import (
     calculate_epsilonF1_score,
     calculate_hypervolume_discrepancy_for_model,
 )
-from vectoptal.models import GPyTorchModelListExactModel
+from vopy.models import GPyTorchModelListExactModel
 
 
 def test_discrete():

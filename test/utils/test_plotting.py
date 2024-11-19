@@ -3,8 +3,8 @@ from unittest import TestCase
 import numpy as np
 from matplotlib import pyplot as plt
 
-from vectoptal.order import ConeTheta2DOrder, ConeOrder3D
-from vectoptal.utils.plotting import (
+from vopy.order import ConeTheta2DOrder, ConeOrder3D
+from vopy.utils.plotting import (
     plot_2d_cone,
     plot_3d_cone,
     plot_2d_theta_cone,

@@ -2,11 +2,11 @@
     :class: hidden-section
 
 
-vectoptal.models
+vopy.models
 ===================================
 
-.. automodule:: vectoptal.models
-.. currentmodule:: vectoptal.models
+.. automodule:: vopy.models
+.. currentmodule:: vopy.models
 
 .. autoclass:: Model
     :members:

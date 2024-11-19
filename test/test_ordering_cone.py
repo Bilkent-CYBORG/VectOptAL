@@ -2,7 +2,7 @@ from unittest import TestCase, mock
 
 import numpy as np
 
-from vectoptal.ordering_cone import OrderingCone, ConeTheta2D
+from vopy.ordering_cone import OrderingCone, ConeTheta2D
 
 
 class TestOrderingCone(TestCase):
@@ -25,14 +25,14 @@ class TestOrderingCone(TestCase):
         self.assertTrue(ordering_cone.is_inside([-1, -1]))
 
     def test_plot(self):
-        with mock.patch("vectoptal.ordering_cone.plot_2d_cone") as mock_plot:
+        with mock.patch("vopy.ordering_cone.plot_2d_cone") as mock_plot:
             W = np.eye(2)
             ordering_cone = OrderingCone(W)
             ordering_cone.plot()
 
             mock_plot.assert_called_once()
 
-        with mock.patch("vectoptal.ordering_cone.plot_3d_cone") as mock_plot:
+        with mock.patch("vopy.ordering_cone.plot_3d_cone") as mock_plot:
             W = np.eye(3)
             ordering_cone = OrderingCone(W)
             ordering_cone.plot()
@@ -71,7 +71,7 @@ class TestConeTheta2D(TestCase):
         self.assertAlmostEqual(ordering_cone.beta, 1 / np.sin(angle_rad))
 
     def test_plot(self):
-        with mock.patch("vectoptal.ordering_cone.plot_2d_theta_cone") as mock_plot:
+        with mock.patch("vopy.ordering_cone.plot_2d_theta_cone") as mock_plot:
             ordering_cone = ConeTheta2D(45)
             ordering_cone.plot()
 

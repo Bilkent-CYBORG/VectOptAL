@@ -2,13 +2,13 @@ from unittest import mock, TestCase
 
 import numpy as np
 
-from vectoptal.order import Order
-from vectoptal.utils import set_seed
-from vectoptal.utils.seed import SEED
-from vectoptal.ordering_cone import OrderingCone
-from vectoptal.design_space import FixedPointsDesignSpace
-from vectoptal.models.gpytorch import GPyTorchModelListExactModel
-from vectoptal.acquisition import (
+from vopy.order import Order
+from vopy.utils import set_seed
+from vopy.utils.seed import SEED
+from vopy.ordering_cone import OrderingCone
+from vopy.design_space import FixedPointsDesignSpace
+from vopy.models.gpytorch import GPyTorchModelListExactModel
+from vopy.acquisition import (
     SumVarianceAcquisition,
     MaxVarianceDecoupledAcquisition,
     ThompsonEntropyDecoupledAcquisition,

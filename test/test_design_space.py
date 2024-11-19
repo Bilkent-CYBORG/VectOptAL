@@ -2,11 +2,11 @@ from unittest import TestCase, mock
 
 import numpy as np
 
-from vectoptal.utils import set_seed
-from vectoptal.utils.seed import SEED
-from vectoptal.models import UncertaintyPredictiveModel
-from vectoptal.datasets import get_dataset_instance
-from vectoptal.design_space import FixedPointsDesignSpace, AdaptivelyDiscretizedDesignSpace
+from vopy.utils import set_seed
+from vopy.utils.seed import SEED
+from vopy.models import UncertaintyPredictiveModel
+from vopy.datasets import get_dataset_instance
+from vopy.design_space import FixedPointsDesignSpace, AdaptivelyDiscretizedDesignSpace
 
 
 class TestFixedPointsDesignSpace(TestCase):
@@ -45,7 +45,7 @@ class TestFixedPointsDesignSpace(TestCase):
         with self.assertRaises(ValueError):
             self.design_space.update(self.mock_model, scale=np.ones((3, 5, 6)))
 
-    @mock.patch("vectoptal.design_space.RectangularConfidenceRegion.update")
+    @mock.patch("vopy.design_space.RectangularConfidenceRegion.update")
     def test_update_all_pts(self, mock_conf_region_update):
         """
         Test the update method with all points.
@@ -98,7 +98,7 @@ class TestAdaptivelyDiscretizedDesignSpace(TestCase):
         with self.assertRaises(ValueError):
             self.design_space.update(self.mock_model, scale=np.ones((3, 5, 6)))
 
-    @mock.patch("vectoptal.design_space.RectangularConfidenceRegion.update")
+    @mock.patch("vopy.design_space.RectangularConfidenceRegion.update")
     def test_update_all_pts(self, mock_conf_region_update):
         """
         Test the update method with all points.

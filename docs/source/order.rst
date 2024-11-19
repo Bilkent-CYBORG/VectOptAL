@@ -2,11 +2,11 @@
     :class: hidden-section
 
 
-vectoptal.order
+vopy.order
 ===================================
 
-.. automodule:: vectoptal.order
-.. currentmodule:: vectoptal.order
+.. automodule:: vopy.order
+.. currentmodule:: vopy.order
 
 .. autoclass:: Order
     :members:

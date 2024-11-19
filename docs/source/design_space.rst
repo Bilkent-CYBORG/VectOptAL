@@ -2,11 +2,11 @@
     :class: hidden-section
 
 
-vectoptal.design_space
+vopy.design_space
 ===================================
 
-.. automodule:: vectoptal.design_space
-.. currentmodule:: vectoptal.design_space
+.. automodule:: vopy.design_space
+.. currentmodule:: vopy.design_space
 
 .. autoclass:: DesignSpace
     :members:

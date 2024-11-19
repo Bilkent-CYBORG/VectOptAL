@@ -2,12 +2,12 @@ import logging
 
 import numpy as np
 
-from vectoptal.order import ComponentwiseOrder
-from vectoptal.datasets import get_dataset_instance
-from vectoptal.design_space import FixedPointsDesignSpace
-from vectoptal.algorithms.algorithm import PALAlgorithm
-from vectoptal.maximization_problem import ProblemFromDataset
-from vectoptal.models import EmpiricalMeanVarModel
+from vopy.order import ComponentwiseOrder
+from vopy.datasets import get_dataset_instance
+from vopy.design_space import FixedPointsDesignSpace
+from vopy.algorithms.algorithm import PALAlgorithm
+from vopy.maximization_problem import ProblemFromDataset
+from vopy.models import EmpiricalMeanVarModel
 
 
 class Auer(PALAlgorithm):
@@ -30,7 +30,7 @@ class Auer(PALAlgorithm):
     white Gaussian noise whose diagonal entries are specified by the user.
 
     Example:
-        >>> from vectoptal.algorithms import Auer
+        >>> from vopy.algorithms import Auer
         >>>
         >>> epsilon, delta, noise_var = 0.1, 0.05, 0.01
         >>> dataset_name = "DiskBrake"

@@ -2,11 +2,11 @@
     :class: hidden-section
 
 
-vectoptal.ordering_cone
+vopy.ordering_cone
 ===================================
 
-.. automodule:: vectoptal.ordering_cone
-.. currentmodule:: vectoptal.ordering_cone
+.. automodule:: vopy.ordering_cone
+.. currentmodule:: vopy.ordering_cone
 
 .. autoclass:: OrderingCone
     :members:

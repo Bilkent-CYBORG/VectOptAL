@@ -3,10 +3,10 @@ from typing import Optional
 
 import numpy as np
 
-from vectoptal.order import Order
-from vectoptal.datasets import get_dataset_instance
-from vectoptal.algorithms.algorithm import PALAlgorithm
-from vectoptal.maximization_problem import ProblemFromDataset
+from vopy.order import Order
+from vopy.datasets import get_dataset_instance
+from vopy.algorithms.algorithm import PALAlgorithm
+from vopy.maximization_problem import ProblemFromDataset
 
 
 class NaiveElimination(PALAlgorithm):
@@ -31,8 +31,8 @@ class NaiveElimination(PALAlgorithm):
     white Gaussian noise whose diagonal entries are specified by the user.
 
     Example:
-        >>> from vectoptal.order import ComponentwiseOrder
-        >>> from vectoptal.algorithms import NaiveElimination
+        >>> from vopy.order import ComponentwiseOrder
+        >>> from vopy.algorithms import NaiveElimination
         >>>
         >>> epsilon, delta, noise_var = 0.1, 0.05, 0.01
         >>> dataset_name = "DiskBrake"

@@ -2,10 +2,10 @@ from itertools import combinations
 from abc import ABC, abstractmethod
 from typing import Any, Tuple, Optional
 
-from vectoptal.order import Order
-from vectoptal.utils import binary_entropy
-from vectoptal.models import Model, ModelList
-from vectoptal.design_space import DiscreteDesignSpace
+from vopy.order import Order
+from vopy.utils import binary_entropy
+from vopy.models import Model, ModelList
+from vopy.design_space import DiscreteDesignSpace
 
 import numpy as np
 

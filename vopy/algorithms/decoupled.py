@@ -2,15 +2,15 @@ import logging
 
 import numpy as np
 
-from vectoptal.order import Order
-from vectoptal.datasets import get_dataset_instance
-from vectoptal.algorithms.algorithm import Algorithm
-from vectoptal.maximization_problem import ProblemFromDataset, DecoupledEvaluationProblem
-from vectoptal.acquisition import (
+from vopy.order import Order
+from vopy.datasets import get_dataset_instance
+from vopy.algorithms.algorithm import Algorithm
+from vopy.maximization_problem import ProblemFromDataset, DecoupledEvaluationProblem
+from vopy.acquisition import (
     ThompsonEntropyDecoupledAcquisition,
     optimize_decoupled_acqf_discrete,
 )
-from vectoptal.models import GPyTorchModelListExactModel, get_gpytorch_modellist_w_known_hyperparams
+from vopy.models import GPyTorchModelListExactModel, get_gpytorch_modellist_w_known_hyperparams
 
 
 class DecoupledGP(Algorithm):
@@ -37,8 +37,8 @@ class DecoupledGP(Algorithm):
     regions.
 
     Example:
-        >>> from vectoptal.order import ComponentwiseOrder
-        >>> from vectoptal.algorithms import DecoupledGP
+        >>> from vopy.order import ComponentwiseOrder
+        >>> from vopy.algorithms import DecoupledGP
         >>>
         >>> noise_var = 0.01
         >>> cost_budget = 64

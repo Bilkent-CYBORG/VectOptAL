@@ -1,11 +1,11 @@
 from unittest import TestCase
 
-from vectoptal.utils import set_seed
-from vectoptal.utils.seed import SEED
-from vectoptal.order import ComponentwiseOrder
-from vectoptal.algorithms import DecoupledGP
-from vectoptal.datasets import get_dataset_instance
-from vectoptal.utils.evaluate import calculate_epsilonF1_score
+from vopy.utils import set_seed
+from vopy.utils.seed import SEED
+from vopy.order import ComponentwiseOrder
+from vopy.algorithms import DecoupledGP
+from vopy.datasets import get_dataset_instance
+from vopy.utils.evaluate import calculate_epsilonF1_score
 
 
 class TestDecoupledGP(TestCase):

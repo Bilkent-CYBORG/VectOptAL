@@ -1,4 +1,4 @@
-from vectoptal.acquisition.acquisition import (
+from vopy.acquisition.acquisition import (
     AcquisitionStrategy,
     DecoupledAcquisitionStrategy,
     SumVarianceAcquisition,

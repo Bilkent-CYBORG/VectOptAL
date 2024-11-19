@@ -1,11 +1,11 @@
 .. role:: hidden
     :class: hidden-section
 
-vectoptal.confidence_region
+vopy.confidence_region
 ===================================
 
-.. automodule:: vectoptal.confidence_region
-.. currentmodule:: vectoptal.confidence_region
+.. automodule:: vopy.confidence_region
+.. currentmodule:: vopy.confidence_region
 
 .. autoclass:: ConfidenceRegion
     :members:

@@ -2,12 +2,12 @@ from unittest import TestCase
 
 import numpy as np
 
-from vectoptal.utils import set_seed
-from vectoptal.utils.seed import SEED
-from vectoptal.algorithms import PaVeBaGP
-from vectoptal.order import ComponentwiseOrder
-from vectoptal.datasets import get_dataset_instance
-from vectoptal.utils.evaluate import calculate_epsilonF1_score
+from vopy.utils import set_seed
+from vopy.utils.seed import SEED
+from vopy.algorithms import PaVeBaGP
+from vopy.order import ComponentwiseOrder
+from vopy.datasets import get_dataset_instance
+from vopy.utils.evaluate import calculate_epsilonF1_score
 
 
 class TestPaVeBaGP(TestCase):

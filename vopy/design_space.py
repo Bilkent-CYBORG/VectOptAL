@@ -4,13 +4,13 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-from vectoptal.confidence_region import (
+from vopy.confidence_region import (
     ConfidenceRegion,
     RectangularConfidenceRegion,
     EllipsoidalConfidenceRegion,
 )
-from vectoptal.models import Model, GPModel
-from vectoptal.utils import get_closest_indices_from_points
+from vopy.models import Model, GPModel
+from vopy.utils import get_closest_indices_from_points
 
 
 class DesignSpace(ABC):

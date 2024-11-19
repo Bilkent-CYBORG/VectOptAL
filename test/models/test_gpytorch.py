@@ -5,7 +5,7 @@ from gpytorch.distributions import MultitaskMultivariateNormal, MultivariateNorm
 from gpytorch.kernels import RBFKernel
 from gpytorch.likelihoods import GaussianLikelihood, MultitaskGaussianLikelihood
 
-from vectoptal.models.gpytorch import (
+from vopy.models.gpytorch import (
     MultitaskExactGPModel,
     BatchIndependentExactGPModel,
     GPyTorchMultioutputExactModel,
@@ -17,7 +17,7 @@ from vectoptal.models.gpytorch import (
     get_gpytorch_model_w_known_hyperparams,
 )
 
-from vectoptal.maximization_problem import Problem
+from vopy.maximization_problem import Problem
 
 
 class TestMultitaskExactGPModel(unittest.TestCase):

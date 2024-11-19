@@ -1,11 +1,11 @@
 from unittest import TestCase
 
-from vectoptal.utils import set_seed
-from vectoptal.utils.seed import SEED
-from vectoptal.order import ConeTheta2DOrder
-from vectoptal.algorithms import NaiveElimination
-from vectoptal.datasets import get_dataset_instance
-from vectoptal.utils.evaluate import calculate_epsilonF1_score
+from vopy.utils import set_seed
+from vopy.utils.seed import SEED
+from vopy.order import ConeTheta2DOrder
+from vopy.algorithms import NaiveElimination
+from vopy.datasets import get_dataset_instance
+from vopy.utils.evaluate import calculate_epsilonF1_score
 
 
 class TestNaiveElimination(TestCase):

@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.patches import Polygon
 
-from vectoptal.utils import get_2d_w
+from vopy.utils import get_2d_w
 
 
 def plot_2d_theta_cone(

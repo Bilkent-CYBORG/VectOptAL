@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import numpy as np
 
-from vectoptal.models import EmpiricalMeanVarModel
+from vopy.models import EmpiricalMeanVarModel
 
 
 class TestEmpiricalMeanVarModel(TestCase):

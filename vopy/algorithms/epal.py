@@ -1,39 +1,35 @@
 import logging
-from typing import Tuple
 
 import numpy as np
-from scipy.optimize import minimize
 
-from vectoptal.order import Order
-from vectoptal.datasets import get_dataset_instance
-from vectoptal.algorithms.algorithm import PALAlgorithm
-from vectoptal.design_space import FixedPointsDesignSpace
-from vectoptal.maximization_problem import ProblemFromDataset
-from vectoptal.acquisition import MaxDiagonalAcquisition, optimize_acqf_discrete
-from vectoptal.models import CorrelatedExactGPyTorchModel, get_gpytorch_model_w_known_hyperparams
-from vectoptal.confidence_region import (
+from vopy.order import ComponentwiseOrder
+from vopy.datasets import get_dataset_instance
+from vopy.algorithms.algorithm import PALAlgorithm
+from vopy.maximization_problem import ProblemFromDataset
+from vopy.acquisition import MaxDiagonalAcquisition, optimize_acqf_discrete
+from vopy.design_space import FixedPointsDesignSpace
+from vopy.models import IndependentExactGPyTorchModel, get_gpytorch_model_w_known_hyperparams
+from vopy.confidence_region import (
     confidence_region_is_dominated,
     confidence_region_check_dominates,
     confidence_region_is_covered,
 )
 
 
-class VOGP(PALAlgorithm):
-    """
-    Implement the Vector Optimization with Gaussian Process (VOGP) algorithm.
+class EpsilonPAL(PALAlgorithm):
+    r"""
+    Implement the GP-based :math:`\epsilon`-Pareto Active Learning (:math:`\epsilon`-PAL) algorithm.
 
-    :param epsilon: Accuracy parameter for the PAC algorithm.
+    :param epsilon: Determines the accuracy of the PAC-learning framework.
     :type epsilon: float
-    :param delta: Confidence parameter for the PAC algorithm.
+    :param delta: Determines the success probability of the PAC-learning framework.
     :type delta: float
     :param dataset_name: Name of the dataset to be used.
     :type dataset_name: str
-    :param order: An instance of the Order class for managing comparisons.
-    :type order: Order
     :param noise_var: Variance of the Gaussian sampling noise.
     :type noise_var: float
     :param conf_contraction: Contraction coefficient to shrink the
-        confidence regions empirically. Defaults to 32.
+        confidence regions empirically. Defaults to 9.
     :type conf_contraction: float
     :param batch_size: Number of samples to be taken in each round. Defaults to 1.
     :type batch_size: int
@@ -43,15 +39,14 @@ class VOGP(PALAlgorithm):
     It uses Gaussian Process regression to model the rewards and confidence
     regions.
 
-    Example Usage:
-        >>> from vectoptal.order import ComponentwiseOrder
-        >>> from vectoptal.algorithms import VOGP
+    Example:
+        >>> from vopy.order import ComponentwiseOrder
+        >>> from vopy.algorithms import EpsilonPAL
         >>>
         >>> epsilon, delta, noise_var = 0.1, 0.05, 0.01
         >>> dataset_name = "DiskBrake"
-        >>> order_right = ComponentwiseOrder(2)
         >>>
-        >>> algorithm = VOGP(epsilon, delta, dataset_name, order_right, noise_var)
+        >>> algorithm = EpsilonPAL(epsilon, delta, dataset_name, noise_var)
         >>>
         >>> while True:
         >>>     is_done = algorithm.run_one_step()
@@ -59,7 +54,13 @@ class VOGP(PALAlgorithm):
         >>>     if is_done:
         >>>          break
         >>>
-        >>> pareto_set = algorithm.P
+        >>> pareto_indices = algorithm.P
+
+    Reference:
+        ":math:`\epsilon`-PAL: An Active Learning Approach to the Multi-Objective Optimization
+        Problem",
+        Zuluaga, Krause, Püschel, JMLR, '16
+        https://jmlr.org/papers/v17/15-047.html
     """
 
     def __init__(
@@ -67,20 +68,19 @@ class VOGP(PALAlgorithm):
         epsilon: float,
         delta: float,
         dataset_name: str,
-        order: Order,
         noise_var: float,
-        conf_contraction: float = 32,
+        conf_contraction: float = 9,
         batch_size: int = 1,
     ) -> None:
         super().__init__(epsilon, delta)
 
-        self.order = order
         self.batch_size = batch_size
         self.conf_contraction = conf_contraction
 
         dataset = get_dataset_instance(dataset_name)
 
         self.m = dataset.out_dim
+        self.order = ComponentwiseOrder(dim=self.m)
 
         self.design_space = FixedPointsDesignSpace(
             dataset.in_data, dataset.out_dim, confidence_type="hyperrectangle"
@@ -88,16 +88,13 @@ class VOGP(PALAlgorithm):
         self.problem = ProblemFromDataset(dataset, noise_var)
 
         self.model = get_gpytorch_model_w_known_hyperparams(
-            CorrelatedExactGPyTorchModel,
+            IndependentExactGPyTorchModel,
             self.problem,
             noise_var,
             initial_sample_cnt=1,
             X=dataset.in_data,
             Y=dataset.out_data,
         )
-
-        self.u_star, self.d1 = self.compute_u_star()
-        self.u_star_eps = self.u_star * epsilon
 
         self.S = set(range(self.design_space.cardinality))
         self.P = set()
@@ -126,8 +123,7 @@ class VOGP(PALAlgorithm):
             pt_conf = self.design_space.confidence_regions[pt]
             for pt_prime in pessimistic_set:
                 pt_p_conf = self.design_space.confidence_regions[pt_prime]
-                # Function to check if ∃z' in R(x') such that R(x) <_C z + u, where u < epsilon
-                if confidence_region_is_dominated(self.order, pt_conf, pt_p_conf, self.u_star_eps):
+                if confidence_region_is_dominated(self.order, pt_conf, pt_p_conf, self.epsilon):
                     to_be_discarded.append(pt)
                     break
 
@@ -150,7 +146,7 @@ class VOGP(PALAlgorithm):
 
                 pt_p_conf = self.design_space.confidence_regions[pt_prime]
 
-                if confidence_region_is_covered(self.order, pt_conf, pt_p_conf, self.u_star_eps):
+                if confidence_region_is_covered(self.order, pt_conf, pt_p_conf, self.epsilon):
                     break
             else:
                 new_pareto_pts.append(pt)
@@ -177,9 +173,10 @@ class VOGP(PALAlgorithm):
         self.model.update()
 
     def run_one_step(self) -> bool:
-        """
-        Executes one iteration of the VOGP algorithm, performing modeling, discarding,
-        epsilon-covering, and evaluating phases. Returns the algorithm termination status.
+        r"""
+        Executes one iteration of the :math:`\epsilon`-PAL algorithm, performing modeling,
+        discarding, epsilon-covering, and evaluating phases. Returns the algorithm termination
+        status.
 
         :return: True if the set `S` is empty, indicating termination, False otherwise.
         :rtype: bool
@@ -226,51 +223,9 @@ class VOGP(PALAlgorithm):
             * self.design_space.cardinality
             * (np.pi**2)
             * ((self.round + 1) ** 2)
-            / (3 * self.delta)
+            / (6 * self.delta)
         )
         return np.sqrt(beta_sqr / self.conf_contraction)
-
-    def compute_u_star(self) -> Tuple[np.ndarray, float]:
-        """
-        Computes the normalized direction vector `u_star` and the ordering difficulty `d1` of
-        a polyhedral ordering cone defined in the order self.order.ordering_cone.
-
-        :return: A tuple containing `u_star`, the normalized direction vector of the cone, and
-            `d1`, the Euclidean norm of the vector that gives `u_star` when normalized, _i.e._, `z`.
-        :rtype: Tuple[np.ndarray, float]
-        """
-
-        # TODO: Convert to CVXPY and check if efficient.
-
-        cone_matrix = self.order.ordering_cone.W
-
-        n = cone_matrix.shape[0]
-
-        def objective(z):
-            return np.linalg.norm(z)
-
-        def constraint_func(z):
-            constraints = []
-            constraint = cone_matrix @ (z) - np.ones((n,))
-            constraints.extend(constraint)
-            return np.array(constraints)
-
-        z_init = np.ones(self.m)  # Initial guess
-        cons = [{"type": "ineq", "fun": lambda z: constraint_func(z)}]  # Constraints
-        res = minimize(
-            objective,
-            z_init,
-            method="SLSQP",
-            constraints=cons,
-            options={"maxiter": 1000000, "ftol": 1e-30},
-        )
-        norm = np.linalg.norm(res.x)
-        construe = np.all(constraint_func(res.x) + 1e-14)
-
-        if not construe:
-            pass
-
-        return res.x / norm, norm
 
     def compute_pessimistic_set(self) -> set:
         """

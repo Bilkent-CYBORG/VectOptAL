@@ -3,11 +3,11 @@ import numpy as np
 import torch
 from botorch.utils.multi_objective.hypervolume import Hypervolume
 
-from vectoptal.order import Order
-from vectoptal.models import Model
-from vectoptal.datasets import Dataset
-from vectoptal.maximization_problem import ContinuousProblem
-from vectoptal.utils import get_uncovered_size, get_delta, generate_sobol_samples
+from vopy.order import Order
+from vopy.models import Model
+from vopy.datasets import Dataset
+from vopy.maximization_problem import ContinuousProblem
+from vopy.utils import get_uncovered_size, get_delta, generate_sobol_samples
 
 
 def calculate_epsilonF1_score(

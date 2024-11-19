@@ -3,8 +3,8 @@ from typing import Optional, Union, List
 
 import numpy as np
 
-from vectoptal.datasets import Dataset
-from vectoptal.utils import get_closest_indices_from_points, get_noisy_evaluations_chol
+from vopy.datasets import Dataset
+from vopy.utils import get_closest_indices_from_points, get_noisy_evaluations_chol
 
 
 # TODO: Revise evaluate abstract method.

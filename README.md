@@ -1,12 +1,21 @@
 ## Vector Optimization with Active Learning
 
-[![Test Workflow](https://github.com/Bilkent-CYBORG/VectOptAL/actions/workflows/test.yml/badge.svg)](https://github.com/Bilkent-CYBORG/VectOptAL/blob/master/.github/workflows/test.yml)
-[![Documentation Status](https://readthedocs.org/projects/vectoptal/badge/?version=latest)](https://vectoptal.readthedocs.io/en/latest/)
+[![Test Workflow](https://github.com/Bilkent-CYBORG/VOPy/actions/workflows/test.yml/badge.svg)](https://github.com/Bilkent-CYBORG/VOPy/blob/master/.github/workflows/test.yml)
+[![Documentation Status](https://readthedocs.org/projects/vopy/badge/?version=latest)](https://vopy.readthedocs.io/en/latest/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-### Examples and Documentation
+### What is VOPy?
+VOPy is an open-source Python library built to address noisy black-box vector optimization problems, where the user preferences are encoded with a cone order.
 
-Visit our [**website**](https://vectoptal.readthedocs.io/en/latest/) to see tutorials, examples and API references on how to use VectOptAL.
+### What to do with VOPy?
+VOPy includes several pre-implemented algorithms, models, orders, and problems from the literature for black-box vector optimization, allowing users to select and utilize components based on their specific needs. Specifically, you can:
+- Using existing methods for novel problems
+- Benchmark novel algorithms with literature
+- ... and anything in between utilizing wide range of existing tools!
+
+### How To Start?
+
+Visit our [**website**](https://vopy.readthedocs.io/en/latest/) to see tutorials, examples and API references on how to use VOPy.
 
 
 ### Setup
@@ -15,7 +24,7 @@ For requirements, see [requirements.txt](requirements.txt) or [environment.yml](
 
 Installation using pip:
 ```bash
-pip install vectoptal
+pip install vopy
 ```
 
 <!-- To setup a proper environment:
@@ -27,7 +36,7 @@ conda env create --name vo --file environment.yml
 To upgrade to the latest (unstable) version, run
 
 ```bash
-pip install --upgrade git+https://github.com/Bilkent-CYBORG/VectOptAL.git
+pip install --upgrade git+https://github.com/Bilkent-CYBORG/VOPy.git
 ```
 
 #### Manual installation (for development)
@@ -35,8 +44,8 @@ pip install --upgrade git+https://github.com/Bilkent-CYBORG/VectOptAL.git
 If you are contributing a pull request, it is best to perform a manual installation:
 
 ```sh
-git clone https://github.com/Bilkent-CYBORG/VectOptAL.git
-cd VectOptAL
+git clone https://github.com/Bilkent-CYBORG/VOPy.git
+cd VOPy
 pip install -e .[dev,docs,examples,test]
 ```
 

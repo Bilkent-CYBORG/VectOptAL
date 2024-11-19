@@ -3,9 +3,9 @@ from unittest import TestCase, mock
 import torch
 import numpy as np
 
-from vectoptal.datasets import get_dataset_instance
-from vectoptal.utils.seed import SEED
-from vectoptal.utils import (
+from vopy.datasets import get_dataset_instance
+from vopy.utils.seed import SEED
+from vopy.utils import (
     set_seed,
     get_2d_w,
     get_alpha,
@@ -132,7 +132,7 @@ class TestGetClosestIndicesFromPoints(TestCase):
 class TestGetNoisyEvaluationsChol(TestCase):
     """Test noisy evaluations generation."""
 
-    @mock.patch("vectoptal.utils.utils.np.random.normal")
+    @mock.patch("vopy.utils.utils.np.random.normal")
     def test_get_noisy_evaluations_chol(self, mock_normal):
         """Test the get_noisy_evaluations_chol function."""
         n = 10

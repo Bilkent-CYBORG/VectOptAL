@@ -10,9 +10,9 @@ from botorch.fit import fit_gpytorch_mll
 import numpy as np
 from numpy.typing import ArrayLike
 
-from vectoptal.models import GPModel, ModelList
-from vectoptal.maximization_problem import Problem
-from vectoptal.utils.utils import generate_sobol_samples
+from vopy.models import GPModel, ModelList
+from vopy.maximization_problem import Problem
+from vopy.utils.utils import generate_sobol_samples
 
 torch.set_default_dtype(torch.float64)
 

@@ -5,8 +5,8 @@ import numpy as np
 import cvxpy as cp
 import scipy as sp
 
-from vectoptal.order import Order
-from vectoptal.utils import (
+from vopy.order import Order
+from vopy.utils import (
     hyperrectangle_check_intersection,
     hyperrectangle_get_vertices,
     is_pt_in_extended_polytope,

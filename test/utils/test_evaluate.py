@@ -2,8 +2,8 @@ from unittest import mock, TestCase
 
 import numpy as np
 
-from vectoptal.order import ComponentwiseOrder
-from vectoptal.utils.evaluate import (
+from vopy.order import ComponentwiseOrder
+from vopy.utils.evaluate import (
     calculate_epsilonF1_score,
     calculate_hypervolume_discrepancy_for_model,
 )
@@ -31,7 +31,7 @@ class TestEpsilonF1Score(TestCase):
 class TestHypervolumeDiscrepancy(TestCase):
     """Test the hypervolume discrepancy evaluation metric."""
 
-    @mock.patch("vectoptal.utils.evaluate.generate_sobol_samples")
+    @mock.patch("vopy.utils.evaluate.generate_sobol_samples")
     def test_calculate_hypervolume_discrepancy_for_model(self, mock_generate_sobol_samples):
         """Test the calculate_hypervolume_discrepancy_for_model function."""
 

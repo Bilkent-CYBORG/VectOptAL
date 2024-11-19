@@ -2,11 +2,11 @@
     :class: hidden-section
 
 
-vectoptal.datasets
+vopy.datasets
 ===================================
 
-.. automodule:: vectoptal.datasets
-.. currentmodule:: vectoptal.datasets
+.. automodule:: vopy.datasets
+.. currentmodule:: vopy.datasets
 
-.. automodule:: vectoptal.datasets.dataset
+.. automodule:: vopy.datasets.dataset
     :members:

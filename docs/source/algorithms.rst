@@ -1,11 +1,11 @@
 .. role:: hidden
     :class: hidden-section
 
-vectoptal.algorithms
+vopy.algorithms
 ===================================
 
-.. automodule:: vectoptal.algorithms
-.. currentmodule:: vectoptal.algorithms
+.. automodule:: vopy.algorithms
+.. currentmodule:: vopy.algorithms
 
 
 Algorithms for Vector Optimization

@@ -1,5 +1,5 @@
-from vectoptal.models.model import Model, GPModel, ModelList, UncertaintyPredictiveModel
-from vectoptal.models.gpytorch import (
+from vopy.models.model import Model, GPModel, ModelList, UncertaintyPredictiveModel
+from vopy.models.gpytorch import (
     GPyTorchModel,
     MultitaskExactGPModel,
     BatchIndependentExactGPModel,
@@ -11,7 +11,7 @@ from vectoptal.models.gpytorch import (
     GPyTorchModelListExactModel,
     get_gpytorch_modellist_w_known_hyperparams,
 )
-from vectoptal.models.empirical_mean_var import EmpiricalMeanVarModel
+from vopy.models.empirical_mean_var import EmpiricalMeanVarModel
 
 __all__ = [
     "Model",

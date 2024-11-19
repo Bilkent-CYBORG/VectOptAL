@@ -3,10 +3,10 @@ from unittest import TestCase, mock
 
 import numpy as np
 
-from vectoptal.utils import set_seed
-from vectoptal.utils.seed import SEED
-from vectoptal.datasets import Dataset
-from vectoptal.maximization_problem import (
+from vopy.utils import set_seed
+from vopy.utils.seed import SEED
+from vopy.datasets import Dataset
+from vopy.maximization_problem import (
     ProblemFromDataset,
     ContinuousProblem,
     get_continuous_problem,
@@ -76,7 +76,7 @@ class TestContinuousProblem(TestCase):
     def setUp(self):
         set_seed(SEED)
 
-        module = importlib.import_module(name="vectoptal.maximization_problem")
+        module = importlib.import_module(name="vopy.maximization_problem")
         module_globals = module.__dict__
 
         self.problem_names = [
