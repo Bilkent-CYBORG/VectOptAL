@@ -164,10 +164,10 @@ class BraninCurrin(ContinuousProblem):
     :type noise_var: float
 
     References:
-    .. [Belakaria2019]
-        Belakaria, Deshwal, Doppa.
-        Max-value Entropy Search for Multi-Objective Bayesian Optimization.
-        Neural Information Processing Systems (NeurIPS), 2019.
+        .. [Belakaria2019]
+            Belakaria, Deshwal, Doppa.
+            Max-value Entropy Search for Multi-Objective Bayesian Optimization.
+            Neural Information Processing Systems (NeurIPS), 2019.
     """
 
     bounds = [(0.0, 1.0), (0.0, 1.0)]

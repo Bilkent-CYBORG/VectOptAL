@@ -6,7 +6,4 @@ vopy.maximization_problem
 ===================================
 
 .. automodule:: vopy.maximization_problem
-.. currentmodule:: vopy.maximization_problem
-
-.. automodule:: vopy.maximization_problem
     :members:
