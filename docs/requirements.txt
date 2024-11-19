@@ -1,3 +1,4 @@
 # These are installed via pip through conda/mamba. Don't add anything if you are not sure.
 sphinx_rtd_theme
 sphinx-notfound-page
+nbsphinx

@@ -10,19 +10,13 @@ VectOptAL's documentation!
 
 Welcome to VectOptAL, an open-source Python library built to tackle the challenges of black-box vector optimization. Designed for scenarios where multiple objectives must be optimized simultaneously, VectOptAL goes beyond standard multi-objective optimization tools by offering a unique, cone-based ordering of solutions. With features tailored for noisy environments, both discrete and continuous design spaces, limited budgets, and batch observations, VectOptAL opens up new possibilities for researchers and practitioners. Its modular architecture supports easy integration of existing methods and encourages the creation of innovative algorithms, making VectOptAL a versatile toolkit for advancing work in vector optimization.
 
-.. toctree::
-   :glob:
-   :maxdepth: 1
-   :caption: Tutorials:
-
-   examples/tutorial.ipynb
 
 .. toctree::
    :glob:
    :maxdepth: 2
-   :caption: Examples:
+   :caption: Examples
 
-   examples/**/index
+   examples/*
 
 .. toctree::
    :maxdepth: 1

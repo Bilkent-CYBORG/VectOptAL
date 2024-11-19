@@ -27,7 +27,7 @@ def plot_2d_theta_cone(
     xlim = [-5, 5]
     ylim = [-5, 5]
 
-    fig, ax = plt.subplots(1, 1, figsize=(8, 5))
+    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
 
@@ -110,7 +110,7 @@ def plot_2d_cone(
     xlim = [-5, 5]
     ylim = [-5, 5]
 
-    fig, ax = plt.subplots(1, 1, figsize=(8, 5))
+    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
 
@@ -162,7 +162,7 @@ def plot_3d_cone(
     ylim = [-5, 5]
     zlim = [-5, 5]
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(6, 4))
     ax = fig.add_subplot(111, projection="3d")
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
@@ -225,7 +225,7 @@ def plot_pareto_front(
     if dim not in [2, 3]:
         raise AssertionError("Only 2D and 3D plots are supported.")
 
-    fig = plt.figure(figsize=(8, 5))
+    fig = plt.figure(figsize=(6, 4))
 
     mask = np.ones(len(elements), dtype=np.uint8)
     mask[pareto_indices] = 0
@@ -244,14 +244,14 @@ def plot_pareto_front(
             elements[pareto_indices][:, 1],
             c="mediumslateblue",
             label="Pareto",
-            alpha=0.6,
+            alpha=0.7,
         )
         ax.scatter(
             elements[non_pareto_indices][:, 0],
             elements[non_pareto_indices][:, 1],
             c="tab:blue",
             label="Non Pareto",
-            alpha=0.6,
+            alpha=0.5,
         )
     else:
         ax = fig.add_subplot(111, projection="3d")
