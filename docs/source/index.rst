@@ -29,6 +29,7 @@ Welcome to VOPy, an open-source Python library built to tackle the challenges of
    acquisition
    design_space
    confidence_region
+   maximization_problem
    datasets
    utils
    
