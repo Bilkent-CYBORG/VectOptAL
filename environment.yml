@@ -5,13 +5,11 @@ channels:
 - gpytorch
 dependencies:
 - python>=3.10
-- gpytorch
 - botorch>=0.10.0,<0.12.0
 - cvxpy
 - scikit-learn
 - scipy
 - matplotlib
-- numpy
 - jupyter
 - pytest
 - pytest-cov
@@ -20,6 +18,5 @@ dependencies:
 - pydocstyle
 - black
 - bandit
-- sphinx_rtd_theme
 - pip:
     - -r docs/requirements.txt

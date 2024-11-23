@@ -17,6 +17,8 @@ from vopy.models.gpytorch import (
     get_gpytorch_model_w_known_hyperparams,
 )
 
+from vopy.utils import set_seed
+from vopy.utils.seed import SEED
 from vopy.maximization_problem import Problem
 
 
@@ -25,6 +27,7 @@ class TestMultitaskExactGPModel(unittest.TestCase):
 
     def setUp(self):
         """Set up sample data and model for tests."""
+        set_seed(SEED)
         self.X = torch.randn(10, 2)
         self.Y = torch.randn(10, 2)
         self.likelihood = MultitaskGaussianLikelihood(num_tasks=self.Y.shape[-1])
@@ -41,6 +44,7 @@ class TestBatchIndependentExactGPModel(unittest.TestCase):
 
     def setUp(self):
         """Set up sample data and model for tests."""
+        set_seed(SEED)
         self.X = torch.randn(10, 2)
         self.Y = torch.randn(10, 2)
         self.likelihood = GaussianLikelihood()
@@ -70,6 +74,7 @@ class TestGPyTorchMultioutputExactModel(unittest.TestCase):
     def setUp(self):
         """Set up model instance with test data."""
         # Use the testable subclass to avoid abstract class issues
+        set_seed(SEED)
         self.model = TestableGPyTorchMultioutputExactModel(
             input_dim=2, output_dim=2, noise_var=0.1, model_kind=MultitaskExactGPModel
         )
@@ -113,6 +118,7 @@ class TestCorrelatedExactGPyTorchModel(unittest.TestCase):
 
     def setUp(self):
         """Set up correlated multitask model."""
+        set_seed(SEED)
         self.model = CorrelatedExactGPyTorchModel(input_dim=2, output_dim=2, noise_var=0.1)
         self.X = torch.randn(5, 2)
         self.Y = torch.randn(5, 2)
@@ -122,7 +128,12 @@ class TestCorrelatedExactGPyTorchModel(unittest.TestCase):
     def test_predict(self):
         """Test predict method."""
         means, variances = self.model.predict(self.X)
-        self.assertGreaterEqual(np.min(variances), 0, "Negative variance.")
+        for i in range(len(self.X)):
+            with self.subTest(i=i):
+                try:
+                    np.linalg.cholesky(variances[i].reshape(self.Y.shape[1], self.Y.shape[1]))
+                except np.linalg.LinAlgError:
+                    self.fail("Covariance matrix is not positive definite.")
 
 
 class TestIndependentExactGPyTorchModel(unittest.TestCase):
@@ -130,6 +141,7 @@ class TestIndependentExactGPyTorchModel(unittest.TestCase):
 
     def setUp(self):
         """Set up independent multitask model."""
+        set_seed(SEED)
         self.model = IndependentExactGPyTorchModel(input_dim=2, output_dim=2, noise_var=0.1)
         self.X = torch.randn(5, 2)
         self.Y = torch.randn(5, 2)
@@ -147,6 +159,8 @@ class TestGetGPyTorchModelWithKnownHyperparams(unittest.TestCase):
 
     def test_model_with_given_data(self):
         """Test if the model is created correctly when X and Y data are provided."""
+        set_seed(SEED)
+
         self.input_dim = 2
         self.output_dim = 2
         self.noise_var = 0.1
@@ -187,6 +201,7 @@ class TestSingleTaskGP(unittest.TestCase):
 
     def setUp(self):
         """Set up single-task GP model."""
+        set_seed(SEED)
         self.X = torch.randn(10, 2)
         self.Y = torch.randn(10)
         self.likelihood = GaussianLikelihood()
@@ -203,6 +218,7 @@ class TestGPyTorchModelListExactModel(unittest.TestCase):
 
     def setUp(self):
         """Set up multi-output GP model list."""
+        set_seed(SEED)
         self.input_dim = 2
         self.output_dim = 2
         self.model = GPyTorchModelListExactModel(
@@ -246,6 +262,7 @@ class TestGetGPyTorchModelListWithKnownHyperparams(unittest.TestCase):
 
     def setUp(self):
         """Set up problem instance with test data."""
+        set_seed(SEED)
         self.input_dim = 2
         self.output_dim = 2
         self.noise_var = 0.1
