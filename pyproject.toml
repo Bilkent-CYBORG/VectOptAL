@@ -22,6 +22,12 @@ Homepage = "https://github.com/Bilkent-CYBORG/VOPy"
 Documentation = "https://vopy.readthedocs.io/en/latest/"
 Issues = "https://github.com/Bilkent-CYBORG/VOPy/issues"
 
+[project.optional-dependencies]
+dev = ["black", "flake8", "flake8-print"]
+docs = ["pydocstyle", "sphinx_rtd_theme", "sphinx-notfound-page", "nbsphinx"]
+examples = ["jupyter"]
+test = ["pytest", "pytest-cov", "bandit"]
+
 [build-system]
 requires = ["setuptools>=64", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"

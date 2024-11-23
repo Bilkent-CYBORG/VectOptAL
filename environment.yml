@@ -13,10 +13,10 @@ dependencies:
 - jupyter
 - pytest
 - pytest-cov
+- bandit
+- black
 - flake8
 - flake8-print
 - pydocstyle
-- black
-- bandit
 - pip:
     - -r docs/requirements.txt

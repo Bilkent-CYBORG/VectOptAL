@@ -20,17 +20,10 @@ Visit our [**website**](https://vopy.readthedocs.io/en/latest/) to see tutorials
 
 ### Setup
 
-For requirements, see [requirements.txt](requirements.txt) or [environment.yml](environment.yml).
-
 Installation using pip:
 ```bash
 pip install vopy
 ```
-
-<!-- To setup a proper environment:
-```setup
-conda env create --name vo --file environment.yml
-``` -->
 
 #### Latest (Unstable) Version
 To upgrade to the latest (unstable) version, run
@@ -46,11 +39,8 @@ If you are contributing a pull request, it is best to perform a manual installat
 ```sh
 git clone https://github.com/Bilkent-CYBORG/VOPy.git
 cd VOPy
-pip install -e .[dev,docs,examples,test]
+mamba env create --name vopy --file environment.yml  # To setup a proper development environment
+pip install -e .
 ```
 
-<!-- 
-### Run the example experiment as:
-```bash
-python main.py
-``` -->
+For requirements, see [requirements.txt](requirements.txt) or [environment.yml](environment.yml).

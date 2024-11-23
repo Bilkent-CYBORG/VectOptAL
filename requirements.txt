@@ -7,10 +7,10 @@ numpy
 jupyter
 pytest
 pytest-cov
+bandit
+black
 flake8
 flake8-print
 pydocstyle
-black
-bandit
 
 -r docs/requirements.txt
