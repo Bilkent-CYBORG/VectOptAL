@@ -1,4 +1,4 @@
-name: vectopt
+name: vopy
 channels:
 - conda-forge
 - pytorch

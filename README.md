@@ -43,4 +43,4 @@ mamba env create --name vopy --file environment.yml  # To setup a proper develop
 pip install -e .
 ```
 
-For requirements, see [requirements.txt](requirements.txt) or [environment.yml](environment.yml).
+For all development requirements, see [requirements.txt](requirements.txt) or [environment.yml](environment.yml).
