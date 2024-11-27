@@ -2,7 +2,7 @@ import logging
 
 import numpy as np
 
-from vopy.order import Order
+from vopy.order import PolyhedralConeOrder
 from vopy.confidence_region import (
     confidence_region_is_dominated,
     confidence_region_is_covered,
@@ -64,7 +64,7 @@ class PaVeBa(PALAlgorithm):
         epsilon: float,
         delta: float,
         dataset_name: str,
-        order: Order,
+        order: PolyhedralConeOrder,
         noise_var: float,
         conf_contraction: float = 32,
     ) -> None:

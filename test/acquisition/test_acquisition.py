@@ -2,7 +2,7 @@ from unittest import mock, TestCase
 
 import numpy as np
 
-from vopy.order import Order
+from vopy.order import PolyhedralConeOrder
 from vopy.utils import set_seed
 from vopy.utils.seed import SEED
 from vopy.ordering_cone import OrderingCone
@@ -77,8 +77,8 @@ class TestThompsonEntropyDecoupledAcquisition(TestCase):
         GP.update()
         ordering1 = OrderingCone(np.array([[1, 0], [1, 0]]))
         ordering2 = OrderingCone(np.array([[0, 1], [0, 1]]))
-        order1 = Order(ordering1)
-        order2 = Order(ordering2)
+        order1 = PolyhedralConeOrder(ordering1)
+        order2 = PolyhedralConeOrder(ordering2)
         acq1 = ThompsonEntropyDecoupledAcquisition(GP, order1, 1)
         acq2 = ThompsonEntropyDecoupledAcquisition(GP, order2, 1)
         acq3 = ThompsonEntropyDecoupledAcquisition(GP, order2, 0)

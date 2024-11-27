@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from botorch.utils.multi_objective.hypervolume import Hypervolume
 
-from vopy.order import Order
+from vopy.order import PolyhedralConeOrder
 from vopy.models import Model
 from vopy.datasets import Dataset
 from vopy.maximization_problem import ContinuousProblem
@@ -12,7 +12,7 @@ from vopy.utils import get_uncovered_size, get_delta, generate_sobol_samples
 
 def calculate_epsilonF1_score(
     dataset: Dataset,
-    order: Order,
+    order: PolyhedralConeOrder,
     true_indices: np.ndarray,
     pred_indices: np.ndarray,
     epsilon: float,
@@ -55,7 +55,7 @@ def calculate_epsilonF1_score(
 
 
 def calculate_hypervolume_discrepancy_for_model(
-    order: Order, problem: ContinuousProblem, model: Model
+    order: PolyhedralConeOrder, problem: ContinuousProblem, model: Model
 ):
     """
     This method computes the hypervolume discrepancy between the true Pareto front and the

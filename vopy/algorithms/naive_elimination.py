@@ -3,7 +3,7 @@ from typing import Optional
 
 import numpy as np
 
-from vopy.order import Order
+from vopy.order import PolyhedralConeOrder
 from vopy.datasets import get_dataset_instance
 from vopy.algorithms.algorithm import PALAlgorithm
 from vopy.maximization_problem import ProblemFromDataset
@@ -59,7 +59,7 @@ class NaiveElimination(PALAlgorithm):
         epsilon: float,
         delta: float,
         dataset_name: str,
-        order: Order,
+        order: PolyhedralConeOrder,
         noise_var: float,
         L: Optional[int] = None,
     ) -> None:

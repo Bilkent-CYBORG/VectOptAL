@@ -11,6 +11,9 @@ vopy.order
 .. autoclass:: Order
     :members:
 
+.. autoclass:: PolyhedralConeOrder
+    :members:
+
 Useful Orders
 -----------------------------
 

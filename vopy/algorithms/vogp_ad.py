@@ -3,7 +3,7 @@ import logging
 import numpy as np
 from scipy.optimize import minimize
 
-from vopy.order import Order
+from vopy.order import PolyhedralConeOrder
 from vopy.algorithms.algorithm import PALAlgorithm
 from vopy.maximization_problem import ContinuousProblem
 from vopy.acquisition import MaxDiagonalAcquisition, optimize_acqf_discrete
@@ -67,7 +67,7 @@ class VOGP_AD(PALAlgorithm):
         epsilon: float,
         delta: float,
         problem: ContinuousProblem,
-        order: Order,
+        order: PolyhedralConeOrder,
         noise_var: float,
         conf_contraction: float = 32,
         batch_size: int = 1,

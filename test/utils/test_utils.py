@@ -24,6 +24,8 @@ from vopy.utils import (
     is_pt_in_extended_polytope,
     line_seg_pt_intersect_at_dim,
     binary_entropy,
+    normalize,
+    unnormalize,
 )
 
 
@@ -450,6 +452,24 @@ class TestLineSegPtIntersectAtDim(TestCase):
         target_dim = 1
         intersection = line_seg_pt_intersect_at_dim(P1, P2, target_pt, target_dim)
         self.assertIsNone(intersection)
+
+
+class TestNormalization(TestCase):
+    """Test normalization and unnormalization functions."""
+
+    def setUp(self):
+        self.data = np.array([[1, 0], [2, 1], [3, 2]], dtype=float)
+        self.bounds = [(-1.0, 3.0), (0.0, 2.0)]
+
+    def test_normalize(self):
+        """Test the normalize function."""
+        normalized_data = normalize(self.data, self.bounds)
+        np.testing.assert_allclose(normalized_data, np.array([[0.5, 0.0], [0.75, 0.5], [1.0, 1.0]]))
+
+    def test_unnormalize(self):
+        """Test the unnormalize function."""
+        unnormalized_data = unnormalize(normalize(self.data, self.bounds), self.bounds)
+        np.testing.assert_allclose(unnormalized_data, self.data)
 
 
 class TestBinaryEntropy(TestCase):

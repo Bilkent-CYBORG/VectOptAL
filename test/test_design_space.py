@@ -136,3 +136,11 @@ class TestAdaptivelyDiscretizedDesignSpace(TestCase):
         self.design_space.update(self.mock_model, scale=np.ones(1))
 
         self.assertFalse(self.design_space.should_refine_design(self.mock_model, 1, np.array(1)))
+
+    def visualize_design_space(self):
+        """
+        Test the visualize_design_space method.
+        """
+        fig = self.design_space.visualize_design_space()
+
+        self.assertIsNotNone(fig)

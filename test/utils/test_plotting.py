@@ -9,6 +9,7 @@ from vopy.utils.plotting import (
     plot_3d_cone,
     plot_2d_theta_cone,
     plot_pareto_front,
+    plot_cells_with_centers,
 )
 
 
@@ -40,4 +41,10 @@ class TestPlotting(TestCase):
         result = plot_pareto_front(elements_2d, self.order_2d.get_pareto_set(elements_2d))
         self.assertIsInstance(result, plt.Figure)
         result = plot_pareto_front(elements_3d, self.order_3d.get_pareto_set(elements_3d))
+        self.assertIsInstance(result, plt.Figure)
+
+    def test_plot_cells_with_centers(self):
+        cells = np.array([[[0, 0.5], [0, 1]], [[0.5, 1], [0, 1]]])
+        centers = np.array([[0.25, 0.5], [0.75, 0.5]])
+        result = plot_cells_with_centers(cells, centers)
         self.assertIsInstance(result, plt.Figure)

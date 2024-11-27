@@ -91,7 +91,7 @@ def plot_2d_theta_cone(
 
 def plot_2d_cone(
     cone_membership: Callable[[np.ndarray], np.ndarray], path: Optional[Union[str, PathLike]] = None
-):
+) -> plt.Figure:
     """
     Plot the 2D cone by checking membership of the points in the cone.
 
@@ -141,7 +141,7 @@ def plot_2d_cone(
 
 def plot_3d_cone(
     cone_membership: Callable[[np.ndarray], np.ndarray], path: Optional[Union[str, PathLike]] = None
-):
+) -> plt.Figure:
     """
     Plot the 3D cone by checking membership of the points in the cone.
 
@@ -198,7 +198,7 @@ def plot_3d_cone(
 
 def plot_pareto_front(
     elements: np.ndarray, pareto_indices: np.ndarray, path: Optional[Union[str, PathLike]] = None
-):
+) -> plt.Figure:
     """
     Plot the Pareto front for a given set of elements.
 
@@ -286,6 +286,51 @@ def plot_pareto_front(
 
     ax.legend(loc="lower left")
     fig.tight_layout()
+
+    if path is not None:
+        fig.savefig(path)
+
+    return fig
+
+
+def plot_cells_with_centers(
+    cells: np.ndarray, centers: np.ndarray, path: Optional[Union[str, PathLike]] = None
+) -> plt.Figure:
+    """
+    Plot the given cells with their corresponding centers. The plot is created using
+    Matplotlib and can be saved to a specified path if provided.
+
+    :param cells: An array of shape (N, 2, 2) representing the cells to be plotted.
+    :type cells: np.ndarray
+    :param centers: An array of shape (N, 2) representing the centers of the cells.
+    :type centers: np.ndarray
+    :param path: The file path where the plot will be saved. If None, the plot is not saved.
+    :type path: Optional[Union[str, PathLike]]
+    :return: The Matplotlib figure object containing the plot.
+    :rtype: plt.Figure
+    """
+
+    dim = centers.shape[1]
+    if dim != 2:
+        raise NotImplementedError("Visualization of cells is only implemented for 2D data.")
+
+    fig, ax = plt.subplots()
+    for point, cell in zip(centers, cells):
+        rect = plt.Rectangle(
+            (cell[0][0], cell[1][0]),
+            cell[0][1] - cell[0][0],
+            cell[1][1] - cell[1][0],
+            edgecolor="black",
+            facecolor="none",
+        )
+        ax.add_patch(rect)
+        ax.plot(point[0], point[1], c="tab:red", marker="o", markersize=2)  # Plot the center point
+
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.set_xlabel(r"$x_1$")
+    ax.set_ylabel(r"$x_2$")
+    ax.set_title("Cells with centers")
 
     if path is not None:
         fig.savefig(path)

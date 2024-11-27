@@ -1,6 +1,6 @@
 from os import PathLike
 from typing import Union, Optional
-from abc import ABC
+from abc import ABC, abstractmethod
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -11,9 +11,21 @@ from vopy.ordering_cone import OrderingCone, ConeTheta2D
 
 class Order(ABC):
     """
-    Base class for defining an ordering relation using a specified ordering cone.
-    Provides methods to determine dominance between points, compute the Pareto set,
-    and plot the Pareto front in 2D or 3D.
+    Abstract base class for defining an ordering relation between points in a space. Any deriving
+    class must implement the :meth:`dominates` that induces the preorder.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    @abstractmethod
+    def dominates(self) -> bool:
+        pass
+
+
+class PolyhedralConeOrder(Order):
+    """
+    Base class for defining an ordering relation using a specified polyhedral ordering cone.
 
     :param ordering_cone: An instance of :obj:`OrderingCone` that defines the ordering relation.
     :type ordering_cone: OrderingCone
@@ -26,9 +38,9 @@ class Order(ABC):
         """
         Determines if point :obj:`a` dominates point :obj:`b` according to the ordering cone.
 
-        :param a: The point to check for dominance.
+        :param a: The vector representing the point to check for dominance.
         :type a: np.ndarray
-        :param b: The point to be dominated.
+        :param b: The vector representing the point to check if dominated.
         :type b: np.ndarray
         :return: `True` if :obj:`a` dominates :obj:`b` according to the order; otherwise, `False`.
         :rtype: bool
@@ -126,7 +138,7 @@ class Order(ABC):
         return fig
 
 
-class ComponentwiseOrder(Order):
+class ComponentwiseOrder(PolyhedralConeOrder):
     """
     Component-wise ordering class that defines an ordering relation where each
     dimension is considered independently. Vector optimization with this order corresponds to the
@@ -143,7 +155,7 @@ class ComponentwiseOrder(Order):
         super().__init__(ordering_cone)
 
 
-class ConeTheta2DOrder(Order):
+class ConeTheta2DOrder(PolyhedralConeOrder):
     """
     Defines an ordering relation in 2D using a cone with a specified opening angle. The ordering
     cone is an instance of :class:`vopy.ordering_cone.ConeTheta2D`.
@@ -159,7 +171,7 @@ class ConeTheta2DOrder(Order):
         super().__init__(ordering_cone)
 
 
-class ConeOrder3D(Order):
+class ConeOrder3D(PolyhedralConeOrder):
     """
     Defines a 3D ordering relation using a specified cone type. The class supports
     three predefined cone types—'acute', 'right', and 'obtuse'—each with its
@@ -209,7 +221,7 @@ class ConeOrder3D(Order):
         super().__init__(ordering_cone)
 
 
-class ConeOrder3DIceCream(Order):
+class ConeOrder3DIceCream(PolyhedralConeOrder):
     """
     Defines a 3D ordering relation approximating the shape of an ice cream cone with opening
     defined by :obj:`cone_angle`. The ordering cone is constructed with equally rotated

@@ -490,6 +490,52 @@ def line_seg_pt_intersect_at_dim(
     return point_on_line
 
 
+def normalize(data: np.ndarray, bounds: list[tuple[float, float]]) -> np.ndarray:
+    """
+    Normalize the data based on the provided bounds. Each column of the data array is normalized
+    based on the corresponding bounds.
+
+    :param data: The data array to normalize.
+    :type data: np.ndarray
+    :param bounds: A list of tuples containing the lower and upper bounds for each column.
+    :type bounds: list[tuple[float, float]]
+    :return: The normalized data array.
+    :rtype: np.ndarray
+    """
+
+    if len(bounds) != data.shape[1]:
+        raise ValueError("Bounds must have the same number of elements as the data columns.")
+
+    normalized_data = np.empty_like(data)
+    for i, (lower, upper) in enumerate(bounds):
+        normalized_data[:, i] = (data[:, i] - lower) / (upper - lower)
+
+    return normalized_data
+
+
+def unnormalize(data: np.ndarray, bounds: list[tuple[float, float]]) -> np.ndarray:
+    """
+    Unnormalize the data based on the provided bounds. Each column of the data array is unnormalized
+    based on the corresponding bounds.
+
+    :param data: The data array to unnormalize.
+    :type data: np.ndarray
+    :param bounds: A list of tuples containing the lower and upper bounds for each column.
+    :type bounds: list[tuple[float, float]]
+    :return: The unnormalized data array.
+    :rtype: np.ndarray
+    """
+
+    if len(bounds) != data.shape[1]:
+        raise ValueError("Bounds must have the same number of elements as the data columns.")
+
+    unnormalized_data = np.empty_like(data)
+    for i, (lower, upper) in enumerate(bounds):
+        unnormalized_data[:, i] = data[:, i] * (upper - lower) + lower
+
+    return unnormalized_data
+
+
 def binary_entropy(x: np.ndarray) -> np.ndarray:
     """
     Calculate the binary entropy of a given probability.

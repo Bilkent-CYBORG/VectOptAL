@@ -1,6 +1,7 @@
-from typing import Optional, Literal
+from os import PathLike
 from itertools import product
 from abc import ABC, abstractmethod
+from typing import Optional, Literal, Union
 
 import numpy as np
 
@@ -11,6 +12,7 @@ from vopy.confidence_region import (
 )
 from vopy.models import Model, GPModel
 from vopy.utils import get_closest_indices_from_points
+from vopy.utils.plotting import plot_cells_with_centers
 
 
 class DesignSpace(ABC):
@@ -158,7 +160,8 @@ class AdaptivelyDiscretizedDesignSpace(DiscreteDesignSpace):
     This class is a concrete implementation of the `DiscreteDesignSpace` class. It represents a
     design space where the domain is adaptively discretized based on a given model. The class
     maintains a list of points in a tree like structure as a representation of the design space,
-    and allows for refinement of the design space based on the model's predictions.
+    and allows for refinement of the design space based on the model's predictions. Note that
+    the design space is assumed to be the unit hypercube.
 
     :param domain_dim: The dimension of the input space.
     :type domain_dim: int
@@ -385,3 +388,21 @@ class AdaptivelyDiscretizedDesignSpace(DiscreteDesignSpace):
 
             Vh[i] = 4 * term1 * (np.sqrt(C2 + 2 * term2 + term3 + term4) + C3)
         return Vh
+
+    def visualize_design_space(self, path: Optional[Union[str, PathLike]] = None):
+        """
+        Visualize the design space's current cell structure.
+
+        This method visualizes the cells that are defined by their centers at `self.points` and
+        their bounds at `self.cells`. It uses Matplotlib to create a plot of the design space.
+
+        :param path: The path to save the plot to. If not provided, the plot
+            will only be displayed. Defaults to `None`.
+        :type path: Optional[Union[str, PathLike]]
+        :return: The Matplotlib figure object containing the plot.
+        :rtype: plt.Figure
+        """
+
+        fig = plot_cells_with_centers(self.cells, self.points, path)
+
+        return fig

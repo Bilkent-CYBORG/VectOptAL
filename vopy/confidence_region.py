@@ -5,7 +5,7 @@ import numpy as np
 import cvxpy as cp
 import scipy as sp
 
-from vopy.order import Order
+from vopy.order import PolyhedralConeOrder
 from vopy.utils import (
     hyperrectangle_check_intersection,
     hyperrectangle_get_vertices,
@@ -132,7 +132,11 @@ class RectangularConfidenceRegion(ConfidenceRegion):
 
     @classmethod
     def is_dominated(
-        cls, order: Order, obj1: ConfidenceRegion, obj2: ConfidenceRegion, slackness: np.ndarray
+        cls,
+        order: PolyhedralConeOrder,
+        obj1: ConfidenceRegion,
+        obj2: ConfidenceRegion,
+        slackness: np.ndarray,
     ) -> bool:
         """
         :param order: Ordering object.
@@ -165,7 +169,7 @@ class RectangularConfidenceRegion(ConfidenceRegion):
     @classmethod
     def check_dominates(
         cls,
-        order: Order,
+        order: PolyhedralConeOrder,
         obj1: ConfidenceRegion,
         obj2: ConfidenceRegion,
         slackness: np.ndarray = np.array(0.0),
@@ -197,7 +201,11 @@ class RectangularConfidenceRegion(ConfidenceRegion):
 
     @classmethod
     def is_covered(
-        cls, order: Order, obj1: ConfidenceRegion, obj2: ConfidenceRegion, slackness: np.ndarray
+        cls,
+        order: PolyhedralConeOrder,
+        obj1: ConfidenceRegion,
+        obj2: ConfidenceRegion,
+        slackness: np.ndarray,
     ) -> bool:
         """
         :param order: Ordering object.
@@ -304,7 +312,11 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
 
     @classmethod
     def is_dominated(
-        cls, order: Order, obj1: ConfidenceRegion, obj2: ConfidenceRegion, slackness: np.ndarray
+        cls,
+        order: PolyhedralConeOrder,
+        obj1: ConfidenceRegion,
+        obj2: ConfidenceRegion,
+        slackness: np.ndarray,
     ) -> bool:
         """
         :param order: Ordering object.
@@ -365,7 +377,7 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
     @classmethod
     def check_dominates(
         cls,
-        order: Order,
+        order: PolyhedralConeOrder,
         obj1: ConfidenceRegion,
         obj2: ConfidenceRegion,
         slackness: np.ndarray = np.array(0.0),
@@ -390,7 +402,11 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
 
     @classmethod
     def is_covered(
-        cls, order: Order, obj1: ConfidenceRegion, obj2: ConfidenceRegion, slackness: np.ndarray
+        cls,
+        order: PolyhedralConeOrder,
+        obj1: ConfidenceRegion,
+        obj2: ConfidenceRegion,
+        slackness: np.ndarray,
     ):
         """
         :param order: Ordering object.
@@ -446,7 +462,10 @@ class EllipsoidalConfidenceRegion(ConfidenceRegion):
 
 
 def confidence_region_is_dominated(
-    order: Order, region1: ConfidenceRegion, region2: ConfidenceRegion, slackness: np.ndarray
+    order: PolyhedralConeOrder,
+    region1: ConfidenceRegion,
+    region2: ConfidenceRegion,
+    slackness: np.ndarray,
 ) -> bool:
     """
     Helper function to call the is_dominated method of the appropriate confidence region object.
@@ -472,7 +491,7 @@ def confidence_region_is_dominated(
 
 
 def confidence_region_check_dominates(
-    order: Order, region1: ConfidenceRegion, region2: ConfidenceRegion
+    order: PolyhedralConeOrder, region1: ConfidenceRegion, region2: ConfidenceRegion
 ) -> bool:
     """
     Helper function to call the check_dominates method of the appropriate confidence region object.
@@ -500,7 +519,10 @@ def confidence_region_check_dominates(
 
 
 def confidence_region_is_covered(
-    order: Order, region1: ConfidenceRegion, region2: ConfidenceRegion, slackness: np.ndarray
+    order: PolyhedralConeOrder,
+    region1: ConfidenceRegion,
+    region2: ConfidenceRegion,
+    slackness: np.ndarray,
 ) -> bool:
     """
     Helper function to call the is_covered method of the appropriate confidence region object.

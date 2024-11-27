@@ -2,7 +2,7 @@ import logging
 
 import numpy as np
 
-from vopy.order import Order
+from vopy.order import PolyhedralConeOrder
 from vopy.datasets import get_dataset_instance
 from vopy.algorithms.algorithm import Algorithm
 from vopy.maximization_problem import ProblemFromDataset, DecoupledEvaluationProblem
@@ -61,7 +61,7 @@ class DecoupledGP(Algorithm):
     def __init__(
         self,
         dataset_name: str,
-        order: Order,
+        order: PolyhedralConeOrder,
         noise_var: float,
         cost_budget: float,
         costs: list,

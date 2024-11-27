@@ -1,8 +1,9 @@
 import unittest
 import torch
 import numpy as np
-from gpytorch.distributions import MultitaskMultivariateNormal, MultivariateNormal
+from scipy.linalg import issymmetric
 from gpytorch.kernels import RBFKernel
+from gpytorch.distributions import MultitaskMultivariateNormal, MultivariateNormal
 from gpytorch.likelihoods import GaussianLikelihood, MultitaskGaussianLikelihood
 
 from vopy.models.gpytorch import (
@@ -135,6 +136,13 @@ class TestCorrelatedExactGPyTorchModel(unittest.TestCase):
                 except np.linalg.LinAlgError:
                     self.fail("Covariance matrix is not positive definite.")
 
+    def test_covariance_noise(self):
+        """Test noise with covariance  matrix."""
+        noise_var = np.eye(2) * 0.1
+        noise_var[noise_var == 0] = 0.05
+        model = CorrelatedExactGPyTorchModel(input_dim=2, output_dim=2, noise_var=noise_var)
+        model.likelihood.rank = 2
+
 
 class TestIndependentExactGPyTorchModel(unittest.TestCase):
     """Tests for the IndependentExactGPyTorchModel class."""
@@ -255,6 +263,15 @@ class TestGPyTorchModelListExactModel(unittest.TestCase):
         lengthscales, variances = self.model.get_lengthscale_and_var()
         self.assertGreaterEqual(np.min(variances), 0, "Negative variance.")
         self.assertGreaterEqual(np.min(lengthscales), 0, "Negative lengthscale.")
+
+    def test_evaluate_kernel(self):
+        """Test evaluate_kernel method."""
+        kernel_matrix = self.model.evaluate_kernel(self.X)
+        eigenvalues = np.linalg.eigvals(kernel_matrix)
+        self.assertGreaterEqual(
+            np.min(eigenvalues), -1e-7, "Kernel did not return positive semidefinite matrix."
+        )
+        self.assertTrue(issymmetric(kernel_matrix, rtol=1e-5), "Kernel matrix is not symmetric.")
 
 
 class TestGetGPyTorchModelListWithKnownHyperparams(unittest.TestCase):

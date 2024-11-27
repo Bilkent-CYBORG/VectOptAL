@@ -17,6 +17,8 @@ from vopy.utils.utils import (
     is_pt_in_extended_polytope,
     line_seg_pt_intersect_at_dim,
     binary_entropy,
+    normalize,
+    unnormalize,
 )
 
 __all__ = [
@@ -38,4 +40,6 @@ __all__ = [
     "is_pt_in_extended_polytope",
     "line_seg_pt_intersect_at_dim",
     "binary_entropy",
+    "normalize",
+    "unnormalize",
 ]

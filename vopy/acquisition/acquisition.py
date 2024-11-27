@@ -2,7 +2,7 @@ from itertools import combinations
 from abc import ABC, abstractmethod
 from typing import Any, Tuple, Optional
 
-from vopy.order import Order
+from vopy.order import PolyhedralConeOrder
 from vopy.utils import binary_entropy
 from vopy.models import Model, ModelList
 from vopy.design_space import DiscreteDesignSpace
@@ -149,7 +149,7 @@ class ThompsonEntropyDecoupledAcquisition(DecoupledAcquisitionStrategy):
     def __init__(
         self,
         model: ModelList,
-        order: Order,
+        order: PolyhedralConeOrder,
         evaluation_index: Optional[int] = None,
         costs: Optional[list] = None,
         num_thompson_samples: int = 10,
