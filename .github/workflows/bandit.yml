@@ -12,6 +12,7 @@
 
 name: Bandit
 on:
+  workflow_call:
   push:
     branches: [ "master" ]
   pull_request:
