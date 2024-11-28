@@ -18,10 +18,15 @@ permissions:
 jobs:
   run_test_suite:
     uses: ./.github/workflows/test.yml
+    permissions:
+      contents: read
 
   run_bandit:
     uses: ./.github/workflows/bandit.yml
-    secrets: inherit
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
 
   release-build:
     runs-on: ubuntu-latest
