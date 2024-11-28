@@ -45,7 +45,7 @@ pip install -e .
 
 For all development requirements, see [requirements.txt](requirements.txt) or [environment.yml](environment.yml).
 
-Further, installing the pre-commit hooks are highly recommended.
+Further, installing the pre-commit hooks are **highly** encouraged.
 
 ```sh
 # Inside the package folder
