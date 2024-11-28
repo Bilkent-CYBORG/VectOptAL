@@ -13,9 +13,9 @@ VOPy is an open-source Python library built to address noisy black-box vector op
 
 ### What to do with VOPy?
 VOPy includes several pre-implemented algorithms, models, orders, and problems from the literature for black-box vector optimization, allowing users to select and utilize components based on their specific needs. Specifically, you can:
-- Using existing methods for novel problems
-- Benchmark novel algorithms with literature
-- ... and anything in between utilizing wide range of existing tools!
+- Use existing black-box vector optimization methods for new problems
+- Benchmark novel algorithms with the state-of-the-art
+- Utilize a wide range of existing tools in black-box vector optimization
 
 ### How To Start?
 
