@@ -12,6 +12,7 @@ dependencies:
 - matplotlib
 - pre-commit
 - pytest
+- pytest-xdist
 - pytest-cov
 - bandit
 - black

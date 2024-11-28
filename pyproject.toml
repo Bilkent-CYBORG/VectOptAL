@@ -24,7 +24,7 @@ Issues = "https://github.com/Bilkent-CYBORG/VOPy/issues"
 
 [project.optional-dependencies]
 dev = ["black", "usort", "flake8", "flake8-print"]
-test = ["pre-commit", "pytest", "pytest-cov", "bandit"]
+test = ["pre-commit", "pytest", "pytest-xdist", "pytest-cov", "bandit"]
 examples = ["jupyter"]
 docs = ["pydocstyle", "sphinx_rtd_theme", "sphinx-notfound-page", "nbsphinx"]
 
