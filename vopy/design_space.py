@@ -10,7 +10,7 @@ from vopy.confidence_region import (
     EllipsoidalConfidenceRegion,
     RectangularConfidenceRegion,
 )
-from vopy.models import GPModel, Model
+from vopy.models.model import GPModel, Model
 from vopy.utils import get_closest_indices_from_points
 from vopy.utils.plotting import plot_cells_with_centers
 

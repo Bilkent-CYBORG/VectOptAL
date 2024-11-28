@@ -3,7 +3,7 @@ from unittest import mock, TestCase
 import numpy as np
 from vopy.datasets import get_dataset_instance
 from vopy.design_space import AdaptivelyDiscretizedDesignSpace, FixedPointsDesignSpace
-from vopy.models import UncertaintyPredictiveModel
+from vopy.models.model import UncertaintyPredictiveModel
 
 from vopy.utils import set_seed
 from vopy.utils.seed import SEED

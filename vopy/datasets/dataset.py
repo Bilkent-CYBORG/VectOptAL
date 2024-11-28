@@ -88,7 +88,7 @@ class Test(Dataset):
     _cardinality = 32
 
     def __init__(self):
-        data_file = files("vopy.data.datasets").joinpath("test.npy")
+        data_file = files("vopy.datasets.data").joinpath("test.npy")
         data = np.load(data_file, allow_pickle=True)
         self.out_data = np.copy(data[:, self._in_dim :])
         self.in_data = np.copy(data[:, : self._in_dim])
@@ -112,7 +112,7 @@ class SNW(Dataset):
     _cardinality = 206
 
     def __init__(self):
-        data_file = files("vopy.data.datasets").joinpath("sort_256.csv")
+        data_file = files("vopy.datasets.data").joinpath("sort_256.csv")
         data = np.genfromtxt(data_file, delimiter=";")
         self.out_data = np.copy(data[:, self._in_dim :])
         self.in_data = np.copy(data[:, : self._in_dim])
@@ -137,7 +137,7 @@ class DiskBrake(Dataset):
     _cardinality = 128
 
     def __init__(self):
-        data_file = files("vopy.data.datasets").joinpath("brake.npy")
+        data_file = files("vopy.datasets.data").joinpath("brake.npy")
         data = np.load(data_file, allow_pickle=True)
         self.out_data = np.copy(data[:, self._in_dim :])
         self.in_data = np.copy(data[:, : self._in_dim])
@@ -160,7 +160,7 @@ class VehicleSafety(Dataset):
     _cardinality = 500
 
     def __init__(self):
-        data_file = files("vopy.data.datasets").joinpath("VehicleSafety.npy")
+        data_file = files("vopy.datasets.data").joinpath("VehicleSafety.npy")
         data = np.load(data_file, allow_pickle=True)
         self.out_data = np.copy(data[:, self._in_dim :])
         self.in_data = np.copy(data[:, : self._in_dim])

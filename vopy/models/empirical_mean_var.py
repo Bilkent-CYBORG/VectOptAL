@@ -2,7 +2,7 @@ from typing import Iterable
 
 import numpy as np
 
-from vopy.models import UncertaintyPredictiveModel
+from vopy.models.model import UncertaintyPredictiveModel
 
 
 class EmpiricalMeanVarModel(UncertaintyPredictiveModel):

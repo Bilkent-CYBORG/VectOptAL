@@ -13,7 +13,7 @@ from numpy.typing import ArrayLike
 
 from vopy.maximization_problem import Problem
 
-from vopy.models import GPModel, ModelList
+from vopy.models.model import GPModel, ModelList
 from vopy.utils.utils import generate_sobol_samples
 
 torch.set_default_dtype(torch.float64)
