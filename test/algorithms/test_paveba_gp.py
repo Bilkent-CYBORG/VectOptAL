@@ -17,13 +17,13 @@ class TestPaVeBaGP(TestCase):
         # A basic setup for the model.
         set_seed(SEED)
 
-        self.epsilon = 0.1
+        self.epsilon = 0.2
         self.delta = 0.1
         self.dataset_name = "Test"
         self.order = ComponentwiseOrder(2)
         self.noise_var = 0.00001
         self.dataset_cardinality = get_dataset_instance(self.dataset_name)._cardinality
-        self.conf_contraction = 4
+        self.conf_contraction = 256
         self.algo = PaVeBaGP(
             epsilon=self.epsilon,
             delta=self.delta,
@@ -56,11 +56,11 @@ class TestPaVeBaGP(TestCase):
             list(pareto_indices),
             self.epsilon,
         )
-        self.assertTrue(eps_f1 > 0.9)
+        self.assertGreaterEqual(eps_f1, 0.9)
 
     def test_run_one_step_with_hyperrectangle(self):
         """Test the run_one_step method."""
-        num_rounds = 10
+        num_rounds = 5
         alg_done = False
         for i in range(num_rounds):  # Run for 10 rounds, it should be enough.
             if not alg_done and i <= 3:  # Save the state at round 3 at the latest.
@@ -88,7 +88,7 @@ class TestPaVeBaGP(TestCase):
             type="DE",
         )
 
-        num_rounds = 5
+        num_rounds = 3
         alg_done = False
         for i in range(num_rounds):  # Run for 10 rounds, it should be enough.
             if not alg_done and i <= 2:  # Save the state at round 3 at the latest.

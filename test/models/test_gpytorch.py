@@ -292,7 +292,7 @@ class TestGetGPyTorchModelListWithKnownHyperparams(unittest.TestCase):
 
     def test_get_model_without_initial_data(self):
         """Test model creation when X and Y are not provided."""
-        self.problem.evaluate.return_value = np.random.randn(1024, self.output_dim)
+        self.problem.evaluate.return_value = np.random.randn(512, self.output_dim)
 
         model = get_gpytorch_modellist_w_known_hyperparams(
             problem=self.problem,

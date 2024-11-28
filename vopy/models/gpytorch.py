@@ -439,7 +439,7 @@ def get_gpytorch_model_w_known_hyperparams(
     :rtype: GPyTorchMultioutputExactModel
     """
     if X is None:
-        X = generate_sobol_samples(problem.in_dim, 1024)  # TODO: magic number
+        X = generate_sobol_samples(problem.in_dim, 512)  # TODO: magic number
     if Y is None:
         Y = problem.evaluate(X)
 
@@ -795,7 +795,7 @@ def get_gpytorch_modellist_w_known_hyperparams(
     :rtype: GPyTorchModelListExactModel
     """
     if X is None:
-        X = generate_sobol_samples(problem.in_dim, 1024)  # TODO: magic number
+        X = generate_sobol_samples(problem.in_dim, 512)  # TODO: magic number
     if Y is None:
         Y = problem.evaluate(X)
 

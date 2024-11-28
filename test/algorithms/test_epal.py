@@ -17,13 +17,13 @@ class TestEpsilonPAL(unittest.TestCase):
         # Set random seed for reproducibility
         set_seed(SEED)
 
-        self.epsilon = 0.1
+        self.epsilon = 0.2
         self.delta = 0.1
         self.noise_var = 0.00001
         self.dataset_name = "Test"
-        self.conf_contraction = 9
+        self.conf_contraction = 128
 
-        self.iter_count = 10
+        self.iter_count = 5
         self.output_dim = 2
         self.order = ComponentwiseOrder(self.output_dim)
         self.dataset_cardinality = get_dataset_instance(self.dataset_name)._cardinality

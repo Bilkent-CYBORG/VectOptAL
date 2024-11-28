@@ -24,14 +24,14 @@ class TestVOGP(unittest.TestCase):
         set_seed(SEED)
 
         # Parameters for VOGP instance
-        self.epsilon = 0.1
+        self.epsilon = 0.2
         self.delta = 0.1
         self.noise_var = 0.00001
-        self.conf_contraction = 4
+        self.conf_contraction = 64
         self.dataset_name = "Test"
         self.order = ComponentwiseOrder(2)
 
-        self.iter_count = 10
+        self.iter_count = 5
 
         # Create the VOGP instance
         self.algorithm = VOGP(

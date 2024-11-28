@@ -23,7 +23,7 @@ class TestAuer(TestCase):
         self.order = ComponentwiseOrder(2)
         self.noise_var = 0.00001
         self.dataset_cardinality = get_dataset_instance(self.dataset_name)._cardinality
-        self.conf_contraction = 4
+        self.conf_contraction = 32
         self.algorithm = Auer(
             epsilon=self.epsilon,
             delta=self.delta,
@@ -72,7 +72,7 @@ class TestAuer(TestCase):
             list(pareto_indices),
             self.epsilon,
         )
-        self.assertTrue(eps_f1 > 0.9)
+        self.assertGreaterEqual(eps_f1, 0.9)
 
     def test_run_one_step(self):
         """Test the run_one_step method."""

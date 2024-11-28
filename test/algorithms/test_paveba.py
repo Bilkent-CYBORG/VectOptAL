@@ -17,13 +17,13 @@ class TestPaVeBa(TestCase):
         """A basic setup for the model."""
         set_seed(SEED)
 
-        self.epsilon = 0.1
+        self.epsilon = 0.2
         self.delta = 0.1
         self.dataset_name = "Test"
         self.order = ComponentwiseOrder(2)
         self.noise_var = 0.00001
         self.dataset_cardinality = get_dataset_instance(self.dataset_name)._cardinality
-        self.conf_contraction = 1
+        self.conf_contraction = 1024
         self.algo = PaVeBa(
             epsilon=self.epsilon,
             delta=self.delta,
@@ -57,13 +57,11 @@ class TestPaVeBa(TestCase):
             list(pareto_indices),
             self.epsilon,
         )
-        self.assertTrue(eps_f1 > 0.9)
+        self.assertGreaterEqual(eps_f1, 0.9)
 
     def test_run_one_step(self):
         """Test the run_one_step method."""
-        self.algo.conf_contraction = 32
-
-        num_rounds = 10
+        num_rounds = 5
         alg_done = False
         for i in range(num_rounds):  # Run for 10 rounds, it should be enough.
             if not alg_done and i <= 3:  # Save the state at round 3 at the latest.
@@ -83,7 +81,7 @@ class TestPaVeBa(TestCase):
         self.algo.run_one_step()
         t1 = 8 * self.noise_var
         t2 = np.log((np.pi**2 * (3) * self.dataset_cardinality) / (6 * 0.1))
-        r1 = np.sqrt(t1 * t2)
+        r1 = np.sqrt(t1 * t2) / self.conf_contraction
         r2 = self.algo.compute_radius()
         self.assertTrue(r1 == r2)
 

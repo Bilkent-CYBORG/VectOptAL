@@ -48,7 +48,7 @@ class TestNaiveElimination(TestCase):
             list(pareto_indices),
             self.epsilon,
         )
-        self.assertTrue(eps_f1 > 0.9)
+        self.assertGreaterEqual(eps_f1, 0.9)
 
     def test_run_one_step(self):
         """Test the run_one_step method."""

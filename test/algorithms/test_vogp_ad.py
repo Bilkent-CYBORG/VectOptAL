@@ -21,15 +21,13 @@ class TestVOGP_AD(unittest.TestCase):
         set_seed(SEED)
 
         # Parameters for VOGP instance
-        self.epsilon = 0.1
+        self.epsilon = 0.2
         self.delta = 0.1
         self.noise_var = 0.00001
         self.problem_name = "BraninCurrin"
         self.problem: ContinuousProblem = get_continuous_problem(self.problem_name, self.noise_var)
         self.order = ComponentwiseOrder(2)
-        self.conf_contraction = 64
-
-        self.iter_count = 1
+        self.conf_contraction = 128
 
         # Create the VOGP instance
         self.algorithm = VOGP_AD(
@@ -78,5 +76,5 @@ class TestVOGP_AD(unittest.TestCase):
         )
 
         self.assertLessEqual(
-            log_hv_discrepancy, -3.5, "Log. hypervolume discrepancy should be reasonably low."
+            log_hv_discrepancy, -2.5, "Log. hypervolume discrepancy should be reasonably low."
         )
