@@ -3,14 +3,15 @@ from typing import Literal, Optional
 
 import numpy as np
 
-from vopy.order import PolyhedralConeOrder
-from vopy.datasets import get_dataset_instance
-from vopy.algorithms.algorithm import PALAlgorithm
-from vopy.design_space import FixedPointsDesignSpace
-from vopy.maximization_problem import ProblemFromDataset, DecoupledEvaluationProblem
 from vopy.acquisition import MaxVarianceDecoupledAcquisition, optimize_decoupled_acqf_discrete
-from vopy.confidence_region import confidence_region_is_dominated, confidence_region_is_covered
-from vopy.models import GPyTorchModelListExactModel, get_gpytorch_modellist_w_known_hyperparams
+from vopy.algorithms.algorithm import PALAlgorithm
+from vopy.confidence_region import confidence_region_is_covered, confidence_region_is_dominated
+from vopy.datasets import get_dataset_instance
+from vopy.design_space import FixedPointsDesignSpace
+from vopy.maximization_problem import DecoupledEvaluationProblem, ProblemFromDataset
+from vopy.models import get_gpytorch_modellist_w_known_hyperparams, GPyTorchModelListExactModel
+
+from vopy.order import PolyhedralConeOrder
 
 
 class PaVeBaPartialGP(PALAlgorithm):

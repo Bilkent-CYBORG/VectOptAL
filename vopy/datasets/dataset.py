@@ -19,11 +19,11 @@ References:
     Design Automation Conference, 2012.
 """
 
-import os
 from abc import ABC
+from importlib.resources import files
 
 import numpy as np
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 
 class Dataset(ABC):
@@ -88,8 +88,8 @@ class Test(Dataset):
     _cardinality = 32
 
     def __init__(self):
-        datafile = os.path.join("data", "test", "test.npy")
-        data = np.load(datafile, allow_pickle=True)
+        data_file = files("vopy.data.datasets").joinpath("test.npy")
+        data = np.load(data_file, allow_pickle=True)
         self.out_data = np.copy(data[:, self._in_dim :])
         self.in_data = np.copy(data[:, : self._in_dim])
 
@@ -112,8 +112,8 @@ class SNW(Dataset):
     _cardinality = 206
 
     def __init__(self):
-        datafile = os.path.join("data", "snw", "sort_256.csv")
-        data = np.genfromtxt(datafile, delimiter=";")
+        data_file = files("vopy.data.datasets").joinpath("sort_256.csv")
+        data = np.genfromtxt(data_file, delimiter=";")
         self.out_data = np.copy(data[:, self._in_dim :])
         self.in_data = np.copy(data[:, : self._in_dim])
 
@@ -137,8 +137,8 @@ class DiskBrake(Dataset):
     _cardinality = 128
 
     def __init__(self):
-        datafile = os.path.join("data", "brake", "brake.npy")
-        data = np.load(datafile, allow_pickle=True)
+        data_file = files("vopy.data.datasets").joinpath("brake.npy")
+        data = np.load(data_file, allow_pickle=True)
         self.out_data = np.copy(data[:, self._in_dim :])
         self.in_data = np.copy(data[:, : self._in_dim])
 
@@ -160,8 +160,8 @@ class VehicleSafety(Dataset):
     _cardinality = 500
 
     def __init__(self):
-        datafile = os.path.join("data", "vehicle_safety", "VehicleSafety.npy")
-        data = np.load(datafile, allow_pickle=True)
+        data_file = files("vopy.data.datasets").joinpath("VehicleSafety.npy")
+        data = np.load(data_file, allow_pickle=True)
         self.out_data = np.copy(data[:, self._in_dim :])
         self.in_data = np.copy(data[:, : self._in_dim])
 

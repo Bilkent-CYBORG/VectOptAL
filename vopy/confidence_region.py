@@ -1,16 +1,17 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-import numpy as np
 import cvxpy as cp
+
+import numpy as np
 import scipy as sp
 
 from vopy.order import PolyhedralConeOrder
 from vopy.utils import (
     hyperrectangle_check_intersection,
+    hyperrectangle_get_region_matrix,
     hyperrectangle_get_vertices,
     is_pt_in_extended_polytope,
-    hyperrectangle_get_region_matrix,
 )
 
 

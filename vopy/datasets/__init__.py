@@ -1,3 +1,3 @@
-from vopy.datasets.dataset import get_dataset_instance, Dataset
+from vopy.datasets.dataset import Dataset, get_dataset_instance
 
 __all__ = ["get_dataset_instance", "Dataset"]

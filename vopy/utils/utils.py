@@ -1,11 +1,12 @@
-import random
 import itertools
-from typing import Union, Iterable, Optional
+import random
+from typing import Iterable, Optional, Union
+
+import cvxpy as cp
+import numpy as np
+import scipy.special
 
 import torch
-import numpy as np
-import cvxpy as cp
-import scipy.special
 from scipy.stats.qmc import Sobol
 from sklearn.metrics.pairwise import euclidean_distances
 

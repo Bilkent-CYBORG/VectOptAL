@@ -2,12 +2,13 @@ import logging
 
 import numpy as np
 
-from vopy.order import ComponentwiseOrder
+from vopy.algorithms.algorithm import PALAlgorithm
 from vopy.datasets import get_dataset_instance
 from vopy.design_space import FixedPointsDesignSpace
-from vopy.algorithms.algorithm import PALAlgorithm
 from vopy.maximization_problem import ProblemFromDataset
 from vopy.models import EmpiricalMeanVarModel
+
+from vopy.order import ComponentwiseOrder
 
 
 class Auer(PALAlgorithm):

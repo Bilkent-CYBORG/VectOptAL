@@ -1,26 +1,27 @@
 import unittest
-import torch
+
 import numpy as np
-from scipy.linalg import issymmetric
-from gpytorch.kernels import RBFKernel
+import torch
 from gpytorch.distributions import MultitaskMultivariateNormal, MultivariateNormal
+from gpytorch.kernels import RBFKernel
 from gpytorch.likelihoods import GaussianLikelihood, MultitaskGaussianLikelihood
+from scipy.linalg import issymmetric
+from vopy.maximization_problem import Problem
 
 from vopy.models.gpytorch import (
-    MultitaskExactGPModel,
     BatchIndependentExactGPModel,
-    GPyTorchMultioutputExactModel,
     CorrelatedExactGPyTorchModel,
-    IndependentExactGPyTorchModel,
-    SingleTaskGP,
-    GPyTorchModelListExactModel,
-    get_gpytorch_modellist_w_known_hyperparams,
     get_gpytorch_model_w_known_hyperparams,
+    get_gpytorch_modellist_w_known_hyperparams,
+    GPyTorchModelListExactModel,
+    GPyTorchMultioutputExactModel,
+    IndependentExactGPyTorchModel,
+    MultitaskExactGPModel,
+    SingleTaskGP,
 )
 
 from vopy.utils import set_seed
 from vopy.utils.seed import SEED
-from vopy.maximization_problem import Problem
 
 
 class TestMultitaskExactGPModel(unittest.TestCase):

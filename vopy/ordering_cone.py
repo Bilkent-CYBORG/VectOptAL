@@ -1,11 +1,11 @@
 from os import PathLike
-from typing import Union, Optional
+from typing import Optional, Union
 
 import numpy as np
 from matplotlib import pyplot as plt
 
 from vopy.utils import get_2d_w, get_alpha_vec
-from vopy.utils.plotting import plot_2d_theta_cone, plot_2d_cone, plot_3d_cone
+from vopy.utils.plotting import plot_2d_cone, plot_2d_theta_cone, plot_3d_cone
 
 
 class OrderingCone:

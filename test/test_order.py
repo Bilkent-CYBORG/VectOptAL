@@ -2,15 +2,15 @@ from unittest import TestCase
 
 import numpy as np
 from matplotlib import pyplot as plt
-
-from vopy.ordering_cone import OrderingCone, ConeTheta2D
 from vopy.order import (
-    PolyhedralConeOrder,
     ComponentwiseOrder,
-    ConeTheta2DOrder,
     ConeOrder3D,
     ConeOrder3DIceCream,
+    ConeTheta2DOrder,
+    PolyhedralConeOrder,
 )
+
+from vopy.ordering_cone import ConeTheta2D, OrderingCone
 
 
 class TestPolyhedralConeOrder(TestCase):

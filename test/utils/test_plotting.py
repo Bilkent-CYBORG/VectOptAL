@@ -3,13 +3,13 @@ from unittest import TestCase
 import numpy as np
 from matplotlib import pyplot as plt
 
-from vopy.order import ConeTheta2DOrder, ConeOrder3D
+from vopy.order import ConeOrder3D, ConeTheta2DOrder
 from vopy.utils.plotting import (
     plot_2d_cone,
-    plot_3d_cone,
     plot_2d_theta_cone,
-    plot_pareto_front,
+    plot_3d_cone,
     plot_cells_with_centers,
+    plot_pareto_front,
 )
 
 

@@ -1,17 +1,19 @@
 import logging
 from abc import ABC
-from typing import Optional, List, Union, Literal
+from typing import List, Literal, Optional, Union
 
-import torch
 import gpytorch
-from gpytorch.mlls import SumMarginalLogLikelihood
-from botorch.fit import fit_gpytorch_mll
 
 import numpy as np
+
+import torch
+from botorch.fit import fit_gpytorch_mll
+from gpytorch.mlls import SumMarginalLogLikelihood
 from numpy.typing import ArrayLike
 
-from vopy.models import GPModel, ModelList
 from vopy.maximization_problem import Problem
+
+from vopy.models import GPModel, ModelList
 from vopy.utils.utils import generate_sobol_samples
 
 torch.set_default_dtype(torch.float64)

@@ -4,8 +4,8 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 import os
-import sys
 import shutil
+import sys
 
 sys.path.append(os.path.abspath(os.path.join(__file__, "..", "..", "..")))
 autodoc_mock_imports = [

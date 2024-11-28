@@ -1,11 +1,12 @@
 from unittest import TestCase
 
-from vopy.utils import set_seed
-from vopy.utils.seed import SEED
-from vopy.order import ConeTheta2DOrder
 from vopy.algorithms import NaiveElimination
 from vopy.datasets import get_dataset_instance
+from vopy.order import ConeTheta2DOrder
+
+from vopy.utils import set_seed
 from vopy.utils.evaluate import calculate_epsilonF1_score
+from vopy.utils.seed import SEED
 
 
 class TestNaiveElimination(TestCase):

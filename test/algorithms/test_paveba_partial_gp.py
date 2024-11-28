@@ -1,13 +1,13 @@
 from unittest import TestCase
 
 import numpy as np
-
-from vopy.utils import set_seed
-from vopy.utils.seed import SEED
-from vopy.order import ComponentwiseOrder
 from vopy.algorithms import PaVeBaPartialGP
 from vopy.datasets import get_dataset_instance
+from vopy.order import ComponentwiseOrder
+
+from vopy.utils import set_seed
 from vopy.utils.evaluate import calculate_epsilonF1_score
+from vopy.utils.seed import SEED
 
 
 class TestPaVeBaPartialGP(TestCase):

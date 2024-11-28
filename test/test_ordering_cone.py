@@ -1,8 +1,8 @@
-from unittest import TestCase, mock
+from unittest import mock, TestCase
 
 import numpy as np
 
-from vopy.ordering_cone import OrderingCone, ConeTheta2D
+from vopy.ordering_cone import ConeTheta2D, OrderingCone
 
 
 class TestOrderingCone(TestCase):

@@ -1,16 +1,16 @@
-from os import PathLike
-from itertools import product
 from abc import ABC, abstractmethod
-from typing import Optional, Literal, Union
+from itertools import product
+from os import PathLike
+from typing import Literal, Optional, Union
 
 import numpy as np
 
 from vopy.confidence_region import (
     ConfidenceRegion,
-    RectangularConfidenceRegion,
     EllipsoidalConfidenceRegion,
+    RectangularConfidenceRegion,
 )
-from vopy.models import Model, GPModel
+from vopy.models import GPModel, Model
 from vopy.utils import get_closest_indices_from_points
 from vopy.utils.plotting import plot_cells_with_centers
 

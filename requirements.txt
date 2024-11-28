@@ -4,13 +4,15 @@ scikit-learn
 scipy
 matplotlib
 numpy
-jupyter
+pre-commit
 pytest
 pytest-cov
 bandit
 black
+usort
 flake8
 flake8-print
+jupyter
 pydocstyle
 
 -r docs/requirements.txt

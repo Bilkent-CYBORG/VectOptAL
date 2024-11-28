@@ -1,17 +1,17 @@
-from vopy.models.model import Model, GPModel, ModelList, UncertaintyPredictiveModel
-from vopy.models.gpytorch import (
-    GPyTorchModel,
-    MultitaskExactGPModel,
-    BatchIndependentExactGPModel,
-    GPyTorchMultioutputExactModel,
-    CorrelatedExactGPyTorchModel,
-    IndependentExactGPyTorchModel,
-    get_gpytorch_model_w_known_hyperparams,
-    SingleTaskGP,
-    GPyTorchModelListExactModel,
-    get_gpytorch_modellist_w_known_hyperparams,
-)
 from vopy.models.empirical_mean_var import EmpiricalMeanVarModel
+from vopy.models.gpytorch import (
+    BatchIndependentExactGPModel,
+    CorrelatedExactGPyTorchModel,
+    get_gpytorch_model_w_known_hyperparams,
+    get_gpytorch_modellist_w_known_hyperparams,
+    GPyTorchModel,
+    GPyTorchModelListExactModel,
+    GPyTorchMultioutputExactModel,
+    IndependentExactGPyTorchModel,
+    MultitaskExactGPModel,
+    SingleTaskGP,
+)
+from vopy.models.model import GPModel, Model, ModelList, UncertaintyPredictiveModel
 
 __all__ = [
     "Model",

@@ -1,17 +1,17 @@
 import importlib
-from unittest import TestCase, mock
+from unittest import mock, TestCase
 
 import numpy as np
+from vopy.datasets import Dataset
+from vopy.maximization_problem import (
+    ContinuousProblem,
+    DecoupledEvaluationProblem,
+    get_continuous_problem,
+    ProblemFromDataset,
+)
 
 from vopy.utils import set_seed
 from vopy.utils.seed import SEED
-from vopy.datasets import Dataset
-from vopy.maximization_problem import (
-    ProblemFromDataset,
-    ContinuousProblem,
-    get_continuous_problem,
-    DecoupledEvaluationProblem,
-)
 
 
 class TestProblemFromDataset(TestCase):

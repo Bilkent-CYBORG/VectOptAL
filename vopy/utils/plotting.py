@@ -1,5 +1,5 @@
 from os import PathLike
-from typing import Optional, Union, Callable
+from typing import Callable, Optional, Union
 
 import numpy as np
 from matplotlib import pyplot as plt

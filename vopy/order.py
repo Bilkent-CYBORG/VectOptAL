@@ -1,12 +1,13 @@
-from os import PathLike
-from typing import Union, Optional
 from abc import ABC, abstractmethod
+from os import PathLike
+from typing import Optional, Union
 
 import numpy as np
 from matplotlib import pyplot as plt
 
+from vopy.ordering_cone import ConeTheta2D, OrderingCone
+
 from vopy.utils.plotting import plot_pareto_front
-from vopy.ordering_cone import OrderingCone, ConeTheta2D
 
 
 class Order(ABC):

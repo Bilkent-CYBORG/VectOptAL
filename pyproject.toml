@@ -23,10 +23,10 @@ Documentation = "https://vopy.readthedocs.io/en/latest/"
 Issues = "https://github.com/Bilkent-CYBORG/VOPy/issues"
 
 [project.optional-dependencies]
-dev = ["black", "flake8", "flake8-print"]
-docs = ["pydocstyle", "sphinx_rtd_theme", "sphinx-notfound-page", "nbsphinx"]
+dev = ["black", "usort", "flake8", "flake8-print"]
+test = ["pre-commit", "pytest", "pytest-cov", "bandit"]
 examples = ["jupyter"]
-test = ["pytest", "pytest-cov", "bandit"]
+docs = ["pydocstyle", "sphinx_rtd_theme", "sphinx-notfound-page", "nbsphinx"]
 
 [build-system]
 requires = ["setuptools>=64", "setuptools-scm>=8"]
@@ -34,6 +34,10 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["vopy"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"vopy" = ["datasets/data/*"]
 
 [tool.setuptools_scm]
 # Should be present even if its empty.
@@ -48,5 +52,5 @@ filterwarnings = [
 [tool.black]
 line-length = 100
 
-[tool.bandit.assert_used]
-skips = ['*/test_*.py']
+# [tool.bandit.assert_used]
+# skips = ['*/test_*.py']

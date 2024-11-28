@@ -1,9 +1,9 @@
-import unittest
 import importlib
+import unittest
 
 import numpy as np
 
-from vopy.datasets import get_dataset_instance, Dataset
+from vopy.datasets import Dataset, get_dataset_instance
 
 
 class TestDataset(unittest.TestCase):
