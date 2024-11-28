@@ -10,6 +10,10 @@ VOPy's documentation!
 
 Welcome to VOPy, an open-source Python library built to tackle the challenges of black-box vector optimization. Designed for scenarios where multiple objectives must be optimized simultaneously, VOPy goes beyond standard multi-objective optimization tools by offering a unique, cone-based ordering of solutions. With features tailored for noisy environments, both discrete and continuous design spaces, limited budgets, and batch observations, VOPy opens up new possibilities for researchers and practitioners. Its modular architecture supports easy integration of existing methods and encourages the creation of innovative algorithms, making VOPy a versatile toolkit for advancing work in vector optimization.
 
+.. image:: _static/vopy_deps.jpg
+    :alt: Overview of the dependencies, core modules, and built-in algorithms of VOPy.
+    :width: 600px
+    :align: center
 
 .. toctree::
    :glob:
