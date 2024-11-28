@@ -21,6 +21,7 @@ jobs:
 
   run_bandit:
     uses: ./.github/workflows/bandit.yml
+    secrets: inherit
 
   release-build:
     runs-on: ubuntu-latest
