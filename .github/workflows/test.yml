@@ -15,7 +15,6 @@ permissions:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -31,4 +30,6 @@ jobs:
         pip install -r requirements.txt
     - name: Unit tests
       run: |
-        pytest -n auto -ra
+        pytest -n auto -cov=vopy --cov-report=xml -ra
+    - name: Coveralls
+      uses: coverallsapp/github-action@v2
