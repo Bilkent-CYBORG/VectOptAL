@@ -1,6 +1,7 @@
 ## Vector Optimization with Active Learning
 
 [![Test Workflow](https://github.com/Bilkent-CYBORG/VOPy/actions/workflows/test.yml/badge.svg)](https://github.com/Bilkent-CYBORG/VOPy/blob/master/.github/workflows/test.yml)
+[![Coverage Status](https://coveralls.io/repos/github/Bilkent-CYBORG/VOPy/badge.svg)](https://coveralls.io/github/Bilkent-CYBORG/VOPy)
 [![Documentation Status](https://readthedocs.org/projects/vopy/badge/?version=latest)](https://vopy.readthedocs.io/en/latest/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
