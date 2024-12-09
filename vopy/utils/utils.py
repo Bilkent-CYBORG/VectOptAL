@@ -178,6 +178,37 @@ def generate_sobol_samples(dim: int, n: int) -> np.ndarray:
     return samples
 
 
+def get_bigmij(vi: np.ndarray, vj: np.ndarray, W: np.ndarray) -> float:
+    """
+    This method calculates the M(i,j) value, which is used to measure the difference between two
+    designs `vi` and `vj` based on the constraint matrix `W`.
+
+    :param vi: A D-vector representing the design vector i.
+    :type vi: np.ndarray
+    :param vj: A D-vector representing the design vector j.
+    :type vj: np.ndarray
+    :param W: A (n_constraint, D) ndarray representing the constraint matrix.
+    :type W: np.ndarray
+    :return: The computed M(i,j) value.
+    :rtype: float
+    """
+    m = W.shape[1]
+
+    x = cp.Variable(m)
+    prob = cp.Problem(
+        objective=cp.Minimize(cp.sum_squares(x)), constraints=[W @ x >= 0, W @ (vj + x - vi) >= 0]
+    )
+
+    try:
+        prob.solve()
+    except cp.error.SolverError:
+        prob.solve(solver=cp.SCS)
+
+    bigmij = np.sqrt(prob.value)
+
+    return bigmij
+
+
 def get_smallmij(vi: np.ndarray, vj: np.ndarray, W: np.ndarray, alpha_vec: np.ndarray) -> float:
     """
     This method calculates the m(i,j) value, which is used to measure the difference between two
@@ -367,8 +398,8 @@ def hyperrectangle_get_vertices(lower: np.ndarray, upper: np.ndarray) -> np.ndar
     :return: An array of shape (2^n, n) containing the vertices of the hyperrectangle.
     :rtype: np.ndarray
     """
-    a = [[l1, l2] for l1, l2 in zip(lower, upper)]
-    vertex_list = [element for element in itertools.product(*a)]
+    dim_bounds = [[dim_low, dim_high] for dim_low, dim_high in zip(lower, upper)]
+    vertex_list = [vertex for vertex in itertools.product(*dim_bounds)]
     return np.array(vertex_list)
 
 

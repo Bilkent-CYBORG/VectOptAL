@@ -61,6 +61,11 @@ class VOGP_AD(PALAlgorithm):
         >>>          break
         >>>
         >>> predictive_model = algorithm.model
+
+    Reference:
+        "Vector Optimization with Gaussian Process Bandits",
+        Korkmaz, Yıldırım, Ararat, Tekin, arXiv preprint
+        https://arxiv.org/abs/2412.02484
     """
 
     def __init__(

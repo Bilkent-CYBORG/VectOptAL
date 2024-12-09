@@ -11,6 +11,7 @@ from vopy.utils import (
     get_2d_w,
     get_alpha,
     get_alpha_vec,
+    get_bigmij,
     get_closest_indices_from_points,
     get_delta,
     get_noisy_evaluations_chol,
@@ -180,8 +181,8 @@ class TestGenerateSobolSamples(TestCase):
         np.testing.assert_allclose(samples_fst, samples_scd)
 
 
-class TestGetSmallmij(TestCase):
-    """Test m(i, j) computation."""
+class Testmij(TestCase):
+    """Test m(i, j) and M(i, j) computations."""
 
     def test_get_smallmij(self):
         """Test the get_smallmij function."""
@@ -201,6 +202,24 @@ class TestGetSmallmij(TestCase):
                 np.testing.assert_allclose(
                     m, min(np.clip(W_normalized @ diff, a_min=0, a_max=None))
                 )
+
+    def test_get_bigmij(self):
+        """Test the get_bigmij function."""
+        vi = np.array([1, 0])
+        vj = np.array([1.1, 0.2])
+
+        angles = [45, 60, 90, 120, 135]
+        for angle in angles:
+            with self.subTest(angle=angle):
+                W = get_2d_w(angle)
+                alpha_vec = get_alpha_vec(W)
+
+                W_normalized = (W.T / alpha_vec.flatten()).T
+                diff = vj - vi
+                M_pred = min(np.clip(-(W_normalized @ diff), a_min=0, a_max=None))
+
+                M = get_bigmij(vi, vj, W)
+                np.testing.assert_allclose(M, M_pred)
 
 
 class TestGetDelta(TestCase):

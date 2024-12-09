@@ -51,6 +51,7 @@ class PolyhedralConeOrder(Order):
     def get_pareto_set(self, elements: np.ndarray) -> np.ndarray:
         """
         Computes the Pareto set from a set of elements, retaining only non-dominated points.
+        See: https://stackoverflow.com/a/40239615
 
         :param elements: An array of shape (N, dim), where `N` is the number of elements
             and `dim` is the dimension of the elements and the ordering cone.

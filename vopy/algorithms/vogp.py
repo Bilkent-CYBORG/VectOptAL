@@ -61,6 +61,11 @@ class VOGP(PALAlgorithm):
         >>>          break
         >>>
         >>> pareto_set = algorithm.P
+
+    Reference:
+        "Vector Optimization with Gaussian Process Bandits",
+        Korkmaz, Yıldırım, Ararat, Tekin, arXiv preprint
+        https://arxiv.org/abs/2412.02484
     """
 
     def __init__(
