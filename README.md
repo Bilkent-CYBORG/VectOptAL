@@ -1,4 +1,4 @@
-## Vector Optimization with Active Learning
+## VOPy: A Framework for Black-box Vector Optimization
 
 [![Test Workflow](https://github.com/Bilkent-CYBORG/VOPy/actions/workflows/test.yml/badge.svg)](https://github.com/Bilkent-CYBORG/VOPy/blob/master/.github/workflows/test.yml)
 [![Coverage Status](https://coveralls.io/repos/github/Bilkent-CYBORG/VOPy/badge.svg)](https://coveralls.io/github/Bilkent-CYBORG/VOPy)
@@ -56,3 +56,20 @@ Further, installing the pre-commit hooks are **highly** encouraged.
 # Inside the package folder
 pre-commit install
 ```
+
+### **Citing**
+
+If you use VOPy, please cite the following paper:
+
+```
+@article{yildirim2024vopy,
+  title={{VOPy}: A Framework for Black-box Vector Optimization},
+  author={Yıldırım, Yaşar Cahit and Karagözlü, Efe Mert and Korkmaz, İlter Onat and Ararat, Çağın and Tekin, Cem},
+  journal={arXiv preprint arXiv:2412.06604},
+  year={2024}
+}
+```
+
+### **License**
+
+VOPy is under [MIT license](LICENSE).
